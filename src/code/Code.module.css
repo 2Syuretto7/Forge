@@ -1,0 +1,131 @@
+.pane {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 10px 12px;
+  gap: 8px;
+  overflow-y: auto;
+}
+.head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+}
+.kicker {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.title {
+  margin: 0;
+  font-size: 1.05rem;
+}
+.status {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 0.82rem;
+  min-height: 1.2em;
+}
+.badgePass {
+  background: var(--good-soft);
+  color: var(--good);
+  padding: 0 8px;
+  border-radius: 999px;
+}
+.py {
+  color: var(--muted);
+}
+.editor {
+  flex: 1 1 320px;
+  min-height: 260px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.results {
+  font-size: 0.86rem;
+}
+.sumPass {
+  color: var(--good);
+  font-weight: 600;
+}
+.sumFail {
+  color: var(--bad);
+  font-weight: 600;
+}
+.testList {
+  list-style: none;
+  padding: 0;
+  margin: 4px 0;
+}
+.testList li {
+  padding: 2px 0;
+}
+.tMark {
+  display: inline-block;
+  width: 3.2em;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+}
+.tPass .tMark {
+  color: var(--good);
+}
+.tFail .tMark {
+  color: var(--bad);
+}
+.tMsg {
+  margin-left: 3.2em;
+  color: var(--muted);
+  font-family: var(--mono);
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.output {
+  background: var(--code-bg);
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  max-height: 200px;
+  overflow: auto;
+  white-space: pre-wrap;
+  margin: 0;
+}
+.err {
+  color: var(--bad);
+}
+.help {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+  font-size: 0.88rem;
+}
+.hint {
+  background: var(--surface-2);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+.hint :global(p) {
+  display: inline;
+  margin: 0;
+}
+.solution {
+  width: 100%;
+}
+.solution pre {
+  background: var(--code-bg);
+  padding: 8px;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  overflow-x: auto;
+  max-height: 320px;
+}
