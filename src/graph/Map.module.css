@@ -1,0 +1,219 @@
+.map {
+  padding: 8px 16px 24px;
+}
+.graphWrap {
+  position: relative;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  font-size: 0.88rem;
+  margin: 6px 0 8px;
+}
+.toggle {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.zoomBtns {
+  margin-left: auto;
+  display: inline-flex;
+  gap: 4px;
+}
+.svg {
+  width: 100%;
+  height: auto;
+  max-height: calc(100vh - 130px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  cursor: grab;
+}
+.bandA {
+  fill: var(--surface-2);
+  opacity: 0.6;
+}
+.bandB {
+  fill: transparent;
+}
+.colLabel {
+  fill: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+}
+.rowLabel {
+  fill: var(--muted);
+  font-size: 12px;
+}
+.e_vertical {
+  stroke: var(--edge-v);
+  stroke-width: 1.6;
+}
+.e_horizontal {
+  stroke: var(--edge-h);
+  stroke-width: 2;
+}
+.e_long_range {
+  stroke: var(--edge-l);
+  stroke-width: 2;
+  stroke-dasharray: 6 4;
+}
+.m_vertical {
+  fill: var(--edge-v);
+}
+.m_horizontal {
+  fill: var(--edge-h);
+}
+.m_long_range {
+  fill: var(--edge-l);
+}
+.dim {
+  opacity: 0.15;
+}
+.node {
+  cursor: pointer;
+}
+.node:focus {
+  outline: none;
+}
+.node:focus-visible .disc {
+  stroke: var(--focus);
+  stroke-width: 3;
+}
+.disc {
+  stroke-width: 2;
+}
+.nodeId {
+  font-size: 13px;
+  font-weight: 700;
+  pointer-events: none;
+}
+.nodeTitle {
+  font-size: 10.5px;
+  fill: var(--text);
+  pointer-events: none;
+}
+.ring {
+  stroke: var(--accent);
+  stroke-width: 4;
+}
+.s_available .disc,
+.legendDot.s_available {
+  fill: var(--surface);
+  stroke: var(--accent);
+}
+.s_available .nodeId {
+  fill: var(--accent);
+}
+.s_in_progress .disc,
+.legendDot.s_in_progress {
+  fill: var(--accent-soft);
+  stroke: var(--accent);
+}
+.s_in_progress .nodeId {
+  fill: var(--text);
+}
+.s_complete .disc,
+.legendDot.s_complete {
+  fill: var(--good);
+  stroke: var(--good);
+}
+.s_complete .nodeId {
+  fill: var(--surface);
+}
+.s_locked .disc,
+.legendDot.s_locked {
+  fill: var(--surface-2);
+  stroke: var(--edge-v);
+  stroke-dasharray: 3 2;
+}
+.s_locked .nodeId {
+  fill: var(--muted);
+}
+.s_unpublished .disc {
+  fill: var(--surface-2);
+  stroke: var(--border);
+}
+.s_unpublished .nodeId {
+  fill: var(--muted);
+}
+.s_unpublished {
+  cursor: default;
+}
+.tip {
+  position: absolute;
+  top: 48px;
+  right: 12px;
+  width: 300px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.12);
+  pointer-events: none;
+}
+.tipTitle {
+  font-weight: 700;
+}
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  list-style: none;
+  padding: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.legend li {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.legendDot {
+  stroke-width: 2;
+}
+.list {
+  max-width: 640px;
+  margin: 0 auto;
+}
+.stageHead {
+  font-size: 1.05rem;
+  margin: 18px 0 6px;
+}
+.lessonList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.listItem {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin: 8px 0;
+}
+.listItem.s_available,
+.listItem.s_in_progress {
+  border-left-color: var(--accent);
+}
+.listItem.s_complete {
+  border-left-color: var(--good);
+}
+.listHead {
+  display: flex;
+  flex-direction: column;
+}
+.listTitle {
+  font-weight: 600;
+}
+.rowName {
+  fill: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
