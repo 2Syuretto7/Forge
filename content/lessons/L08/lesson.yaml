@@ -1,0 +1,34 @@
+id: L08
+hours: 10
+capstone: "The NumPy autograd engine trains an MLP whose loss curve matches the PyTorch reference within tolerance"
+teaser: "Build a tensor autograd engine with broadcasting and a module API, then open PyTorch and recognize every piece."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 45}
+  - {file: m2-derivation.md, mode: theory,   minutes: 180}
+  - {file: m3-build.md,      mode: practice, minutes: 160}
+  - {file: m4-scale.md,      mode: practice, minutes: 70}
+  - {file: m5-break.md,      mode: both,     minutes: 50}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 25}
+  - {file: m7-capstone.md,   mode: practice, minutes: 45}
+hooks:
+  - {to: L09, text: "Your engine's parameters and gradients are what optimizers consume; L09 writes SGD with momentum and Adam on top."}
+  - {to: L11, text: "Every operation on the tape becomes a GPU kernel launch; L11 measures what they cost."}
+  - {to: L18, text: "The tensors saved for backward are the activation memory that distributed training must budget."}
+reuses:
+  - {from: L03, concept: "reverse-mode differentiation and vector-Jacobian products"}
+  - {from: L07, concept: "hand-written backward passes for an MLP"}
+annotations:
+  - {target: L07, anchor: "Backpropagation", text: "L08 automates exactly this: each operation records its inputs and a VJP on a tape, and backward() replays the tape in reverse."}
+concepts:
+  - q: "Why must an autograd engine visit nodes in reverse topological order during backward?"
+    a: "A node's gradient is complete only after every node that uses it has passed its contribution back; reverse topological order guarantees all consumers are processed first."
+  - q: "How do you compute the gradient of an input that was broadcast in the forward pass?"
+    a: "Sum the output gradient over every dimension that was added or stretched from size 1, so the gradient has the input's original shape."
+  - q: "Why do frameworks complain about in-place modification of tensors needed for backward?"
+    a: "The backward pass reads tensors saved during the forward pass; changing them in place makes the gradient use wrong values silently, so frameworks track a version counter and raise an error."
+  - q: "What does torch.no_grad() do?"
+    a: "It stops the recording of operations, so no graph is built and no tensors are saved for backward, saving memory during inference."
+  - q: "Why do gradients accumulate rather than overwrite?"
+    a: "A tensor used several times receives one contribution per use, and the chain rule sums them; that is also why optimizers must zero gradients between steps."
+katas: [e02, e04, e06]
