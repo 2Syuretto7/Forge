@@ -538,14 +538,14 @@ Implementation notes (decided during Phase 1):
 ## 13. Task list (execute in order; tick as done)
 
 ### Phase 1: Skeleton and L01 (owner can start learning at the end of this phase)
-- [ ] 1.1 Scaffold repo, tooling, CI (`check.yml`, `deploy.yml`), README.
-- [ ] 1.2 Content pipeline: `graph.yaml` with all 24 lessons and all edges; `build_content.ts`; `validate_content.ts` with every rule (lessons not yet written are allowed only under a `--phase` flag that lists the lessons expected so far).
-- [ ] 1.3 IndexedDB store and Settings screen (key, model, theme, export/import, reset).
-- [ ] 1.4 Map view with layered layout, node states, edge styles, toggles, mobile list mode.
-- [ ] 1.5 Lesson player: movements, directives (all of 6.3), edge markers, theory/practice meter.
-- [ ] 1.6 Pyodide worker, CodeMirror pane, test runner, hints, solution reveal.
-- [ ] 1.7 Prediction blocks and derivation step checker.
-- [ ] 1.8 Widgets used by L01 (`MatrixTransform`).
+- [x] 1.1 Scaffold repo, tooling, CI (`check.yml`, `deploy.yml`), README.
+- [x] 1.2 Content pipeline: `graph.yaml` with all 24 lessons and all edges; `build_content.ts`; `validate_content.ts` with every rule (lessons not yet written are allowed only under a `--phase` flag that lists the lessons expected so far).
+- [x] 1.3 IndexedDB store and Settings screen (key, model, theme, export/import, reset).
+- [x] 1.4 Map view with layered layout, node states, edge styles, toggles, mobile list mode.
+- [x] 1.5 Lesson player: movements, directives (all of 6.3), edge markers, theory/practice meter.
+- [x] 1.6 Pyodide worker, CodeMirror pane, test runner, hints, solution reveal.
+- [x] 1.7 Prediction blocks and derivation step checker.
+- [x] 1.8 Widgets used by L01 (`MatrixTransform`).
 - [ ] 1.9 Write L01 completely; pytest passes.
 - [ ] 1.10 Deploy; run acceptance checks 1, 2, 9 for the current scope; send the owner the URL.
 
