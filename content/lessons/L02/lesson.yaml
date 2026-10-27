@@ -1,0 +1,30 @@
+id: L02
+hours: 8
+capstone: "A/B test analyzer with bootstrap and Bayesian posteriors, with a report on when they disagree"
+teaser: "Random variables, likelihood, MLE and MAP, the CLT and the bootstrap: how to be exactly as confident as the data allow."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 20}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 150}
+  - {file: m3-build.md,      mode: practice, minutes: 110}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 40}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 20}
+  - {file: m7-capstone.md,   mode: practice, minutes: 40}
+hooks:
+  - {to: L04, text: "Maximizing likelihood turns out to be minimizing cross-entropy; L04 makes that precise."}
+  - {to: L05, text: "Least squares and logistic regression are maximum likelihood under Gaussian and Bernoulli noise."}
+  - {to: L06, text: "Bias and variance of estimators become the bias-variance decomposition of prediction error."}
+  - {to: L23, text: "The bootstrap returns to put confidence intervals on benchmark scores."}
+concepts:
+  - q: "What does the likelihood function measure, and why is it not a probability distribution over the parameter?"
+    a: "L(theta) = p(data | theta) measures how probable the observed data are under each parameter value. As a function of theta it need not integrate to 1; turning it into a distribution over theta requires a prior and Bayes' rule."
+  - q: "Why does the MLE of a Gaussian variance underestimate the true variance?"
+    a: "It measures spread around the sample mean, which is fitted to the same data and therefore closer to the points than the true mean is. Its expectation is (n-1)/n times sigma^2, so dividing by n-1 removes the bias."
+  - q: "What does the central limit theorem say, and what does it require?"
+    a: "The standardized mean of n independent draws with finite variance approaches a standard normal distribution as n grows. It fails for distributions without finite variance, such as the Cauchy."
+  - q: "How does a percentile bootstrap confidence interval work?"
+    a: "Resample the data with replacement many times, recompute the statistic on each resample, and take the 2.5th and 97.5th percentiles of those values as an approximate 95 percent interval."
+  - q: "How does a Beta prior turn into a Beta posterior for coin flips?"
+    a: "With prior Beta(a, b) and k heads in n flips, the posterior is Beta(a + k, b + n - k): the prior acts like a imaginary heads and b imaginary tails."
+katas: [e04, e09, e10]
