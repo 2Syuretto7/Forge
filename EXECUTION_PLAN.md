@@ -550,7 +550,7 @@ Implementation notes (decided during Phase 1):
 - [ ] 1.10 Deploy; run acceptance checks 1, 2, 9 for the current scope; send the owner the URL.
 
 ### Phase 2: Math and Core ML (L02 to L09)
-- [ ] 2.1 Feynman grader (Section 9) with fallback self-assessment.
+- [x] 2.1 Feynman grader (Section 9) with fallback self-assessment.
 - [ ] 2.2 Spaced-review engine, `gen_reviews.ts`, `#/review`, recall-bridge integration.
 - [ ] 2.3 Colab button, completion-code verification, notebook autograder template.
 - [ ] 2.4 Widgets: `DistributionPlayground`, `ComputationGraph`, `EntropyBars`, `DecisionBoundary`, `BiasVarianceCurve`, `LossLandscape`, `ActivationStats`.
