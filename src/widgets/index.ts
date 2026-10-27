@@ -8,7 +8,7 @@ const cache = new Map<string, LazyExoticComponent<ComponentType<WidgetProps>>>()
 
 export function getWidget(name: string) {
   const loader = modules[`./${name}.tsx`];
-  if (!loader || name === 'common') return null;
+  if (!loader || !/^[A-Z]/.test(name)) return null;
   let c = cache.get(name);
   if (!c) {
     c = lazy(loader);
@@ -19,4 +19,4 @@ export function getWidget(name: string) {
 
 export const widgetNames = Object.keys(modules)
   .map((k) => k.slice(2, -4))
-  .filter((n) => n !== 'common');
+  .filter((n) => /^[A-Z]/.test(n));

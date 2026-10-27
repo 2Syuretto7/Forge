@@ -868,3 +868,85 @@ details.aside > summary {
   font-family: var(--mono);
   min-width: 16em;
 }
+.legend-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  list-style: none;
+  padding: 0;
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  justify-content: center;
+}
+.legend-row li {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+}
+.widget-svg.legend-swatch {
+  width: 22px;
+  margin: 0;
+  display: inline-block;
+}
+.widget-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 10px;
+}
+.widget-stats {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-top: 6px;
+}
+.widget-canvas {
+  width: 100%;
+  max-width: 440px;
+  display: block;
+  margin: 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.widget-svg .hist {
+  fill: var(--theory);
+  opacity: 0.55;
+}
+.widget-svg .hist-b {
+  fill: var(--practice);
+  opacity: 0.55;
+}
+.widget-svg .marker {
+  fill: var(--accent);
+}
+.widget-svg .node-box {
+  fill: var(--surface-2);
+  stroke: var(--border);
+}
+.widget-svg .node-box.active {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+.widget-svg .edge-line {
+  stroke: var(--muted);
+  stroke-width: 1.2;
+  fill: none;
+}
+.widget-svg .val {
+  fill: var(--text);
+  font-size: 11px;
+  font-family: var(--mono);
+}
+.widget-svg .grad {
+  fill: var(--accent);
+  font-size: 11px;
+  font-family: var(--mono);
+}
+.widget-svg .pt-0 {
+  fill: var(--theory);
+}
+.widget-svg .pt-1 {
+  fill: var(--accent);
+}

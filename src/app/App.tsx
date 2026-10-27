@@ -4,6 +4,7 @@ import { MapView } from '../graph/MapView';
 import { LessonPlayer } from '../lesson/LessonPlayer';
 import { ReviewPage } from '../review/ReviewPage';
 import { SettingsPage } from '../settings/SettingsPage';
+import { WidgetGallery } from './WidgetGallery';
 import { useIndex } from '../content/load';
 import { useStore } from '../store/store';
 import { dueItems, hoursDone, totalHours } from '../store/derive';
@@ -56,6 +57,7 @@ export function App() {
         <Route path="/lesson/:id/:movement?" element={<LessonPlayer />} />
         <Route path="/review" element={<ReviewPage />} />
         <Route path="/settings" element={<SettingsPage />} />
+        <Route path="/widgets" element={<WidgetGallery />} />
         <Route
           path="*"
           element={
