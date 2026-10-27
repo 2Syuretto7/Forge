@@ -1,0 +1,35 @@
+id: L05
+hours: 8
+capstone: "Multi-class softmax classifier on a provided tabular dataset reaching at least 87 percent test accuracy, with a calibration analysis"
+teaser: "Least squares and logistic regression derived from noise models, solved three ways, evaluated honestly."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 20}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 150}
+  - {file: m3-build.md,      mode: practice, minutes: 110}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 40}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 20}
+  - {file: m7-capstone.md,   mode: practice, minutes: 40}
+hooks:
+  - {to: L06, text: "You fit models here and measure them on held-out data; L06 asks why the held-out error behaves as it does."}
+  - {to: L07, text: "A neural network is logistic regression on features it learns itself."}
+  - {to: L13, text: "The softmax you train here returns as the attention weights of a transformer."}
+reuses:
+  - {from: L01, concept: "least squares and the normal equations"}
+  - {from: L02, concept: "maximum likelihood and Gaussian priors"}
+annotations:
+  - {target: L01, anchor: "least squares", text: "Least squares is maximum likelihood when the noise is Gaussian; ridge regression adds a Gaussian prior (L05)."}
+  - {target: L02, anchor: "Gaussian prior", text: "L05 turns this into ridge regression and weight decay: the MAP estimate of a linear model."}
+concepts:
+  - q: "Why is squared error the right loss for linear regression?"
+    a: "If y = w^T x + Gaussian noise, the negative log-likelihood is a constant plus the sum of squared residuals divided by 2 sigma^2, so maximum likelihood is least squares."
+  - q: "What is the gradient of the mean logistic loss with respect to the weights?"
+    a: "X^T (sigmoid(Xw + b) - y) / n: features weighted by prediction error."
+  - q: "What does L2 regularization correspond to in Bayesian terms?"
+    a: "A zero-mean Gaussian prior on the weights; the penalty strength is the noise variance divided by the prior variance."
+  - q: "Why do unregularized logistic regression weights diverge on separable data?"
+    a: "Scaling up a separating weight vector always lowers the loss toward zero, so the loss has no finite minimizer and gradient descent keeps growing the norm."
+  - q: "What does it mean for a classifier to be calibrated?"
+    a: "Among the examples where it predicts probability p, a fraction p are actually positive; a reliability diagram plots predicted against observed frequencies."
+katas: [e04, e06, e09]
