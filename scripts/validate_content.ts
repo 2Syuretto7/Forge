@@ -154,6 +154,10 @@ export function lessonErrors(l: LoadedLesson, graph: Graph, loaded: Map<string, 
   for (const a of yaml.annotations ?? []) if (!graph.lessons.some((g) => g.id === a.target)) errs.push(`${id}: annotation target ${a.target} unknown`);
   for (const k of yaml.katas ?? []) if (!lesson.exercises[k]) errs.push(`${id}: kata ${k} is not an exercise`);
 
+  const compiled = JSON.stringify(lesson);
+  const katexErrors = (compiled.match(/katex-error/g) ?? []).length;
+  if (katexErrors) errs.push(`${id}: ${katexErrors} KaTeX rendering error(s); search the compiled lesson for katex-error`);
+
   for (const f of walk(lessonDir(id))) {
     const hits = bannedIn(fs.readFileSync(f, 'utf8'));
     if (hits.length) errs.push(`${path.relative(ROOT, f)}: banned content (${hits.join(', ')})`);

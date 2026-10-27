@@ -3,6 +3,7 @@
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkMath from 'remark-math';
+import remarkGfm from 'remark-gfm';
 import remarkDirective from 'remark-directive';
 import rehypeKatex from 'rehype-katex';
 import { toHast } from 'mdast-util-to-hast';
@@ -96,7 +97,7 @@ export function compileMarkdown(source: string, where: string): CompileResult {
   const issues: CompileIssue[] = [];
   const plainText: string[] = [];
   const { src, blanks } = extractBlanks(source);
-  const tree = unified().use(remarkParse).use(remarkMath).use(remarkDirective).parse(src) as Root;
+  const tree = unified().use(remarkParse).use(remarkGfm, { singleTilde: false }).use(remarkMath).use(remarkDirective).parse(src) as Root;
   restoreStrayDirectives(tree);
 
   let title = '';

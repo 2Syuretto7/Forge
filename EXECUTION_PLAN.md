@@ -546,7 +546,7 @@ Implementation notes (decided during Phase 1):
 - [x] 1.6 Pyodide worker, CodeMirror pane, test runner, hints, solution reveal.
 - [x] 1.7 Prediction blocks and derivation step checker.
 - [x] 1.8 Widgets used by L01 (`MatrixTransform`).
-- [ ] 1.9 Write L01 completely; pytest passes.
+- [x] 1.9 Write L01 completely; pytest passes.
 - [ ] 1.10 Deploy; run acceptance checks 1, 2, 9 for the current scope; send the owner the URL.
 
 ### Phase 2: Math and Core ML (L02 to L09)

@@ -17,6 +17,7 @@ import type {
 import { unified } from 'unified';
 import remarkParse from 'remark-parse';
 import remarkMath from 'remark-math';
+import remarkGfm from 'remark-gfm';
 import type { Root, RootContent, List, Parent } from 'mdast';
 import { toString as mdToString } from 'mdast-util-to-string';
 
@@ -81,7 +82,7 @@ export function testNames(src: string): string[] {
 
 // prompt.md: "# Title", body, optional "## Hints" numbered list (max 3).
 export function compilePrompt(src: string, where: string) {
-  const tree = unified().use(remarkParse).use(remarkMath).parse(src) as Root;
+  const tree = unified().use(remarkParse).use(remarkGfm, { singleTilde: false }).use(remarkMath).parse(src) as Root;
   const issues: CompileIssue[] = [];
   let title = '';
   const nodes = [...tree.children];

@@ -15,7 +15,8 @@
     "e2e": "playwright test",
     "pytest": "python3 scripts/run_exercise_tests.py",
     "notebooks": "python3 scripts/run_notebooks.py",
-    "check": "npm run validate && npm run typecheck && npm run lint && npm run test && npm run pytest && npm run build"
+    "check": "npm run validate && npm run typecheck && npm run lint && npm run test && npm run pytest && npm run build",
+    "pyodide-test": "node scripts/run_pyodide_tests.mjs"
   },
   "dependencies": {
     "@codemirror/commands": "6.11.1",
@@ -58,6 +59,7 @@
     "pyodide": "314.0.7",
     "rehype-katex": "7.0.1",
     "remark-directive": "4.0.0",
+    "remark-gfm": "4.0.1",
     "remark-math": "6.0.0",
     "remark-parse": "11.0.0",
     "remark-rehype": "11.1.2",
