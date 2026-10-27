@@ -1,0 +1,35 @@
+id: L04
+hours: 7
+capstone: "Compression experiment: Huffman code a text corpus and compare bits per character with entropy estimates"
+teaser: "Surprisal, entropy, cross-entropy and KL: why training loss is measured in nats and what 1.5 nats means."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 20}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 35}
+  - {file: m2-derivation.md, mode: theory,   minutes: 130}
+  - {file: m3-build.md,      mode: practice, minutes: 90}
+  - {file: m4-scale.md,      mode: practice, minutes: 50}
+  - {file: m5-break.md,      mode: both,     minutes: 40}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 20}
+  - {file: m7-capstone.md,   mode: practice, minutes: 35}
+hooks:
+  - {to: L06, text: "Cross-entropy on held-out data is how you will measure generalization of probabilistic models."}
+  - {to: L14, text: "A language model's training loss is exactly the cross-entropy derived here, and its perplexity the exponential of it."}
+  - {to: L21, text: "KL divergence to a reference model is the penalty that keeps RLHF from drifting."}
+reuses:
+  - {from: L02, concept: "maximum likelihood estimation"}
+  - {from: L03, concept: "the softmax Jacobian"}
+annotations:
+  - {target: L02, anchor: "maximum likelihood estimate", text: "Maximizing average log-likelihood is minimizing the cross-entropy between the empirical distribution and the model (L04)."}
+  - {target: L03, anchor: "softmax", text: "Compose this Jacobian with the gradient of -log p_y and everything collapses to p - onehot(y), the cross-entropy gradient (L04)."}
+concepts:
+  - q: "What does a cross-entropy loss of 1.5 nats per token mean?"
+    a: "On average the model assigns probability e^-1.5, about 0.22, to the token that actually comes next; its perplexity is e^1.5, about 4.5, as uncertain as a fair choice among 4.5 tokens."
+  - q: "Why is KL(p || q) never negative?"
+    a: "Gibbs' inequality: using log x <= x - 1, -KL = sum p log(q/p) <= sum p (q/p - 1) = sum q - 1 <= 0, with equality only when q = p."
+  - q: "Why is minimizing cross-entropy the same as maximum likelihood?"
+    a: "The average negative log-likelihood of data under q is the cross-entropy H(p_hat, q) with the empirical distribution p_hat; H(p_hat) is fixed, so minimizing it minimizes KL(p_hat || q)."
+  - q: "How do forward and reverse KL behave when fitting a single Gaussian to a bimodal target?"
+    a: "Minimizing KL(p || q) is mass-covering: q spreads to cover both modes. Minimizing KL(q || p) is mode-seeking: q locks onto one mode, because it is punished for putting mass where p is small."
+  - q: "What is the gradient of softmax cross-entropy with respect to the logits?"
+    a: "softmax(z) - onehot(y): predicted probabilities minus the target distribution."
+katas: [e02, e07, e09]

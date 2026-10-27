@@ -554,7 +554,7 @@ Implementation notes (decided during Phase 1):
 - [ ] 2.2 Spaced-review engine, `gen_reviews.ts`, `#/review`, recall-bridge integration.
 - [ ] 2.3 Colab button, completion-code verification, notebook autograder template.
 - [x] 2.4 Widgets: `DistributionPlayground`, `ComputationGraph`, `EntropyBars`, `DecisionBoundary`, `BiasVarianceCurve`, `LossLandscape`, `ActivationStats`.
-- [ ] 2.5 Write L02, L03, L04.
+- [x] 2.5 Write L02, L03, L04.
 - [ ] 2.6 Write L05, L06, L07.
 - [ ] 2.7 Write L08 (browser part and notebook), L09.
 - [ ] 2.8 Retro-annotations engine.
