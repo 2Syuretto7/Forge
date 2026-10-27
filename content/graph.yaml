@@ -1,0 +1,93 @@
+# Single source of truth for the curriculum graph (EXECUTION_PLAN.md Section 10).
+tracks: [math, core, arch, sys, llm]
+stages: [foundations, learning, models_gpus, scale, frontier]
+lessons:
+  - {id: L01, title: "Linear algebra as the geometry of data", track: math, stage: foundations, gpu: false, compute: browser}
+  - {id: L02, title: "Probability, likelihood and estimation", track: math, stage: foundations, gpu: false, compute: browser}
+  - {id: L03, title: "Calculus, Jacobians and automatic differentiation", track: math, stage: foundations, gpu: false, compute: browser}
+  - {id: L04, title: "Information theory: entropy, cross-entropy, KL", track: math, stage: foundations, gpu: false, compute: browser}
+  - {id: L05, title: "Linear and logistic regression, end to end", track: core, stage: learning, gpu: false, compute: browser}
+  - {id: L06, title: "Generalization, bias-variance and double descent", track: core, stage: learning, gpu: false, compute: browser}
+  - {id: L07, title: "Neural networks and backprop from scratch", track: core, stage: learning, gpu: false, compute: browser}
+  - {id: L08, title: "Build a mini autograd engine; PyTorch internals", track: sys, stage: learning, gpu: true, compute: browser+colab}
+  - {id: L09, title: "Optimization: SGD, momentum, Adam, schedules, initialization", track: core, stage: learning, gpu: false, compute: browser}
+  - {id: L10, title: "Normalization, residuals and training stability", track: arch, stage: models_gpus, gpu: false, compute: browser}
+  - {id: L11, title: "GPU architecture and the roofline model", track: sys, stage: models_gpus, gpu: true, compute: colab}
+  - {id: L12, title: "Writing kernels: Triton, fused ops, FlashAttention", track: sys, stage: models_gpus, gpu: true, compute: colab}
+  - {id: L13, title: "Attention and the transformer from scratch", track: arch, stage: models_gpus, gpu: true, compute: browser+colab}
+  - {id: L14, title: "Tokenization and language modeling: a GPT from scratch", track: arch, stage: models_gpus, gpu: true, compute: colab}
+  - {id: L15, title: "Scaling laws and compute-optimal training", track: llm, stage: scale, gpu: true, compute: colab}
+  - {id: L16, title: "Data at scale: curation, dedup, mixtures, pipelines", track: sys, stage: scale, gpu: true, compute: browser+colab}
+  - {id: L17, title: "Mixed precision and floating-point numerics", track: sys, stage: models_gpus, gpu: true, compute: colab}
+  - {id: L18, title: "Distributed training: DDP, FSDP/ZeRO, tensor and pipeline parallel", track: sys, stage: scale, gpu: true, compute: colab}
+  - {id: L19, title: "A real pretraining run: loss spikes, checkpoints, eval harness", track: sys, stage: scale, gpu: true, compute: colab}
+  - {id: L20, title: "Fine-tuning: SFT, LoRA, distillation", track: llm, stage: frontier, gpu: true, compute: colab}
+  - {id: L21, title: "RL for language models: policy gradients, RLHF, DPO, verifiable rewards", track: llm, stage: frontier, gpu: true, compute: colab}
+  - {id: L22, title: "Inference systems: KV cache, batching, quantization, speculative decoding", track: sys, stage: frontier, gpu: true, compute: colab}
+  - {id: L23, title: "Evaluation and interpretability: probes, sparse autoencoders, circuits", track: llm, stage: frontier, gpu: true, compute: colab}
+  - {id: L24, title: "Capstone: train, align, evaluate and serve a small LM", track: all, stage: frontier, gpu: true, compute: colab}
+edges:
+  # Vertical (prerequisites)
+  - {from: L01, to: L05, type: vertical}
+  - {from: L01, to: L09, type: vertical}
+  - {from: L01, to: L13, type: vertical}
+  - {from: L02, to: L04, type: vertical}
+  - {from: L02, to: L05, type: vertical}
+  - {from: L02, to: L06, type: vertical}
+  - {from: L03, to: L07, type: vertical}
+  - {from: L03, to: L08, type: vertical}
+  - {from: L04, to: L06, type: vertical}
+  - {from: L04, to: L14, type: vertical}
+  - {from: L05, to: L06, type: vertical}
+  - {from: L05, to: L07, type: vertical}
+  - {from: L06, to: L15, type: vertical}
+  - {from: L07, to: L08, type: vertical}
+  - {from: L07, to: L09, type: vertical}
+  - {from: L07, to: L13, type: vertical}
+  - {from: L08, to: L11, type: vertical}
+  - {from: L09, to: L10, type: vertical}
+  - {from: L09, to: L15, type: vertical}
+  - {from: L10, to: L13, type: vertical}
+  - {from: L11, to: L12, type: vertical}
+  - {from: L11, to: L17, type: vertical}
+  - {from: L11, to: L18, type: vertical}
+  - {from: L13, to: L12, type: vertical}
+  - {from: L13, to: L14, type: vertical}
+  - {from: L13, to: L20, type: vertical}
+  - {from: L13, to: L22, type: vertical}
+  - {from: L13, to: L23, type: vertical}
+  - {from: L14, to: L15, type: vertical}
+  - {from: L14, to: L16, type: vertical}
+  - {from: L15, to: L18, type: vertical}
+  - {from: L15, to: L19, type: vertical}
+  - {from: L16, to: L19, type: vertical}
+  - {from: L17, to: L18, type: vertical}
+  - {from: L17, to: L22, type: vertical}
+  - {from: L18, to: L19, type: vertical}
+  - {from: L19, to: L20, type: vertical}
+  - {from: L20, to: L21, type: vertical}
+  - {from: L21, to: L23, type: vertical}
+  - {from: L12, to: L22, type: vertical}
+  - {from: L19, to: L24, type: vertical}
+  - {from: L20, to: L24, type: vertical}
+  - {from: L21, to: L24, type: vertical}
+  - {from: L22, to: L24, type: vertical}
+  - {from: L23, to: L24, type: vertical}
+  # Horizontal (same stage, across tracks)
+  - {from: L03, to: L04, type: horizontal, note: "Gradients of log-probabilities meet information measures"}
+  - {from: L08, to: L09, type: horizontal, note: "Your autograd engine drives the optimizers"}
+  - {from: L11, to: L13, type: horizontal, note: "Attention cost read on the roofline"}
+  - {from: L16, to: L15, type: horizontal, note: "Data quality shifts the scaling curve"}
+  - {from: L17, to: L14, type: horizontal, note: "Train the GPT in reduced precision"}
+  - {from: L10, to: L12, type: horizontal, note: "The layer norm derived here becomes a fused kernel"}
+  - {from: L20, to: L22, type: horizontal, note: "A distilled student is a natural speculative-decoding draft"}
+  # Long-range (reconnections across stages)
+  - {from: L01, to: L20, type: long_range, note: "SVD returns as the low-rank update in LoRA"}
+  - {from: L04, to: L21, type: long_range, note: "KL divergence returns as the RLHF penalty"}
+  - {from: L02, to: L23, type: long_range, note: "The bootstrap returns as confidence intervals on evals"}
+  - {from: L09, to: L19, type: long_range, note: "Learning-rate schedules return in spike recovery"}
+  - {from: L05, to: L13, type: long_range, note: "Softmax returns as attention weights"}
+  - {from: L06, to: L16, type: long_range, note: "Test-set leakage returns as train/eval contamination"}
+  - {from: L07, to: L21, type: long_range, note: "The gradient p - y returns as the policy-gradient score function"}
+  - {from: L08, to: L18, type: long_range, note: "Tensors saved for backward return as activation memory"}
+  - {from: L15, to: L24, type: long_range, note: "Your scaling fit sizes the capstone model and token budget"}
