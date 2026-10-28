@@ -16,6 +16,10 @@ export async function verifyCode(lessonId: string, tests: string[], code: string
   return clean === exp.toUpperCase();
 }
 
-export function colabUrl(lessonId: string) {
-  return `https://colab.research.google.com/github/2Syuretto7/Forge/blob/main/notebooks/${lessonId}.ipynb`;
+// The deploy workflow passes the branch it built from, so the notebooks opened
+// in Colab are the ones committed next to the deployed site.
+const BRANCH = import.meta.env.VITE_COLAB_BRANCH || 'main';
+
+export function colabUrl(lessonId: string, branch = BRANCH) {
+  return `https://colab.research.google.com/github/2Syuretto7/Forge/blob/${branch}/notebooks/${lessonId}.ipynb`;
 }

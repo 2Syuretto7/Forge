@@ -519,6 +519,7 @@ Implementation notes (decided during Phase 1):
 - `:::colab{notebook=<ID> runtime=cpu}` marks a notebook that needs no GPU (L08); the button text and the notebook metadata then leave the accelerator unset.
 - A retro-annotation may name its target movement (`{target: L07, movement: m2-derivation, anchor: ..., text: ...}`); the anchor is matched case-insensitively against the plain text of that movement's blocks, first match wins.
 - Exercise hints live at the end of `prompt.md` under a `## Hints` heading (numbered list, at most 3).
+- Deployment: `deploy.yml` publishes from `main` and, until `main` exists, from the working branch. The build receives `VITE_COLAB_BRANCH` (the branch it built from), so the Colab button opens the notebooks committed next to the deployed site.
 
 ---
 

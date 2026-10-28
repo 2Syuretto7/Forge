@@ -2,9 +2,6 @@
 // and the autograder cell of Section 5.6 appended.
 import crypto from 'node:crypto';
 
-export const COLAB_OWNER = '2Syuretto7';
-export const COLAB_REPO = 'Forge';
-
 interface Cell {
   kind: 'markdown' | 'code';
   lines: string[];
@@ -131,6 +128,3 @@ export function buildNotebook(id: string, src: string, tests: string, variant: '
   return JSON.stringify(nb, null, 1) + '\n';
 }
 
-export function colabUrl(id: string) {
-  return `https://colab.research.google.com/github/${COLAB_OWNER}/${COLAB_REPO}/blob/main/notebooks/${id}.ipynb`;
-}
