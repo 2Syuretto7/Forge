@@ -1,0 +1,42 @@
+id: L13
+hours: 11
+capstone: "Train a two-layer transformer on character-level Shakespeare (public domain) to a validation loss below 1.70 nats per character"
+teaser: "Derive attention as a soft lookup, build multi-head attention and its backward pass by hand, then train a small transformer on Shakespeare."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 30}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 45}
+  - {file: m2-derivation.md, mode: theory,   minutes: 200}
+  - {file: m3-build.md,      mode: practice, minutes: 170}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 50}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 30}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: L12, text: "The softmax over the score matrix becomes one fused kernel: FlashAttention."}
+  - {to: L14, text: "Add a tokenizer, a data pipeline and sampling, and this model becomes a GPT."}
+  - {to: L20, text: "Fine-tuning methods such as LoRA adapt exactly these projection matrices."}
+  - {to: L22, text: "At inference the keys and values of past tokens are cached instead of recomputed."}
+  - {to: L23, text: "Individual attention heads implement recognizable algorithms, such as copying the token after a match."}
+reuses:
+  - {from: L01, concept: "dot products as similarity and projections onto subspaces"}
+  - {from: L05, concept: "the softmax and its Jacobian"}
+  - {from: L07, concept: "backpropagation through matrix products"}
+  - {from: L10, concept: "pre-norm residual blocks"}
+  - {from: L11, concept: "arithmetic intensity and the roofline"}
+annotations:
+  - {target: L05, movement: m2-derivation, anchor: "Softmax regression for many classes", text: "The same softmax turns attention scores into weights over positions in L13."}
+  - {target: L10, movement: m2-derivation, anchor: "Pre-norm and post-norm", text: "Every transformer block in L13 is this pre-norm residual block, with attention as one branch and an MLP as the other."}
+concepts:
+  - q: "What does an attention layer compute for one query?"
+    a: "A weighted average of value vectors, with weights given by the softmax of the query's dot products with every key."
+  - q: "Why are attention scores divided by the square root of the head dimension?"
+    a: "With unit-variance entries a dot product of length d has variance d; dividing by sqrt(d) keeps the scores at unit scale, so the softmax does not saturate and its gradient does not vanish."
+  - q: "How does a causal mask work, and why does it allow training on every position at once?"
+    a: "Scores for keys after the query are set to minus infinity before the softmax, so each position attends only to itself and the past; every position's next-token prediction is then a valid training example in a single forward pass."
+  - q: "Why does a transformer need positional information?"
+    a: "Attention without positions is permutation-equivariant: shuffling the inputs shuffles the outputs the same way, so the model cannot tell word order."
+  - q: "What property makes rotary position embeddings useful?"
+    a: "Rotating queries and keys by angles proportional to their positions makes their dot product depend only on the difference of the positions."
+  - q: "About how many parameters does one transformer block with model width d have?"
+    a: "About 12 d^2: 4 d^2 in the attention projections and 8 d^2 in the MLP with hidden width 4d."
+katas: [e01, e02, e07]
