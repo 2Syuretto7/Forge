@@ -12,7 +12,7 @@ import json
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-SOLVED = os.path.join(ROOT, 'build', 'notebooks')
+SOLVED = os.path.join(ROOT, 'notebooks', 'solved')
 
 
 def outputs_text(nb_path):
@@ -29,7 +29,7 @@ def outputs_text(nb_path):
 def main():
     only = set(sys.argv[1:])
     if not os.path.isdir(SOLVED):
-        print('run_notebooks: build/notebooks missing; run npm run content first')
+        print('run_notebooks: notebooks/solved missing; run npm run content first')
         sys.exit(1)
     names = sorted(n for n in os.listdir(SOLVED) if n.endswith('.ipynb'))
     if only:

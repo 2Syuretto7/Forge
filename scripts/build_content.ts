@@ -8,7 +8,9 @@ import type { Annotation, ContentIndex, LessonSummary, ReviewItem } from '../src
 
 const OUT = path.join(ROOT, 'public', 'content');
 const NB_OUT = path.join(ROOT, 'notebooks');
-const NB_SOLVED = path.join(ROOT, 'build', 'notebooks');
+// Solved notebooks are committed too: CI executes them, and the owner can run one in Colab to
+// check the GPU paths (docs/colab-check.md).
+const NB_SOLVED = path.join(ROOT, 'notebooks', 'solved');
 
 export function findAnnotations(loaded: Map<string, LoadedLesson>) {
   const annotations: Annotation[] = [];

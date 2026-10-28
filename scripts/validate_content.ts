@@ -183,6 +183,9 @@ export function lessonErrors(l: LoadedLesson, graph: Graph, loaded: Map<string, 
         errs.push(`${id}: notebook lacks the autograder cell`);
       const hits = bannedIn(actual);
       if (hits.length) errs.push(`notebooks/${id}.ipynb: banned content (${hits.join(', ')})`);
+      const solvedPath = path.join(ROOT, 'notebooks', 'solved', `${id}.ipynb`);
+      if (!fs.existsSync(solvedPath) || fs.readFileSync(solvedPath, 'utf8') !== notebookFor(l, 'solved'))
+        errs.push(`${id}: notebooks/solved/${id}.ipynb is missing or stale (run npm run content)`);
     }
   }
 
