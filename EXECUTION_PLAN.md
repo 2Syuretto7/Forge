@@ -599,7 +599,7 @@ Implementation notes (decided during Phase 1):
 - [x] 6.2 Accessibility and mobile pass (Lighthouse at least 90).
 - [x] 6.3 Content review pass: re-read every derivation; every numeric claim backed by a test or a derivation in the lesson.
 - [ ] 6.4 Run all 10 acceptance criteria; fix until all pass.
-- [ ] 6.5 Final README for the owner: the site URL, how to add the API key, how to open Colab lessons. Nothing else.
+- [x] 6.5 Final README for the owner: the site URL, how to add the API key, how to open Colab lessons. Nothing else.
 
 ---
 
