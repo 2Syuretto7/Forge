@@ -597,7 +597,7 @@ Implementation notes (decided during Phase 1):
 ### Phase 6: Hardening and handoff
 - [x] 6.1 Full Playwright suite across a complete simulated learner path (L01 to L24 with solutions).
 - [x] 6.2 Accessibility and mobile pass (Lighthouse at least 90).
-- [ ] 6.3 Content review pass: re-read every derivation; every numeric claim backed by a test or a derivation in the lesson.
+- [x] 6.3 Content review pass: re-read every derivation; every numeric claim backed by a test or a derivation in the lesson.
 - [ ] 6.4 Run all 10 acceptance criteria; fix until all pass.
 - [ ] 6.5 Final README for the owner: the site URL, how to add the API key, how to open Colab lessons. Nothing else.
 
