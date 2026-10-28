@@ -159,8 +159,15 @@ export function lessonErrors(l: LoadedLesson, graph: Graph, loaded: Map<string, 
   if (katexErrors) errs.push(`${id}: ${katexErrors} KaTeX rendering error(s); search the compiled lesson for katex-error`);
 
   for (const f of walk(lessonDir(id))) {
-    const hits = bannedIn(fs.readFileSync(f, 'utf8'));
+    const text = fs.readFileSync(f, 'utf8');
+    const hits = bannedIn(text);
     if (hits.length) errs.push(`${path.relative(ROOT, f)}: banned content (${hits.join(', ')})`);
+    // remark-math renders $$...$$ on one line as inline math; display math needs its own lines.
+    if (f.endsWith('.md'))
+      text.split('\n').forEach((line, i) => {
+        if (line.includes('$$') && line.trim() !== '$$')
+          errs.push(`${path.relative(ROOT, f)}:${i + 1}: put display math delimiters $$ on lines of their own`);
+      });
   }
 
   if (lesson.gpu) {

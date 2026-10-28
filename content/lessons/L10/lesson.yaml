@@ -1,0 +1,35 @@
+id: L10
+hours: 8
+capstone: "A 30-layer residual MLP that trains stably to at least 85 percent test accuracy on the L07 digit task, with each stabilizing choice explained"
+teaser: "Derive batch, layer and RMS normalization with their backward passes, and see why residual connections and pre-norm make depth trainable."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 20}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 160}
+  - {file: m3-build.md,      mode: practice, minutes: 120}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 40}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 20}
+  - {file: m7-capstone.md,   mode: practice, minutes: 20}
+hooks:
+  - {to: L13, text: "Every transformer block is a pre-norm residual block: x + attention(LN(x)), then x + MLP(LN(x))."}
+  - {to: L12, text: "The layer norm you differentiate here becomes a fused GPU kernel in L12."}
+reuses:
+  - {from: L09, concept: "variance-preserving initialization, Adam and warmup"}
+annotations:
+  - {target: L07, movement: m2-derivation, anchor: "Initialization: three ways to fail before training starts", text: "L10 adds two lasting fixes: normalization keeps activations at unit scale during training, and residual connections keep gradients flowing through depth."}
+  - {target: L09, movement: m2-derivation, anchor: "Initialization from variance preservation", text: "Variance preservation holds only at initialization; the normalization layers of L10 enforce it throughout training."}
+concepts:
+  - q: "What does batch norm compute in training mode, and what changes at evaluation?"
+    a: "Each feature is normalized by the mean and variance over the batch, then scaled by gamma and shifted by beta; at evaluation it uses running averages of those statistics, so each example's output no longer depends on the rest of the batch."
+  - q: "How does layer norm differ from batch norm?"
+    a: "Layer norm normalizes each example over its own features, so it needs no batch statistics, behaves identically in training and evaluation, and works with a batch of one."
+  - q: "Why does a residual connection help gradients reach early layers?"
+    a: "The Jacobian of h + F(h) is I + J_F, so the backward pass always contains an identity path that carries the gradient unchanged, whatever F does."
+  - q: "What is the difference between pre-norm and post-norm residual blocks?"
+    a: "Post-norm normalizes after the addition, LN(h + F(h)), so even the skip path passes through every norm; pre-norm normalizes only the branch input, h + F(LN(h)), leaving a clean identity path, and needs a final norm before the output."
+  - q: "Why does batch norm fail with a batch of size one?"
+    a: "The batch mean equals the single example and the variance is zero, so every feature normalizes to zero: the output is beta whatever the input, and no gradient flows back."
+  - q: "How does the second moment of a residual stream grow with depth?"
+    a: "If each branch adds an uncorrelated, zero-mean update of the same size scaled by alpha, it is multiplied by 1 + alpha^2 per layer; scaling branches by 1/sqrt(L) keeps the total bounded."
+katas: [e01, e03, e04]

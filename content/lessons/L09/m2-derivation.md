@@ -3,12 +3,19 @@
 ## 1. Gradient descent on a quadratic
 
 Near a minimum $x^\star$, a smooth loss is approximately $f(x) = \tfrac12 (x - x^\star)^\top A (x - x^\star)$ with a symmetric positive definite Hessian $A$. The gradient is $A(x - x^\star)$, so the error $e_t = x_t - x^\star$ evolves as
-$$e_{t+1} = (I - \eta A)\, e_t.$$
+
+$$
+e_{t+1} = (I - \eta A)\, e_t.
+$$
+
 Write $A = Q \Lambda Q^\top$ (L01). In the eigenbasis the coordinates decouple: the component along eigenvector $q_i$ is multiplied by $1 - \eta \lambda_i$ at every step.
 
 - The iteration converges if and only if $|1 - \eta\lambda_i| < 1$ for every $i$, that is $0 < \eta < 2/\lambda_{\max}$.
 - The slowest component decides the rate $\rho(\eta) = \max_i |1 - \eta \lambda_i|$, which is smallest when the two extreme eigenvalues are balanced: $1 - \eta\mu = -(1 - \eta L)$, giving $\eta^\star = 2/(\mu + L)$ and
-$$\rho^\star = \frac{L - \mu}{L + \mu} = \frac{\kappa - 1}{\kappa + 1}, \qquad \kappa = L/\mu.$$
+
+$$
+\rho^\star = \frac{L - \mu}{L + \mu} = \frac{\kappa - 1}{\kappa + 1}, \qquad \kappa = L/\mu.
+$$
 
 ::::derivation{id=d1 title="Rates on a valley with condition number 100"}
 :::step
@@ -28,9 +35,17 @@ To shrink the error by $10^{-6}$ you need $t$ with $(\rho^\star)^t = 10^{-6}$, a
 ## 2. Momentum is a low-pass filter
 
 Heavy-ball momentum keeps a velocity:
-$$v_{t+1} = \beta v_t + \nabla f(x_t), \qquad x_{t+1} = x_t - \eta v_{t+1}.$$
+
+$$
+v_{t+1} = \beta v_t + \nabla f(x_t), \qquad x_{t+1} = x_t - \eta v_{t+1}.
+$$
+
 Unrolled, $v_{t+1} = \sum_{k \ge 0} \beta^k \nabla f(x_{t-k})$: an exponentially weighted sum of past gradients. Feed it a signal $g_t = \cos(\omega t)$ and the steady-state output is a cosine of the same frequency with amplitude
-$$|H(\omega)| = \frac{1}{|1 - \beta e^{-i\omega}|}.$$
+
+$$
+|H(\omega)| = \frac{1}{|1 - \beta e^{-i\omega}|}.
+$$
+
 At $\omega = 0$ (a gradient that keeps its sign) the gain is $1/(1 - \beta)$; at $\omega = \pi$ (a gradient that flips every step, the zig-zag across a valley) it is $1/(1 + \beta)$. Momentum amplifies the slow, consistent part of the gradient and suppresses the oscillating part.
 
 ::::derivation{id=d2 title="Gains and the optimal heavy ball"}
@@ -50,8 +65,15 @@ The **exponential moving average** (EMA) $m_t = \beta m_{t-1} + (1 - \beta) g_t$
 ## 3. Adaptive steps: RMSProp and Adam
 
 Momentum fixes the zig-zag but still uses one learning rate for every coordinate. **RMSProp** divides each coordinate's step by a running root mean square of its gradients, so steep coordinates take proportionally smaller steps. **Adam** combines this with momentum:
-$$m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t, \qquad v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2,$$
-$$\hat m_t = \frac{m_t}{1 - \beta_1^t}, \qquad \hat v_t = \frac{v_t}{1 - \beta_2^t}, \qquad \theta_t = \theta_{t-1} - \eta \frac{\hat m_t}{\sqrt{\hat v_t} + \epsilon}.$$
+
+$$
+m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t, \qquad v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2,
+$$
+
+$$
+\hat m_t = \frac{m_t}{1 - \beta_1^t}, \qquad \hat v_t = \frac{v_t}{1 - \beta_2^t}, \qquad \theta_t = \theta_{t-1} - \eta \frac{\hat m_t}{\sqrt{\hat v_t} + \epsilon}.
+$$
+
 Typical values are $\beta_1 = 0.9$, $\beta_2 = 0.999$, $\epsilon = 10^{-8}$.
 
 **Bias correction.** Both averages start at zero. If the gradients were constant, $g_t = g$, then $m_t = (1 - \beta_1^t) g$ exactly: the average is biased toward zero by the factor $1 - \beta_1^t$, which the division removes. The same holds for $v_t$ with $\beta_2$.
@@ -75,7 +97,11 @@ Scale invariance is Adam's main appeal: one learning rate works across layers wh
 **L2 regularization** adds $\tfrac{\lambda}{2}\lVert\theta\rVert^2$ to the loss, so the gradient gains $\lambda\theta$. For plain SGD the update becomes $\theta \leftarrow (1 - \eta\lambda)\theta - \eta g$: the weights shrink by a constant factor per step. This is **weight decay**, and for SGD the two names describe the same thing.
 
 For Adam they differ. Adding $\lambda\theta$ to the gradient sends it through the division by $\sqrt{\hat v}$, so a weight whose data gradient is large decays slowly and one whose gradient is tiny decays fast. **AdamW** (Loshchilov and Hutter) decouples the decay from the adaptive step:
-$$\theta_t = \theta_{t-1} - \eta \left( \frac{\hat m_t}{\sqrt{\hat v_t} + \epsilon} + \lambda \theta_{t-1} \right),$$
+
+$$
+\theta_t = \theta_{t-1} - \eta \left( \frac{\hat m_t}{\sqrt{\hat v_t} + \epsilon} + \lambda \theta_{t-1} \right),
+$$
+
 with $\hat m, \hat v$ computed from the data gradient only. Every weight now shrinks by the factor $1 - \eta\lambda$ per step.
 
 ::::derivation{id=d4 title="Decay rates"}
@@ -90,13 +116,20 @@ AdamW with $\eta = 0.01$ and $\lambda = 0.1$ over 1000 steps multiplies a weight
 ## 5. Schedules
 
 **Why decay.** With noisy gradients, SGD does not converge to the minimum but to a cloud around it. For $f(x) = \tfrac12 \lambda x^2$ with gradient noise of variance $\sigma^2$, the update $x \leftarrow (1 - \eta\lambda) x - \eta \xi$ has stationary variance
-$$\operatorname{Var}(x) = \frac{\eta^2\sigma^2}{1 - (1 - \eta\lambda)^2} = \frac{\eta \sigma^2}{\lambda(2 - \eta\lambda)},$$
+
+$$
+\operatorname{Var}(x) = \frac{\eta^2\sigma^2}{1 - (1 - \eta\lambda)^2} = \frac{\eta \sigma^2}{\lambda(2 - \eta\lambda)},
+$$
+
 roughly proportional to $\eta$. A large rate makes fast progress but leaves a wide cloud; lowering it later shrinks the cloud.
 
 **Why warm up.** At initialization the curvature can be much larger than later in training, and Adam's $\hat v$ rests on a handful of gradients. A linear ramp from zero to the peak rate over the first few hundred or thousand steps avoids early divergence.
 
 **Warmup plus cosine.** With $W$ warmup steps, $T$ total steps, peak $\eta_{\max}$ and floor $\eta_{\min}$:
-$$\eta_t = \begin{cases} \eta_{\max}\, t/W & t < W, \\ \eta_{\min} + \tfrac12(\eta_{\max} - \eta_{\min})\left(1 + \cos\!\left(\pi \frac{t - W}{T - W}\right)\right) & W \le t \le T. \end{cases}$$
+
+$$
+\eta_t = \begin{cases} \eta_{\max}\, t/W & t < W, \\ \eta_{\min} + \tfrac12(\eta_{\max} - \eta_{\min})\left(1 + \cos\!\left(\pi \frac{t - W}{T - W}\right)\right) & W \le t \le T. \end{cases}
+$$
 
 ::::derivation{id=d5 title="Noise floor and the cosine schedule"}
 :::step
@@ -116,7 +149,11 @@ With $\eta_{\max} = 0.003$, $\eta_{\min} = 0$, $W = 100$ and $T = 1100$, the rat
 ## 6. Initialization from variance preservation
 
 L07 showed activations exploding or vanishing through depth. Make it exact. A layer computes $z_j = \sum_{i=1}^{n_{\text{in}}} W_{ij} x_i$ with independent zero-mean weights of variance $s^2$, independent of the inputs. Then
-$$\mathbb{E}[z_j^2] = n_{\text{in}}\, s^2\, \mathbb{E}[x_i^2].$$
+
+$$
+\mathbb{E}[z_j^2] = n_{\text{in}}\, s^2\, \mathbb{E}[x_i^2].
+$$
+
 To keep the second moment constant through a linear layer, choose $s^2 = 1/n_{\text{in}}$. The same choice suits tanh, which is close to linear near zero; because tanh is slightly contractive, activations still shrink slowly with depth (exercise 7 measures about a factor of five over 30 layers). The backward pass multiplies gradients by $W^\top$, which asks for $s^2 = 1/n_{\text{out}}$; **Xavier (Glorot) initialization** compromises with $s^2 = 2/(n_{\text{in}} + n_{\text{out}})$.
 
 ReLU zeroes the negative half of a symmetric input, so $\mathbb{E}[\operatorname{relu}(z)^2] = \tfrac12 \mathbb{E}[z^2]$. Keeping the second moment then needs $n_{\text{in}} s^2 \cdot \tfrac12 = 1$: **He initialization**, $s^2 = 2/n_{\text{in}}$.
