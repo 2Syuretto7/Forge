@@ -1,0 +1,288 @@
+[
+ {
+  "id": "L14/d0/s1",
+  "lesson": "L14",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>A model that assigns probability <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>1</mn><mi mathvariant=\"normal\">/</mi><mn>65</mn></mrow><annotation encoding=\"application/x-tex\">1/65</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">1/65</span></span></span></span> to every one of 65 characters has a cross-entropy of <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>ln</mi><mo>⁡</mo><mn>65</mn><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">\\ln 65 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6944em;\"></span><span class=\"mop\">ln</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">65</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> nats per character.</p>",
+  "answer": "4.174|tol=0.002",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L14/d0/s2",
+  "lesson": "L14",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>In bits, that is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msub><mrow><mi>log</mi><mo>⁡</mo></mrow><mn>2</mn></msub><mn>65</mn><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">\\log_2 65 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.9386em;vertical-align:-0.2441em;\"></span><span class=\"mop\"><span class=\"mop\">lo<span style=\"margin-right:0.0139em;\">g</span></span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.207em;\"><span style=\"top:-2.4559em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.2441em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">65</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "6.022|tol=0.002",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L14/d0/s3",
+  "lesson": "L14",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>A loss of 1 nat corresponds to a perplexity of <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>e</mi><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">e \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4831em;\"></span><span class=\"mord mathnormal\">e</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "2.718|tol=0.002",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L14/p1",
+  "lesson": "L14",
+  "kind": "prediction",
+  "prompt": "<p>Which tokenization does GPT-style training use?</p>",
+  "answer": "c",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>Characters, because every string is covered.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>Whole words, with a special token for unknown words.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>Pieces learned from data: frequent sequences of bytes become single tokens, and anything else falls back to individual bytes.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>A fixed list of English syllables.</p>"
+   }
+  ],
+  "explain": "<p>Byte-pair encoding starts from the 256 possible bytes and learns merges of frequent adjacent pairs: \" the\" becomes one token, a rare name stays several. Every string is a sequence of UTF-8 bytes, so nothing is ever unknown. The vocabulary size is a dial between characters (small vocabulary, long sequences) and words (huge vocabulary, short sequences).</p>"
+ },
+ {
+  "id": "L14/p2",
+  "lesson": "L14",
+  "kind": "prediction",
+  "prompt": "<p>A model with a BPE vocabulary of 512 reports a validation loss of 2.4 nats per token, and a character-level model reports 1.6 nats per character on the same text. Which is better?</p>",
+  "answer": "b",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>The character model: 1.6 is less than 2.4.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>You cannot tell until you know how many characters a token covers on average.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>The BPE model, because tokens are better than characters.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>They are equal, because both use cross-entropy.</p>"
+   }
+  ],
+  "explain": "<p>The losses are per token and per character, different units. If a BPE token covers 1.9 characters on average, 2.4 nats per token is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>2.4</mn><mi mathvariant=\"normal\">/</mi><mn>1.9</mn><mo>≈</mo><mn>1.26</mn></mrow><annotation encoding=\"application/x-tex\">2.4/1.9 \\approx 1.26</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">2.4/1.9</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1.26</span></span></span></span> nats per character, better than 1.6. Divide by the characters per token, then by <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>ln</mi><mo>⁡</mo><mn>2</mn></mrow><annotation encoding=\"application/x-tex\">\\ln 2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6944em;\"></span><span class=\"mop\">ln</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">2</span></span></span></span>, to get bits per character, the unit that compares models with different tokenizers.</p>"
+ },
+ {
+  "id": "L14/d1/s1",
+  "lesson": "L14",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Units</p><p>A loss of 1.5 nats per token with 2 characters per token is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>1.5</mn><mi mathvariant=\"normal\">/</mi><mo stretchy=\"false\">(</mo><mn>2</mn><mi>ln</mi><mo>⁡</mo><mn>2</mn><mo stretchy=\"false\">)</mo><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">1.5/(2 \\ln 2) \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">1.5/</span><span class=\"mopen\">(</span><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mop\">ln</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">2</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> bits per character.</p>",
+  "answer": "1.082|tol=0.002",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L14/d1/s2",
+  "lesson": "L14",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Units</p><p>Its perplexity per token is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>e</mi><mn>1.5</mn></msup><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">e^{1.5} \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">e</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">1.5</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "4.48|tol=0.01",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L14/d2/s1",
+  "lesson": "L14",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">One merge</p><p>In the string \"aaabdaaabac\", the pair \"aa\" occurs <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> times, counting overlaps.</p>",
+  "answer": "4",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L14/d2/s2",
+  "lesson": "L14",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">One merge</p><p>Replacing it left to right without overlaps by a new symbol Z gives \"ZabdZabac\", of length <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "9",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L14/d2/s3",
+  "lesson": "L14",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">One merge</p><p>A vocabulary of 50,257 tokens embedded in <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>d</mi><mo>=</mo><mn>768</mn></mrow><annotation encoding=\"application/x-tex\">d = 768</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6944em;\"></span><span class=\"mord mathnormal\">d</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">768</span></span></span></span> dimensions takes <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>50257</mn><mo>⋅</mo><mn>768</mn><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">50257 \\cdot 768 =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">50257</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">768</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> parameters.</p>",
+  "answer": "38597376",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L14/d3/s1",
+  "lesson": "L14",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Temperature and nucleus</p><p>For logits <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo stretchy=\"false\">(</mo><mn>2</mn><mo separator=\"true\">,</mo><mn>1</mn><mo separator=\"true\">,</mo><mn>0</mn><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">(2, 1, 0)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\">2</span><span class=\"mpunct\">,</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">1</span><span class=\"mpunct\">,</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">0</span><span class=\"mclose\">)</span></span></span></span> at <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>T</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">T = 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span>, the first token's probability is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>e</mi><mn>2</mn></msup><mi mathvariant=\"normal\">/</mi><mo stretchy=\"false\">(</mo><msup><mi>e</mi><mn>2</mn></msup><mo>+</mo><mi>e</mi><mo>+</mo><mn>1</mn><mo stretchy=\"false\">)</mo><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">e^2/(e^2 + e + 1) \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">e</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mord\">/</span><span class=\"mopen\">(</span><span class=\"mord\"><span class=\"mord mathnormal\">e</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">e</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">1</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "0.665|tol=0.002",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L14/d3/s2",
+  "lesson": "L14",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Temperature and nucleus</p><p>At <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>T</mi><mo>=</mo><mn>0.5</mn></mrow><annotation encoding=\"application/x-tex\">T = 0.5</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.5</span></span></span></span> the logits become <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo stretchy=\"false\">(</mo><mn>4</mn><mo separator=\"true\">,</mo><mn>2</mn><mo separator=\"true\">,</mo><mn>0</mn><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">(4, 2, 0)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\">4</span><span class=\"mpunct\">,</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">2</span><span class=\"mpunct\">,</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">0</span><span class=\"mclose\">)</span></span></span></span> and that probability rises to about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "0.867|tol=0.002",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L14/d3/s3",
+  "lesson": "L14",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Temperature and nucleus</p><p>At <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>T</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">T = 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span> the probabilities are about <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo stretchy=\"false\">(</mo><mn>0.665</mn><mo separator=\"true\">,</mo><mn>0.245</mn><mo separator=\"true\">,</mo><mn>0.090</mn><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">(0.665, 0.245, 0.090)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\">0.665</span><span class=\"mpunct\">,</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">0.245</span><span class=\"mpunct\">,</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">0.090</span><span class=\"mclose\">)</span></span></span></span>. Top-p with <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>p</mi><mo>=</mo><mn>0.9</mn></mrow><annotation encoding=\"application/x-tex\">p = 0.9</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\">p</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.9</span></span></span></span> keeps <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> tokens.</p>",
+  "answer": "2",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L14/p3",
+  "lesson": "L14",
+  "kind": "prediction",
+  "prompt": "<p>A bigram model with add-one smoothing is trained on the training split and evaluated on validation text. Compared with its training loss, its validation loss is:</p>",
+  "answer": "a",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>Higher, and the gap grows with the vocabulary size, because more bigrams are never seen in training.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>Lower, because smoothing helps.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>Equal, because a bigram model cannot overfit.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>Infinite, because some validation bigrams never occur in training.</p>"
+   }
+  ],
+  "explain": "<p>Smoothing keeps every probability positive, so the loss is finite, but bigrams that never appeared in training get only the smoothed share, and with <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>V</mi><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">V^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.2222em;\">V</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span> possible pairs a larger vocabulary leaves more of them unseen. This is overfitting in its simplest form, and the reason language models are always evaluated on held-out text.</p>"
+ },
+ {
+  "id": "L14/p4",
+  "lesson": "L14",
+  "kind": "prediction",
+  "prompt": "<p>The capstone's tokenizer has a vocabulary of 512. What cross-entropy, in nats per token, does an untrained model have if it predicts uniformly?</p>",
+  "answer": "6.25",
+  "answerKind": "numeric",
+  "tol": 0.1,
+  "options": [],
+  "explain": "<p><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>ln</mi><mo>⁡</mo><mn>512</mn><mo>≈</mo><mn>6.24</mn></mrow><annotation encoding=\"application/x-tex\">\\ln 512 \\approx 6.24</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6944em;\"></span><span class=\"mop\">ln</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">512</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">6.24</span></span></span></span> nats per token. The capstone's first logged loss is close to that (a randomly initialized model with small embeddings predicts nearly uniformly), which is a useful check that the loss is computed correctly before training starts.</p>"
+ },
+ {
+  "id": "L14/p5",
+  "lesson": "L14",
+  "kind": "prediction",
+  "prompt": "<p>You sample 300 tokens from a trained model at temperature 0.05. What do you typically get?</p>",
+  "answer": "d",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>The most fluent text the model can produce.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>Random tokens.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>An error, because the logits overflow.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>A short phrase repeated over and over.</p>"
+   }
+  ],
+  "explain": "<p>Near-zero temperature is greedy decoding: always the single most likely token. Once the model's most likely continuation leads back to a context it has seen, it loops. High temperatures fail the other way, sampling unlikely tokens until the text dissolves. Exercise 12 measures both with distinct n-gram ratios.</p>"
+ },
+ {
+  "id": "L14/concept1",
+  "lesson": "L14",
+  "kind": "concept",
+  "prompt": "How does byte-pair encoding build its vocabulary?",
+  "answer": "Starting from the 256 byte values, it repeatedly replaces the most frequent adjacent pair of tokens in the training text with a new token, recording each merge; encoding replays the merges in order.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L14/concept2",
+  "lesson": "L14",
+  "kind": "concept",
+  "prompt": "Why compare language models in bits per character rather than loss per token?",
+  "answer": "Different tokenizers cut the same text into different numbers of tokens, so per-token losses are not comparable; dividing the total loss by the number of characters, and by ln 2, is.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L14/concept3",
+  "lesson": "L14",
+  "kind": "concept",
+  "prompt": "What do temperature, top-k and top-p do when sampling?",
+  "answer": "Temperature divides the logits, sharpening the distribution below 1 and flattening it above; top-k keeps only the k most likely tokens; top-p keeps the smallest set whose probabilities add up to p.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L14/concept4",
+  "lesson": "L14",
+  "kind": "concept",
+  "prompt": "What is weight tying in a language model?",
+  "answer": "Using the token embedding matrix, transposed, as the output layer, so one matrix both embeds inputs and scores outputs; its gradient is the sum of both uses.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L14/concept5",
+  "lesson": "L14",
+  "kind": "concept",
+  "prompt": "Why does byte-level BPE never fail to encode a string?",
+  "answer": "Every string is a sequence of UTF-8 bytes and every byte is in the base vocabulary, so unknown characters fall back to their bytes.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L14/concept6",
+  "lesson": "L14",
+  "kind": "concept",
+  "prompt": "What is perplexity?",
+  "answer": "The exponential of the mean cross-entropy in nats; a model with perplexity k is as uncertain as a uniform choice among k tokens.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L14/kata/e01",
+  "lesson": "L14",
+  "kind": "kata",
+  "prompt": "Bytes, pairs and one merge",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e01"
+ },
+ {
+  "id": "L14/kata/e03",
+  "lesson": "L14",
+  "kind": "kata",
+  "prompt": "Encoding and decoding",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e03"
+ },
+ {
+  "id": "L14/kata/e08",
+  "lesson": "L14",
+  "kind": "kata",
+  "prompt": "Temperature, top-k and top-p",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e08"
+ }
+]

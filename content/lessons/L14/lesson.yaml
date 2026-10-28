@@ -1,0 +1,37 @@
+id: L14
+hours: 10
+capstone: "A byte-level BPE tokenizer and a small GPT trained on Shakespeare, with validation loss reported in bits per character and samples at two temperatures"
+teaser: "Build a byte-level BPE tokenizer, turn text into training windows, train a GPT on them and control how it samples."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 175}
+  - {file: m3-build.md,      mode: practice, minutes: 160}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 45}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 25}
+  - {file: m7-capstone.md,   mode: practice, minutes: 70}
+hooks:
+  - {to: L15, text: "Scaling laws are fits of exactly this validation loss against model size, data and compute."}
+  - {to: L16, text: "The tokenizer and the windows you build here become a data pipeline over billions of tokens."}
+reuses:
+  - {from: L04, concept: "cross-entropy, bits and perplexity"}
+  - {from: L13, concept: "the decoder-only transformer"}
+  - {from: L17, concept: "training in reduced precision"}
+annotations:
+  - {target: L04, movement: m2-derivation, anchor: "Units: nats, bits and perplexity", text: "A language model's training loss is this cross-entropy per token; L14 converts it to bits per character to compare tokenizers."}
+  - {target: L13, movement: m2-derivation, anchor: "The decoder block", text: "L14 trains this block on BPE tokens, with the output layer tied to the token embedding."}
+concepts:
+  - q: "How does byte-pair encoding build its vocabulary?"
+    a: "Starting from the 256 byte values, it repeatedly replaces the most frequent adjacent pair of tokens in the training text with a new token, recording each merge; encoding replays the merges in order."
+  - q: "Why compare language models in bits per character rather than loss per token?"
+    a: "Different tokenizers cut the same text into different numbers of tokens, so per-token losses are not comparable; dividing the total loss by the number of characters, and by ln 2, is."
+  - q: "What do temperature, top-k and top-p do when sampling?"
+    a: "Temperature divides the logits, sharpening the distribution below 1 and flattening it above; top-k keeps only the k most likely tokens; top-p keeps the smallest set whose probabilities add up to p."
+  - q: "What is weight tying in a language model?"
+    a: "Using the token embedding matrix, transposed, as the output layer, so one matrix both embeds inputs and scores outputs; its gradient is the sum of both uses."
+  - q: "Why does byte-level BPE never fail to encode a string?"
+    a: "Every string is a sequence of UTF-8 bytes and every byte is in the base vocabulary, so unknown characters fall back to their bytes."
+  - q: "What is perplexity?"
+    a: "The exponential of the mean cross-entropy in nats; a model with perplexity k is as uncertain as a uniform choice among k tokens."
+katas: [e01, e03, e08]

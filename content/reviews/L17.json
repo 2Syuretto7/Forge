@@ -1,0 +1,230 @@
+[
+ {
+  "id": "L17/d0/s1",
+  "lesson": "L17",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>The T4's fp16 tensor-core peak is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>65</mn><mi mathvariant=\"normal\">/</mi><mn>8.1</mn><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">65/8.1 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">65/8.1</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> times its fp32 peak.</p>",
+  "answer": "8.02|tol=0.02",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L17/d0/s2",
+  "lesson": "L17",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>A memory-bound kernel that moves 4 bytes per value in fp32 moves <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> in fp16.</p>",
+  "answer": "2",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L17/p1",
+  "lesson": "L17",
+  "kind": "prediction",
+  "prompt": "<p>The weight is stored in bf16 (7 mantissa bits) and each update is rounded to the nearest bf16 value. What is it after 1000 steps?</p>",
+  "answer": "a",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>Still 1.0.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>About 2.0.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>About 1.5.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>Infinity.</p>"
+   }
+  ],
+  "explain": "<p>Near 1.0, consecutive bf16 numbers are <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>2</mn><mrow><mo>−</mo><mn>7</mn></mrow></msup><mo>≈</mo><mn>0.0078</mn></mrow><annotation encoding=\"application/x-tex\">2^{-7} \\approx 0.0078</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">7</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.0078</span></span></span></span> apart. Adding 0.001 gives <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>1.001</mn></mrow><annotation encoding=\"application/x-tex\">1.001</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1.001</span></span></span></span>, whose nearest bf16 neighbour is 1.0: the update rounds away, every time. This is why mixed-precision training keeps a full-precision master copy of the weights, or uses stochastic rounding.</p>"
+ },
+ {
+  "id": "L17/p2",
+  "lesson": "L17",
+  "kind": "prediction",
+  "prompt": "<p>What is the largest finite fp16 number?</p>",
+  "answer": "65504",
+  "answerKind": "numeric",
+  "tol": 1,
+  "options": [],
+  "explain": "<p><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo stretchy=\"false\">(</mo><mn>2</mn><mo>−</mo><msup><mn>2</mn><mrow><mo>−</mo><mn>10</mn></mrow></msup><mo stretchy=\"false\">)</mo><mo>⋅</mo><msup><mn>2</mn><mn>15</mn></msup><mo>=</mo><mn>65504</mn></mrow><annotation encoding=\"application/x-tex\">(2 - 2^{-10}) \\cdot 2^{15} = 65504</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">−</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">10</span></span></span></span></span></span></span></span></span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">15</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">65504</span></span></span></span>. Activations, attention scores or a loss multiplied by a scale factor can exceed it and become infinite. bf16 reaches about <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>3.4</mn><mo>×</mo><msup><mn>10</mn><mn>38</mn></msup></mrow><annotation encoding=\"application/x-tex\">3.4 \\times 10^{38}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">3.4</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">38</span></span></span></span></span></span></span></span></span></span></span></span>, like fp32, because it keeps fp32's 8 exponent bits.</p>"
+ },
+ {
+  "id": "L17/d1/s1",
+  "lesson": "L17",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">The fp16 range</p><p>fp16 has bias <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>2</mn><mn>4</mn></msup><mo>−</mo><mn>1</mn><mo>=</mo><mn>15</mn></mrow><annotation encoding=\"application/x-tex\">2^4 - 1 = 15</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">4</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">−</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">15</span></span></span></span>. The largest exponent field for finite numbers is 30, so the largest value is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo stretchy=\"false\">(</mo><mn>2</mn><mo>−</mo><msup><mn>2</mn><mrow><mo>−</mo><mn>10</mn></mrow></msup><mo stretchy=\"false\">)</mo><mo>⋅</mo><msup><mn>2</mn><mn>15</mn></msup><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">(2 - 2^{-10}) \\cdot 2^{15} =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">−</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">10</span></span></span></span></span></span></span></span></span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">15</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "65504",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L17/d1/s2",
+  "lesson": "L17",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">The fp16 range</p><p>The smallest normal number is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>2</mn><mrow><mn>1</mn><mo>−</mo><mn>15</mn></mrow></msup><mo>=</mo><msup><mn>2</mn><mrow><mo>−</mo><mn>14</mn></mrow></msup><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">2^{1 - 15} = 2^{-14} \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">1</span><span class=\"mbin mtight\">−</span><span class=\"mord mtight\">15</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">14</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>, and the smallest subnormal <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>2</mn><mrow><mo>−</mo><mn>24</mn></mrow></msup><mo>≈</mo><mn>6</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>8</mn></mrow></msup></mrow><annotation encoding=\"application/x-tex\">2^{-24} \\approx 6 \\times 10^{-8}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">24</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">6</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">8</span></span></span></span></span></span></span></span></span></span></span></span>.</p>",
+  "answer": "0.000061|tol=0.000001",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L17/d2/s1",
+  "lesson": "L17",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Spacing</p><p>In fp16, the spacing between 2048 and the next number is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>2</mn><mrow><mn>11</mn><mo>−</mo><mn>10</mn></mrow></msup><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">2^{11 - 10} =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">11</span><span class=\"mbin mtight\">−</span><span class=\"mord mtight\">10</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>, so <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>2048</mn><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">2048 + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">2048</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span> rounds back to 2048.</p>",
+  "answer": "2",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L17/d2/s2",
+  "lesson": "L17",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Spacing</p><p>In bf16, the spacing just above 1 is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>2</mn><mrow><mo>−</mo><mn>7</mn></mrow></msup><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">2^{-7} \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">7</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>: an update of 0.001 to a weight of 1 rounds away.</p>",
+  "answer": "0.0078|tol=0.0001",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L17/d3/s1",
+  "lesson": "L17",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Loss scaling</p><p>A gradient of <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>10</mn><mrow><mo>−</mo><mn>8</mn></mrow></msup></mrow><annotation encoding=\"application/x-tex\">10^{-8}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">8</span></span></span></span></span></span></span></span></span></span></span></span> underflows to 0 in fp16. Scaled by <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>S</mi><mo>=</mo><msup><mn>2</mn><mn>16</mn></msup><mo>=</mo><mn>65536</mn></mrow><annotation encoding=\"application/x-tex\">S = 2^{16} = 65536</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0576em;\">S</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">16</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">65536</span></span></span></span>, it becomes about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>, comfortably representable.</p>",
+  "answer": "0.000655|tol=0.000005",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L17/d3/s2",
+  "lesson": "L17",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Loss scaling</p><p>After <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> consecutive good steps, PyTorch's default <code>GradScaler</code> doubles the scale.</p>",
+  "answer": "2000",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L17/p3",
+  "lesson": "L17",
+  "kind": "prediction",
+  "prompt": "<p>You add 0.01 to an fp16 running sum, starting from 0, ten thousand times. Where does the sum stop?</p>",
+  "answer": "32",
+  "answerKind": "numeric",
+  "tol": 0.5,
+  "options": [],
+  "explain": "<p>At 32. Between 16 and 32 the spacing is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>2</mn><mrow><mo>−</mo><mn>6</mn></mrow></msup><mo>≈</mo><mn>0.0156</mn></mrow><annotation encoding=\"application/x-tex\">2^{-6} \\approx 0.0156</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">6</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.0156</span></span></span></span>, so each 0.01 rounds up to one full step and the sum grows too fast; at 32 the spacing becomes <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>2</mn><mrow><mo>−</mo><mn>5</mn></mrow></msup><mo>=</mo><mn>0.03125</mn></mrow><annotation encoding=\"application/x-tex\">2^{-5} = 0.03125</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">5</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.03125</span></span></span></span>, more than twice the addend, and every addition rounds back. The true sum is 100. Exercise 4 measures it and repairs it two ways.</p>"
+ },
+ {
+  "id": "L17/p4",
+  "lesson": "L17",
+  "kind": "prediction",
+  "prompt": "<p>How many gigabytes of weights, gradients and Adam state does training a 7-billion-parameter model need in mixed precision, before any activations?</p>",
+  "answer": "112",
+  "answerKind": "numeric",
+  "tol": 2,
+  "options": [],
+  "explain": "<p><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>7</mn><mo>×</mo><msup><mn>10</mn><mn>9</mn></msup><mo>×</mo><mn>16</mn></mrow><annotation encoding=\"application/x-tex\">7 \\times 10^9 \\times 16</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">7</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">9</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">16</span></span></span></span> bytes <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo>=</mo><mn>112</mn></mrow><annotation encoding=\"application/x-tex\">= 112</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.3669em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">112</span></span></span></span> GB: more than an 80 GB GPU holds, before a single activation is stored. Mixed precision does not shrink this; L18 shows how to split it across GPUs.</p>"
+ },
+ {
+  "id": "L17/p5",
+  "lesson": "L17",
+  "kind": "prediction",
+  "prompt": "<p>You must store both activations as large as <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>10</mn><mn>5</mn></msup></mrow><annotation encoding=\"application/x-tex\">10^5</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">5</span></span></span></span></span></span></span></span></span></span></span> and the difference between <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>1.000</mn></mrow><annotation encoding=\"application/x-tex\">1.000</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1.000</span></span></span></span> and <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>1.001</mn></mrow><annotation encoding=\"application/x-tex\">1.001</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1.001</span></span></span></span>. Which 16-bit format keeps both?</p>",
+  "answer": "c",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>fp16.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>bf16.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>Neither: fp16 overflows at <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>10</mn><mn>5</mn></msup></mrow><annotation encoding=\"application/x-tex\">10^5</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">5</span></span></span></span></span></span></span></span></span></span></span> and bf16 cannot tell 1.000 from 1.001.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>Both.</p>"
+   }
+  ],
+  "explain": "<p>fp16's largest value is 65504, so <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>10</mn><mn>5</mn></msup></mrow><annotation encoding=\"application/x-tex\">10^5</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">5</span></span></span></span></span></span></span></span></span></span></span> overflows; bf16's spacing near 1 is about 0.0078, so 1.001 rounds to 1.000. Each 16-bit format gives up one of the two, which is why training recipes keep reductions and master weights in fp32, and why fp8 needs per-tensor scale factors.</p>"
+ },
+ {
+  "id": "L17/concept1",
+  "lesson": "L17",
+  "kind": "concept",
+  "prompt": "How do bf16 and fp16 differ?",
+  "answer": "Both use 16 bits; bf16 keeps fp32's 8 exponent bits (same range, about 3 significant digits) while fp16 has 5 exponent bits and 10 mantissa bits (more precision, but a maximum of 65504 and early underflow).",
+  "answerKind": "text"
+ },
+ {
+  "id": "L17/concept2",
+  "lesson": "L17",
+  "kind": "concept",
+  "prompt": "Why does mixed-precision training keep fp32 master weights?",
+  "answer": "Updates are often smaller than the spacing between half-precision numbers near the weight's value, so applied directly to fp16 weights they round away; an fp32 copy accumulates them.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L17/concept3",
+  "lesson": "L17",
+  "kind": "concept",
+  "prompt": "What does loss scaling do?",
+  "answer": "It multiplies the loss by a large factor before the backward pass so small gradients do not underflow in fp16, then divides the gradients by the same factor before the update; dynamic scaling lowers the factor when gradients overflow.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L17/concept4",
+  "lesson": "L17",
+  "kind": "concept",
+  "prompt": "Why is a long sum accumulated in fp32 even when its inputs are fp16?",
+  "answer": "Once the running sum is large, its spacing exceeds the small addends, which then round away; tensor cores and well-written kernels accumulate in fp32.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L17/concept5",
+  "lesson": "L17",
+  "kind": "concept",
+  "prompt": "What is stochastic rounding and why is it useful?",
+  "answer": "Rounding up or down at random with probabilities that make the expected result exact; tiny updates then accumulate on average instead of always rounding away.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L17/concept6",
+  "lesson": "L17",
+  "kind": "concept",
+  "prompt": "How many bytes per parameter does mixed-precision training with Adam need, without activations?",
+  "answer": "About 16: fp16 weights and gradients (2 + 2) plus fp32 master weights and two Adam moments (4 + 4 + 4).",
+  "answerKind": "text"
+ },
+ {
+  "id": "L17/kata/e01",
+  "lesson": "L17",
+  "kind": "kata",
+  "prompt": "Rounding to any format",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e01"
+ },
+ {
+  "id": "L17/kata/e04",
+  "lesson": "L17",
+  "kind": "kata",
+  "prompt": "Sums that stop growing",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e04"
+ },
+ {
+  "id": "L17/kata/e06",
+  "lesson": "L17",
+  "kind": "kata",
+  "prompt": "A dynamic loss scaler",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e06"
+ }
+]
