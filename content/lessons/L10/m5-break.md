@@ -20,7 +20,7 @@ With one example, the batch mean is the example itself and the variance is zero,
 
 ## Post-norm without warmup
 
-The post-norm stack from Movement 3, at depth 30 and width 32, trained with Adam at a rate of 0.007 for 300 steps: without warmup the loss ends near 2.2 in this lesson's reference run, with a 150-step warmup near 1.6, and the pre-norm stack at the same depth reaches about 0.3 even at a rate of 0.01 with no warmup. Across three seeds warmup helped post-norm every time, by between 0.2 and 0.6 in final loss. In two of the three seeds, about a tenth of the ReLU units in the top layers were dead after the run without warmup, against one or two percent with it: large early steps push units into a region they never leave.
+Take the post-norm stack from Movement 3 at depth 20 and width 32, and train it with Adam at a rate of 0.01 for 300 steps. In this lesson's reference runs (seeds 0, 1 and 2), the final loss without warmup was 1.47, 2.31 and 1.99; with a 150-step linear warmup, 0.95, 0.89 and 0.83. The pre-norm stack at the same depth and rate, with no warmup, reached 0.24, 0.22 and 0.28. Without warmup, between 5 and 65 percent of the ReLU units in the top third of the post-norm stack were dead after training, against at most half a percent with warmup: large early steps push units into a region they never leave. Your numbers in the browser will differ somewhat: its NumPy rounds differently, and 300 steps of training amplify tiny differences, but warmup still wins.
 
 :::exercise{ref=e12}
 :::

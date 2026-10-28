@@ -1,6 +1,6 @@
 # Capstone: an optimizer bake-off
 
-Race the optimizers you built on the L07 task, tune each one on a validation split, and write down a recipe that reaches at least 92 percent test accuracy within 1500 steps. The L07 baseline, plain SGD at a fixed rate, reached about 90 percent.
+Race the optimizers you built on the L07 task, tune each one on a validation split, and write down a recipe that reaches at least 92 percent test accuracy within 800 steps. The L07 baseline, plain SGD at a fixed rate, reached about 90 percent.
 
 :::exercise{ref=capstone}
 :::

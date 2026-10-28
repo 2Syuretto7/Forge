@@ -16,7 +16,7 @@ def _val(recipe):
 
 def _check_recipe(r):
     assert r["optimizer"] in KINDS, r
-    assert 0 < r["steps"] <= 1500 and 0 < r["batch"] <= 100, r
+    assert 0 < r["steps"] <= 800 and 0 < r["batch"] <= 100, r
     assert r.get("schedule", "constant") in ("constant", "cosine"), r
 
 

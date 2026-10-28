@@ -116,7 +116,7 @@ def loss_and_grads(params, X, y):
     return loss, g
 
 
-def train(seed=0, steps=400, lr=1e-2, batch=50):
+def train(seed=0, steps=250, lr=1e-2, batch=50):
     X, y = make_digits(2000, 0)
     p = init_model(DEPTH, WIDTH, seed)
     state = adam_init(p)
@@ -149,6 +149,6 @@ each other. Layer norm inside each branch keeps every branch input at unit scale
 training, and putting it before the branch (pre-norm) leaves the skip path untouched, so no warmup
 is needed. The stream still grows with depth, which the final norm corrects. Weights use He
 initialization, so each branch starts with roughly the scale of its input. Adam at a learning rate
-of 0.01 with cosine decay over 400 steps of batch 50 reaches about 0.89 test accuracy, while a
+of 0.01 with cosine decay over 250 steps of batch 50 reaches about 0.87 test accuracy, while a
 20-layer stack without residual connections or normalization stalls near a training loss of 1.2.
 """

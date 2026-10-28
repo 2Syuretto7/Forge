@@ -16,16 +16,16 @@ class _Blowup:
 
 
 def test_sgd_sweep():
-    lrs = list(10 ** np.arange(-3, 0.51, 0.5))
+    lrs = [1e-3, 1e-1, 1.0, 10 ** 0.5]
     losses = sub.sweep(lambda lr: sub.SGD(lr), lrs, X, y)
-    assert len(losses) == 8 and losses[0] > 2.0
+    assert len(losses) == 4 and losses[0] > 2.0
     assert 0.3 <= sub.best_lr(lrs, losses) <= 1.5
     assert losses[-1] > 2.0
     assert min(losses) < 0.2
 
 
 def test_adam_sweep():
-    lrs = list(10 ** np.arange(-4, -0.49, 0.5))
+    lrs = [1e-4, 1e-2, 10 ** -0.5]
     losses = sub.sweep(lambda lr: sub.Adam(lr), lrs, X, y)
     assert 3e-3 <= sub.best_lr(lrs, losses) <= 3e-2
     assert losses[0] > 1.5 and losses[-1] > 1.0

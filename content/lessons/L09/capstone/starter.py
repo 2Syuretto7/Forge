@@ -147,7 +147,7 @@ def warmup_cosine(t, total, warmup, peak, floor=0.0):
     return floor + 0.5 * (peak - floor) * (1.0 + np.cos(np.pi * min(progress, 1.0)))
 
 
-# Each recipe: optimizer ("sgd", "momentum", "adam" or "adamw"), lr, steps (at most 1500), batch,
+# Each recipe: optimizer ("sgd", "momentum", "adam" or "adamw"), lr, steps (at most 800), batch,
 # schedule ("constant" or "cosine"), warmup, weight_decay, and momentum for "momentum".
 RECIPE = {"optimizer": "sgd", "lr": 0.1, "steps": 600, "batch": 50, "schedule": "constant",
           "warmup": 0, "weight_decay": 0.0}

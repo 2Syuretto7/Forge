@@ -147,9 +147,9 @@ def warmup_cosine(t, total, warmup, peak, floor=0.0):
     return floor + 0.5 * (peak - floor) * (1.0 + np.cos(np.pi * min(progress, 1.0)))
 
 
-# Each recipe: optimizer ("sgd", "momentum", "adam" or "adamw"), lr, steps (at most 1500), batch,
+# Each recipe: optimizer ("sgd", "momentum", "adam" or "adamw"), lr, steps (at most 800), batch,
 # schedule ("constant" or "cosine"), warmup, weight_decay, and momentum for "momentum".
-RECIPE = {"optimizer": "adamw", "lr": 0.02, "steps": 1500, "batch": 50, "schedule": "cosine",
+RECIPE = {"optimizer": "adamw", "lr": 0.02, "steps": 800, "batch": 50, "schedule": "cosine",
           "warmup": 50, "weight_decay": 0.2}
 
 
@@ -178,24 +178,24 @@ def run(recipe, seed=0):
 
 # Validation accuracies (make_digits(1000, 2)) of the best recipe found for each optimizer, seed 0.
 BAKEOFF = {
-    "sgd": {"recipe": {"optimizer": "sgd", "lr": 0.8, "steps": 1500, "batch": 50, "schedule": "constant",
-                       "warmup": 0, "weight_decay": 0.0}, "val_acc": 0.932},
-    "momentum": {"recipe": {"optimizer": "momentum", "lr": 0.08, "momentum": 0.9, "steps": 1500, "batch": 50,
-                            "schedule": "cosine", "warmup": 50, "weight_decay": 0.0}, "val_acc": 0.931},
-    "adam": {"recipe": {"optimizer": "adam", "lr": 0.02, "steps": 1500, "batch": 50, "schedule": "cosine",
-                        "warmup": 50, "weight_decay": 0.0}, "val_acc": 0.937},
-    "adamw": {"recipe": dict(RECIPE), "val_acc": 0.949},
+    "sgd": {"recipe": {"optimizer": "sgd", "lr": 0.8, "steps": 800, "batch": 50, "schedule": "constant",
+                       "warmup": 0, "weight_decay": 0.0}, "val_acc": 0.935},
+    "momentum": {"recipe": {"optimizer": "momentum", "lr": 0.08, "momentum": 0.9, "steps": 800, "batch": 50,
+                            "schedule": "constant", "warmup": 0, "weight_decay": 0.0}, "val_acc": 0.927},
+    "adam": {"recipe": {"optimizer": "adam", "lr": 0.02, "steps": 800, "batch": 50, "schedule": "cosine",
+                        "warmup": 50, "weight_decay": 0.0}, "val_acc": 0.934},
+    "adamw": {"recipe": dict(RECIPE), "val_acc": 0.951},
 }
 
 REPORT = """
-Every optimizer trained the 64-64-32-10 network for 1500 steps at batch 50, and I swept the learning
+Every optimizer trained the 64-64-32-10 network for 800 steps at batch 50, and I swept the learning
 rate in roughly half-decade steps with and without a 50-step warmup and cosine decay, choosing on the
-validation split only. Best validation accuracies: sgd 0.932 (rate 0.8, constant), momentum 0.931
-(rate 0.08, beta 0.9, cosine), adam 0.937 (rate 0.02, cosine) and adamw 0.949 (rate 0.02, cosine,
-weight decay 0.2). The final recipe is that adamw setting; its test accuracy is 0.946 with seed 0 and
-0.932 with seed 1, a mean of 0.939, against about 0.90 for the L07 baseline. Tuning the rate mattered
+validation split only. Best validation accuracies: sgd 0.935 (rate 0.8, constant), momentum 0.927
+(rate 0.08, beta 0.9, constant), adam 0.934 (rate 0.02, cosine) and adamw 0.951 (rate 0.02, cosine,
+weight decay 0.2). The final recipe is that adamw setting; its test accuracy is 0.942 with seed 0 and
+0.938 with seed 1, a mean of 0.940, against about 0.90 for the L07 baseline. Tuning the rate mattered
 most: at common default rates (0.1 for sgd, 0.01 for momentum, 0.001 for adam, constant) validation
-accuracy was only 0.892, 0.894 and 0.905. Once the rate was right the optimizers
-were close, and the clear winner was decoupled weight decay, which adds about a point on validation by
-keeping the weights small while the training loss is already near zero.
+accuracy was only 0.880, 0.884 and 0.892. Once the rate was right the optimizers were close, and the
+clear winner was decoupled weight decay, which adds almost two points on validation (0.951 against
+0.934 without it) by keeping the weights small while the training loss is already near zero.
 """

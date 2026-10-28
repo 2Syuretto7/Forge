@@ -26,6 +26,7 @@ sys.modules['forge_harness'] = _m
 const lessonsDir = path.join(ROOT, 'content/lessons');
 let total = 0;
 let bad = 0;
+const timings = [];
 for (const lesson of fs.readdirSync(lessonsDir).sort()) {
   if (only.size && !only.has(lesson)) continue;
   const dirs = [];
@@ -40,6 +41,7 @@ for (const lesson of fs.readdirSync(lessonsDir).sort()) {
     const t0 = performance.now();
     const res = JSON.parse(py.runPython('import json, forge_harness\njson.dumps(forge_harness.run_tests(_code, _tests))'));
     const secs = (performance.now() - t0) / 1000;
+    timings.push([secs, path.relative(ROOT, d)]);
     const failed = res.filter((r) => r.status !== 'pass');
     if (failed.length || secs > LIMIT_S) {
       bad++;
@@ -48,5 +50,7 @@ for (const lesson of fs.readdirSync(lessonsDir).sort()) {
     }
   }
 }
+const slowest = timings.sort((a, b) => b[0] - a[0]).slice(0, 5);
+console.log(`slowest: ${slowest.map(([s, d]) => `${d} ${s.toFixed(1)} s`).join(', ')}`);
 console.log(`run_pyodide_tests: ${total - bad}/${total} exercises OK in Pyodide`);
 process.exit(bad ? 1 : 0);

@@ -4,7 +4,7 @@ The L07 digits, your layer norm and Adam are provided. Build a residual MLP with
 
 1. `init_model(depth, width, seed=0)` returns a dictionary of parameters, with one `(width, width)` weight matrix per hidden layer.
 2. `loss_and_grads(params, X, y)` returns the mean softmax cross-entropy and a gradient for every parameter; it must work for any depth and width that `init_model` produces.
-3. `train(seed=0)` builds a model with `DEPTH` hidden layers and trains it, returning `(params, losses)`. Keep it under about 2 seconds of CPU time (a few hundred Adam steps at width 48 is enough).
+3. `train(seed=0)` builds a model with `DEPTH` hidden layers and trains it, returning `(params, losses)`. Keep it under about 2 seconds of CPU time (250 Adam steps at width 48 are enough).
 4. `evaluate(params, X, y)` returns accuracy.
 5. `REPORT`: at least 80 words explaining each stabilizing choice (residual connections, normalization and where it sits, initialization, learning rate and schedule) with your test accuracy.
 

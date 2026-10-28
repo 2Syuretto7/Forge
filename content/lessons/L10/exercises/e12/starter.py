@@ -171,7 +171,7 @@ def dead_fraction(p, X, depth, mode):
     raise NotImplementedError
 
 
-def warmup_experiment(lr=7e-3, warmup=150, depth=30, width=32, steps=300, seed=0):
+def warmup_experiment(lr=1e-2, warmup=150, depth=20, width=32, steps=300, seed=0):
     """Train the post-norm stack without and with warmup. Return {"none": (loss, dead_top),
     "warmup": (loss, dead_top)}: the mean of the last 30 losses, and the mean dead fraction of the
     top third of the layers on make_digits(500, 1)."""
