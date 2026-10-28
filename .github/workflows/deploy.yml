@@ -1,7 +1,8 @@
 name: deploy
 on:
   push:
-    branches: [main]
+    # The working branch deploys too until main exists (it is the repository's only branch).
+    branches: [main, ccr-4523d778-nctfqo]
   workflow_dispatch:
 permissions:
   contents: read
