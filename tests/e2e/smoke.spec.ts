@@ -13,30 +13,40 @@ async function replaceEditorText(page: Page, text: string) {
   await page.keyboard.insertText(text);
 }
 
-test('map, lesson, pass an exercise, progress survives reload', async ({ page }) => {
+test('dashboard, map, lesson, pass an exercise in the workspace, progress survives reload', async ({ page }) => {
   const errors: string[] = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
 
   await page.goto('./');
+  await expect(page.getByRole('heading', { name: 'Welcome to Forge' })).toBeVisible();
+  await expect(page.getByRole('link', { name: /Start learning/ })).toBeVisible();
+
+  await page.goto('./#/map');
   await expect(page.locator('[aria-label^="L01 "]')).toBeVisible();
   await expect(page.locator('g[role="link"]')).toHaveCount(24);
-
   await page.locator('[aria-label^="L01 "]').click();
   await expect(page).toHaveURL(/#\/lesson\/L01/);
-  await page.getByRole('link', { name: /Build: the toolkit from scratch/ }).click();
 
+  await page.getByRole('button', { name: 'Syllabus' }).click();
+  await page.getByRole('dialog').getByRole('link', { name: /Build: the toolkit from scratch/ }).click();
   const card = page.locator('#ex-e01');
-  await card.getByRole('button', { name: 'Open in editor' }).click();
+  await card.getByRole('link', { name: /^Start exercise 1/ }).click();
+  await expect(page).toHaveURL(/#\/lesson\/L01\/ex\/e01$/);
   await replaceEditorText(page, solution('L01', 'e01'));
-  await page.getByRole('button', { name: 'Check', exact: true }).click();
+  await page.getByRole('button', { name: 'Submit answer' }).click();
   await expect(page.getByText(/5\/5 tests passed/)).toBeVisible({ timeout: 120_000 });
-  await expect(card.getByText('Passed')).toBeVisible();
+  await expect(page.getByText('Passed', { exact: true })).toBeVisible();
+  await expect(page.locator('.pill-xp')).toHaveText('100 XP');
 
   await page.reload();
+  await expect(page.getByText('Passed', { exact: true })).toBeVisible();
+  await page.goto('./#/lesson/L01/m3-build');
   await expect(page.locator('#ex-e01').getByText('Passed')).toBeVisible();
-  await page.goto('./#/');
+  await page.goto('./#/map');
   await expect(page.locator('[aria-label^="L01 "]')).toHaveAttribute('aria-label', /In progress/);
+  await page.goto('./');
+  await expect(page.getByRole('link', { name: /Resume/ })).toHaveAttribute('href', '#/lesson/L01/m3-build');
   expect(errors).toEqual([]);
 });
 

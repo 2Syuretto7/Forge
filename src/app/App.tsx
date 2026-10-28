@@ -2,12 +2,14 @@ import { useEffect } from 'react';
 import { HashRouter, Link, NavLink, Route, Routes } from 'react-router-dom';
 import { MapView } from '../graph/MapView';
 import { LessonPlayer } from '../lesson/LessonPlayer';
+import { ExerciseWorkspace } from '../lesson/ExerciseWorkspace';
+import { Dashboard } from '../home/Dashboard';
 import { ReviewPage } from '../review/ReviewPage';
 import { SettingsPage } from '../settings/SettingsPage';
 import { WidgetGallery } from './WidgetGallery';
-import { useIndex } from '../content/load';
 import { useStore } from '../store/store';
-import { dueItems, hoursDone, totalHours } from '../store/derive';
+import { dueItems, streak, totalXp } from '../store/derive';
+import { Bolt, Flame } from './icons';
 
 function useTheme() {
   const theme = useStore((s) => s.settings.theme);
@@ -19,30 +21,52 @@ function useTheme() {
 }
 
 function Header() {
-  const { data: idx } = useIndex();
   const state = useStore((s) => s);
   const due = dueItems(state).length;
+  const xp = totalXp(state);
+  const days = streak(state);
   return (
     <header className="topbar">
       <a href="#main" className="skip">
         Skip to content
       </a>
       <Link to="/" className="brand">
-        Forge
+        <span className="brand-mark" aria-hidden="true">
+          F
+        </span>
+        <span className="brand-name">Forge</span>
       </Link>
       <nav className="topnav" aria-label="Main">
-        {idx && (
-          <span className="hours" title="Hours of completed movements out of the whole curriculum">
-            {Math.round(hoursDone(state, idx) * 10) / 10} / {totalHours(idx)} h
-          </span>
-        )}
-        <NavLink to="/review" className="navlink">
-          Reviews{due > 0 ? ` (${due} due)` : ''}
+        <NavLink to="/" end className="navlink">
+          Learn
+        </NavLink>
+        <NavLink to="/map" className="navlink">
+          Map
+        </NavLink>
+        <NavLink to="/review" className="navlink" aria-label={due > 0 ? `Reviews (${due} due)` : 'Reviews'}>
+          Reviews
+          {due > 0 && (
+            <span className="nav-count" aria-hidden="true">
+              {due}
+            </span>
+          )}
         </NavLink>
         <NavLink to="/settings" className="navlink">
           Settings
         </NavLink>
       </nav>
+      <div className="topstats">
+        <span className="pill pill-streak" title="Day streak: consecutive days with any learning activity">
+          <Flame />
+          <span>
+            {days} <span className="pill-unit">day{days === 1 ? '' : 's'}</span>
+          </span>
+        </span>
+        <span className="pill pill-xp" title="Experience points">
+          <Bolt />
+          <span>{xp.toLocaleString('en-US')} XP</span>
+        </span>
+      </div>
     </header>
   );
 }
@@ -53,7 +77,9 @@ export function App() {
     <HashRouter>
       <Header />
       <Routes>
-        <Route path="/" element={<MapView />} />
+        <Route path="/" element={<Dashboard />} />
+        <Route path="/map" element={<MapView />} />
+        <Route path="/lesson/:id/ex/:ex" element={<ExerciseWorkspace />} />
         <Route path="/lesson/:id/:movement?" element={<LessonPlayer />} />
         <Route path="/review" element={<ReviewPage />} />
         <Route path="/settings" element={<SettingsPage />} />
@@ -63,7 +89,7 @@ export function App() {
           element={
             <main className="page narrow" id="main">
               <h1>Not found</h1>
-              <Link to="/">Back to the map</Link>
+              <Link to="/">Back to your dashboard</Link>
             </main>
           }
         />

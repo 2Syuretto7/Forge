@@ -55,15 +55,22 @@ async function completeMovement(page: Page, id: string, m: string, next?: string
     await expect(card.getByRole('status')).toBeVisible();
   }
 
+  // Exercises open in the split-screen workspace; each is solved there, then back to the movement.
+  const refs: string[] = [];
   for (const card of await page.locator('.card.exercise').all()) {
-    const ref = (await card.getAttribute('id'))!.replace(/^ex-/, '');
-    const open = card.getByRole('button', { name: 'Open in editor' });
-    if (await open.count() === 0) continue; // a notebook capstone, completed through its Colab block
+    if ((await card.getByRole('link').count()) === 0) continue; // a notebook capstone, completed through its Colab block
     if (await card.locator('.ex-status.passed').count()) continue;
-    await open.click();
+    refs.push((await card.getAttribute('id'))!.replace(/^ex-/, ''));
+  }
+  for (const ref of refs) {
+    await page.goto(`./#/lesson/${id}/ex/${ref}`);
     await replaceEditorText(page, solution(id, ref));
-    await page.getByRole('button', { name: 'Check', exact: true }).click();
-    await expect(card.locator('.ex-status.passed')).toBeVisible({ timeout: 120_000 });
+    await page.getByRole('button', { name: 'Submit answer' }).click();
+    await expect(page.getByText('Correct.', { exact: true })).toBeVisible({ timeout: 120_000 });
+  }
+  if (refs.length) {
+    await page.goto(`./#/lesson/${id}/${m}`);
+    for (const ref of refs) await expect(page.locator(`#ex-${ref} .ex-status.passed`)).toBeVisible();
   }
 
   for (const card of await page.locator('.card.feynman').all()) {
@@ -106,13 +113,13 @@ test.afterAll(async () => {
 for (const id of lessonIds) {
   test(`learner completes ${id}`, async () => {
     test.setTimeout(1_800_000);
-    await page.goto('./');
+    await page.goto('./#/map');
     const node = page.locator(`[aria-label^="${id} "]`);
     await expect(node).not.toHaveAttribute('aria-label', /\. Locked/);
     const ms = movements(id);
     for (const [i, m] of ms.entries()) await completeMovement(page, id, m, ms[i + 1]);
 
-    await page.goto('./');
+    await page.goto('./#/map');
     await expect(page.locator(`[aria-label^="${id} "]`)).toHaveAttribute('aria-label', /\. Complete$/);
     const done = new Set(lessonIds.slice(0, lessonIds.indexOf(id) + 1));
     for (const next of lessonIds.filter((l) => !done.has(l) && prereqs(l).every((p) => done.has(p)))) {

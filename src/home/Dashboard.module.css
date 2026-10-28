@@ -1,0 +1,307 @@
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px 20px 64px;
+}
+.title {
+  font-size: 1.75rem;
+  margin: 4px 0 16px;
+}
+.kicker {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+/* Resume card */
+.hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 24px 28px;
+  border-radius: var(--radius);
+  background: var(--nav-bg);
+  color: var(--nav-text);
+  box-shadow: var(--shadow);
+}
+.hero .kicker {
+  color: var(--cta);
+}
+.heroText {
+  flex: 1 1 380px;
+  min-width: 0;
+}
+.heroTitle {
+  margin: 4px 0 4px;
+  font-size: 1.45rem;
+  line-height: 1.25;
+}
+.heroId {
+  color: var(--nav-muted);
+  font-weight: 700;
+}
+.heroSub {
+  margin: 0 0 14px;
+  color: var(--nav-muted);
+}
+.heroProgress {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: var(--nav-muted);
+  max-width: 460px;
+}
+.heroProgress .progress {
+  background: rgb(255 255 255 / 0.16);
+}
+
+.progress {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  overflow: hidden;
+  min-width: 60px;
+}
+.progressFill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--cta);
+}
+
+/* Stats */
+.row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 18px 0 8px;
+}
+.stats {
+  flex: 3 1 560px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+.stat,
+.reviews {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.reviews {
+  flex: 1 1 220px;
+  justify-content: space-between;
+  border-left: 4px solid var(--accent);
+}
+.statIcon {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  flex: none;
+}
+.xp {
+  background: var(--xp);
+  color: var(--xp-text);
+}
+.streak {
+  background: #ffe8d6;
+  color: #b4461b;
+}
+.code {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.clock {
+  background: var(--good-soft);
+  color: var(--good);
+}
+.statValue {
+  font-size: 1.3rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.statOf {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--muted);
+}
+.statLabel {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+/* Syllabus */
+.sectionTitle {
+  font-size: 1.25rem;
+  margin: 28px 0 8px;
+}
+.stage {
+  margin: 14px 0 22px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.stageHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.stageTitle {
+  margin: 0;
+  font-size: 1.1rem;
+}
+.stageMeta .progress {
+  background: var(--border);
+}
+.stageMeta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 220px;
+}
+.lessons {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.lesson {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-top: 1px solid var(--border);
+}
+.lesson:first-child {
+  border-top: 0;
+}
+.badge {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  flex: none;
+  font-weight: 800;
+  font-size: 0.9rem;
+  border: 2px solid var(--border);
+  color: var(--muted);
+  background: var(--surface);
+}
+.s_in_progress .badge {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.s_available .badge {
+  border-color: var(--text);
+  color: var(--text);
+}
+.s_complete .badge {
+  border-color: var(--good);
+  background: var(--good);
+  color: #fff;
+}
+.lessonBody {
+  flex: 1;
+  min-width: 0;
+}
+.lessonTop {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.lessonTitle {
+  font-weight: 700;
+  color: var(--text);
+  text-decoration: none;
+}
+a.lessonTitle:hover {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.s_locked .lessonTitle {
+  color: var(--muted);
+}
+.status {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  color: var(--muted);
+}
+.st_in_progress {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+.st_complete {
+  background: var(--good-soft);
+  color: var(--good);
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 0.82rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.lessonProgress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 6px;
+  max-width: 360px;
+}
+
+@media (max-width: 760px) {
+  .page {
+    padding: 16px 16px 48px;
+  }
+  .hero {
+    padding: 18px;
+  }
+  .heroTitle {
+    font-size: 1.2rem;
+  }
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    flex-basis: 100%;
+  }
+  .lesson {
+    flex-wrap: wrap;
+    padding: 12px 14px;
+  }
+  .lessonBody {
+    flex-basis: calc(100% - 60px);
+  }
+  .lesson > :global(.btn) {
+    margin-left: 54px;
+  }
+}

@@ -13,8 +13,8 @@ import { Link } from 'react-router-dom';
 export interface BlockCtx {
   lesson: Lesson;
   index: ContentIndex;
-  activeExercise: string | null;
-  openExercise: (id: string) => void;
+  // Exercise numbers in lesson order (capstones are not numbered).
+  exerciseNumber: (ref: string) => number;
 }
 
 function WidgetBlock({ name, props }: { name: string; props: Record<string, string> }) {
@@ -39,7 +39,7 @@ export function BlockView({ b, ctx }: { b: Block; ctx: BlockCtx }) {
     case 'exercise': {
       const ex = lesson.exercises[b.ref];
       if (!ex) return null;
-      return <ExerciseCard lessonId={lesson.id} ex={ex} active={ctx.activeExercise === b.ref} onOpen={() => ctx.openExercise(b.ref)} />;
+      return <ExerciseCard lessonId={lesson.id} ex={ex} number={ctx.exerciseNumber(b.ref)} />;
     }
     case 'widget':
       return <WidgetBlock name={b.name} props={b.props} />;

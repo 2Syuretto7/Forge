@@ -22,10 +22,14 @@ export interface Settings {
   apiKey: string;
   modelId: string;
   theme: 'system' | 'light' | 'dark';
+  // Local dates (YYYY-MM-DD) on which the learner did anything: the day streak.
+  activityDays: string[];
+  // The last lesson screen visited, for "Resume".
+  lastPath: string;
 }
 
 export const DEFAULT_MODEL = 'claude-sonnet-5-5';
-export const DEFAULT_SETTINGS: Settings = { apiKey: '', modelId: DEFAULT_MODEL, theme: 'system' };
+export const DEFAULT_SETTINGS: Settings = { apiKey: '', modelId: DEFAULT_MODEL, theme: 'system', activityDays: [], lastPath: '' };
 
 export interface State {
   loaded: boolean;
@@ -90,6 +94,19 @@ async function put<S extends StoreName>(store: S, rec: unknown) {
   await db.put(store, rec as never);
 }
 
+// ---- activity ------------------------------------------------------------
+
+export async function noteActivity(today = localDate()) {
+  const days = state.settings.activityDays ?? [];
+  if (days.includes(today)) return;
+  await saveSetting('activityDays', [...days, today]);
+}
+
+export async function rememberPath(path: string) {
+  if (state.settings.lastPath === path) return;
+  await saveSetting('lastPath', path);
+}
+
 // ---- progress -------------------------------------------------------------
 
 function progressOf(lessonId: string): ProgressRec {
@@ -123,6 +140,7 @@ export async function logTime(lessonId: string, hours: number) {
   };
   set({ progress: { ...state.progress, [lessonId]: next } });
   await put('progress', next);
+  await noteActivity();
 }
 
 export async function completeMovement(lessonId: string, movementId: string, allMovements: string[], reviewItemIds: string[]) {
@@ -140,6 +158,7 @@ export async function completeMovement(lessonId: string, movementId: string, all
   await put('progress', next);
   if (complete && p.status !== 'complete') await scheduleReviews(reviewItemIds);
   set({ progress: { ...state.progress, [lessonId]: next } });
+  await noteActivity();
 }
 
 // ---- exercises ------------------------------------------------------------
@@ -170,6 +189,7 @@ export async function recordCheck(id: string, passed: boolean, code: string) {
     failedChecks: e.failedChecks + (passed ? 0 : 1),
     lastCode: code,
   });
+  await noteActivity();
 }
 
 export async function recordHint(id: string) {
@@ -191,16 +211,19 @@ export async function savePrediction(rec: PredictionRec) {
   if (state.predictions[rec.id]) return;
   set({ predictions: { ...state.predictions, [rec.id]: rec } });
   await put('predictions', rec);
+  await noteActivity();
 }
 
 export async function saveFeynman(rec: FeynmanRec) {
   set({ feynman: { ...state.feynman, [rec.id]: rec } });
   await put('feynman', rec);
+  await noteActivity();
 }
 
 export async function saveColab(rec: ColabRec) {
   set({ colab: { ...state.colab, [rec.lessonId]: rec } });
   await put('colab', rec);
+  await noteActivity();
 }
 
 // ---- reviews -------------------------------------------------------------
@@ -221,6 +244,7 @@ export async function gradeReview(itemId: string, q: number, today = localDate()
   const next = sm2Grade(rec, q, today);
   set({ reviews: { ...state.reviews, [itemId]: next } });
   await put('reviews', next);
+  await noteActivity(today);
 }
 
 // ---- settings and data management ---------------------------------------
@@ -242,6 +266,9 @@ export async function importProgress(data: unknown) {
 export async function resetProgress() {
   await clearAll(true);
   await loadStore();
+  // The key and theme stay; the streak and the resume point go with the progress.
+  await saveSetting('activityDays', []);
+  await saveSetting('lastPath', '');
 }
 
 export { STORE_NAMES };

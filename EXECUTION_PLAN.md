@@ -124,7 +124,14 @@ forge/
 
 ## 5. App screens and behavior
 
-### 5.1 Map (home, route `#/`)
+### 5.0 Dashboard (home, route `#/`), added at the owner's request to bring the interface closer to Codecademy and DataCamp
+- A "Resume" card that returns to the last lesson screen visited (or the next unfinished movement), with the lesson's step progress.
+- Stats: XP earned, day streak, exercises solved, hours of the path completed; reviews due with a "Practice now" button.
+- The syllabus by stage: one row per lesson with its status, track, hours, where it runs, a progress bar and Start, Continue, Review or Preview.
+- XP: 100 per exercise, 30 less per hint taken (never below 25), 10 when finished with the solution; 10 per prediction (20 if right), 25 per movement, 250 per lesson, 50 per Feynman explanation, 300 per Colab capstone, 5 per graded review. The streak counts consecutive days with any activity.
+- The top bar is shared by every screen: Learn, Map, Reviews (with the due count), Settings, the streak and the XP.
+
+### 5.1 Map (route `#/map`; it was the home page before the dashboard)
 - Full-screen graph. Columns = 5 tracks (Math, Core ML, Architectures, Systems (MLE), LLM science). Rows = 5 stages (Foundations, Learning, Models + GPUs, Scale, Frontier).
 - Node states: locked (prerequisites incomplete, still clickable for preview), available, in progress (ring shows percent), complete.
 - Edges: vertical = solid gray arrow; horizontal = solid colored double arrow; long-range = dashed colored arrow. Toggle each type on/off.
@@ -132,10 +139,10 @@ forge/
 - Header shows: total hours done / total, reviews due today (click to start), Settings.
 - Works on phone width (380px): map becomes a stage-by-stage list with edges listed as chips.
 
-### 5.2 Lesson player (route `#/lesson/:id/:movement?`)
-- Left: movement navigator with theory/practice tag and estimated minutes per movement; a live theory/practice meter for the lesson.
-- Center: the movement content (markdown + math + widgets + exercises).
-- Right (desktop) or bottom sheet (mobile): code pane for the active exercise, test output, hints.
+### 5.2 Lesson player (route `#/lesson/:id/:movement?`) and exercise workspace (route `#/lesson/:id/ex/:exercise`)
+- A lesson bar under the top bar: a Syllabus drawer (movements with theory/practice tag, minutes and their exercises; the live theory/practice meter), the lesson title, and one progress segment per movement.
+- Center: the movement content (markdown + math + widgets) in a reading column; each exercise is a step card with its status, XP and a Start, Continue or Review button. A sticky bottom bar holds Back, the count of tasks done, and Complete movement or Next.
+- Exercises open in a full-screen workspace, as on DataCamp: instructions, hints (each costs XP) and the solution on the left; a dark editor with Run code and Submit answer, and a console with Output and Tests tabs, on the right; Previous, one dot per exercise of the movement, and Next exercise at the bottom. On a phone the three panels become tabs.
 - Edge markers render inline as chips: "Reuses L04: KL divergence" (links back) and "Returns in L21" (links forward; disabled until reachable, shows a one-line teaser).
 - Retro-annotations: when a later lesson is complete, its annotations appear as margin notes in earlier lessons.
 - Progress saves on every exercise pass, movement completion, and prediction submission.
@@ -600,6 +607,7 @@ Implementation notes (decided during Phase 1):
 - [x] 6.3 Content review pass: re-read every derivation; every numeric claim backed by a test or a derivation in the lesson.
 - [ ] 6.4 Run all 10 acceptance criteria; fix until all pass.
 - [x] 6.5 Final README for the owner: the site URL, how to add the API key, how to open Colab lessons. Nothing else.
+- [x] 6.6 Owner request: bring the interface closer to Codecademy and DataCamp (Section 5.0 and 5.2): dashboard with Resume, XP and streak; split-screen exercise workspace; lesson step bar, syllabus drawer and Back/Next bar.
 
 ---
 
