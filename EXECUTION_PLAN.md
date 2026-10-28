@@ -515,7 +515,9 @@ Long-range: L06-L16 (test-set leakage returns as train/eval contamination), L07-
 
 Implementation notes (decided during Phase 1):
 - Pyodide core files come from the pinned `pyodide` npm package; the matching NumPy wheel is vendored in `vendor/pyodide/` and checked against `pyodide-lock.json` by SHA-256. Everything is served from the site itself, so the app makes no CDN calls.
-- Notebooks are authored as percent-format Python (`content/lessons/<ID>/notebook/notebook.py`, cells split on `# %%`, solution regions between `# BEGIN SOLUTION` and `# END SOLUTION`). `build_content.ts` writes the learner `.ipynb` to `notebooks/<ID>.ipynb` (committed, so Colab can open it from `main`) and the solved version to `build/notebooks/` for CI.
+- Notebooks are authored as percent-format Python in the GPU lesson's `capstone/solution.py` (cells split on `# %%`, solution regions between `# BEGIN SOLUTION` and `# END SOLUTION`, with an optional `-> replacement` for the learner version), next to `capstone/tests.py`, which becomes the autograder cell. `build_content.ts` writes the learner `.ipynb` to `notebooks/<ID>.ipynb` (committed, so Colab can open it from `main`) and the solved version to `build/notebooks/` for CI.
+- `:::colab{notebook=<ID> runtime=cpu}` marks a notebook that needs no GPU (L08); the button text and the notebook metadata then leave the accelerator unset.
+- A retro-annotation may name its target movement (`{target: L07, movement: m2-derivation, anchor: ..., text: ...}`); the anchor is matched case-insensitively against the plain text of that movement's blocks, first match wins.
 - Exercise hints live at the end of `prompt.md` under a `## Hints` heading (numbered list, at most 3).
 
 ---
@@ -551,13 +553,13 @@ Implementation notes (decided during Phase 1):
 
 ### Phase 2: Math and Core ML (L02 to L09)
 - [x] 2.1 Feynman grader (Section 9) with fallback self-assessment.
-- [ ] 2.2 Spaced-review engine, `gen_reviews.ts`, `#/review`, recall-bridge integration.
-- [ ] 2.3 Colab button, completion-code verification, notebook autograder template.
+- [x] 2.2 Spaced-review engine, `gen_reviews.ts`, `#/review`, recall-bridge integration.
+- [x] 2.3 Colab button, completion-code verification, notebook autograder template.
 - [x] 2.4 Widgets: `DistributionPlayground`, `ComputationGraph`, `EntropyBars`, `DecisionBoundary`, `BiasVarianceCurve`, `LossLandscape`, `ActivationStats`.
 - [x] 2.5 Write L02, L03, L04.
 - [x] 2.6 Write L05, L06, L07.
-- [ ] 2.7 Write L08 (browser part and notebook), L09.
-- [ ] 2.8 Retro-annotations engine.
+- [x] 2.7 Write L08 (browser part and notebook), L09.
+- [x] 2.8 Retro-annotations engine.
 - [ ] 2.9 Deploy; acceptance checks for current scope.
 
 ### Phase 3: Architectures and Systems (L10 to L14, L17)

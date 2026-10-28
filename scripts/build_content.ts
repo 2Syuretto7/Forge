@@ -19,6 +19,7 @@ export function findAnnotations(loaded: Map<string, LoadedLesson>) {
       if (!target) continue;
       let found: Annotation | null = null;
       for (const [mid, texts] of target.plainText) {
+        if (a.movement && a.movement !== mid) continue;
         const idx = texts.findIndex((t) => t.toLowerCase().includes(a.anchor.toLowerCase()));
         if (idx >= 0) {
           found = { source: id, target: a.target, movement: mid, block: idx, anchor: a.anchor, text: a.text };
@@ -26,7 +27,7 @@ export function findAnnotations(loaded: Map<string, LoadedLesson>) {
         }
       }
       if (found) annotations.push(found);
-      else missing.push(`${id}: annotation anchor "${a.anchor}" not found in ${a.target}`);
+      else missing.push(`${id}: annotation anchor "${a.anchor}" not found in ${a.target}${a.movement ? `/${a.movement}` : ''}`);
     }
   }
   return { annotations, missing };
@@ -41,7 +42,8 @@ export function loadAll() {
 
 export function notebookFor(l: LoadedLesson, variant: 'learner' | 'solved') {
   if (!l.notebookSource) return null;
-  return buildNotebook(l.lesson.id, l.notebookSource, l.lesson.exercises.capstone?.tests ?? '', variant);
+  const gpu = !l.lesson.movements.some((m) => m.blocks.some((b) => b.t === 'colab' && !b.gpu));
+  return buildNotebook(l.lesson.id, l.notebookSource, l.lesson.exercises.capstone?.tests ?? '', variant, gpu);
 }
 
 function main() {

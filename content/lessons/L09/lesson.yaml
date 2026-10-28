@@ -1,0 +1,38 @@
+id: L09
+hours: 9
+capstone: "An optimizer bake-off on the L07 digit task, tuned on a validation split, with a recipe that reaches at least 92 percent test accuracy"
+teaser: "Derive why gradient descent crawls in narrow valleys, then build momentum, Adam, AdamW, schedules and initialization from scratch and race them."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 130}
+  - {file: m4-scale.md,      mode: practice, minutes: 80}
+  - {file: m5-break.md,      mode: both,     minutes: 45}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 20}
+  - {file: m7-capstone.md,   mode: practice, minutes: 30}
+hooks:
+  - {to: L10, text: "Initialization keeps activations at unit scale only at the start; normalization layers keep them there during training."}
+  - {to: L15, text: "Scaling-law fits assume a tuned learning rate and schedule for every model size; L15 asks how they change with scale."}
+  - {to: L19, text: "Warmup, decay and the learning-rate peak return when a large run spikes and has to be rewound."}
+reuses:
+  - {from: L01, concept: "eigendecomposition of symmetric matrices and the condition number"}
+  - {from: L07, concept: "the MLP, its backward pass and the minibatch SGD loop"}
+  - {from: L08, concept: "parameters and gradients exposed by an autograd engine"}
+annotations:
+  - {target: L07, movement: m2-derivation, anchor: "Training: minibatch stochastic gradient descent", text: "L09 replaces this fixed step with momentum, Adam and schedules, and shows that the largest curvature limits the step size."}
+  - {target: L05, movement: m2-derivation, anchor: "Optimization in practice", text: "Standardizing lowers the condition number of the Hessian, which L09 shows sets the convergence rate of gradient descent."}
+concepts:
+  - q: "What is the largest stable learning rate for gradient descent on a quadratic with Hessian eigenvalues between mu and L?"
+    a: "2/L. Each eigen-direction is multiplied by (1 - eta lambda) per step, which must stay inside (-1, 1) for the largest eigenvalue."
+  - q: "How many steps does gradient descent need on a quadratic with condition number kappa, compared with heavy-ball momentum?"
+    a: "About kappa/2 times ln(1/epsilon) for gradient descent, about sqrt(kappa)/2 times ln(1/epsilon) for optimally tuned momentum."
+  - q: "Why does Adam need bias correction?"
+    a: "Its moving averages start at zero, so early on they underestimate the gradient moments by factors 1 - beta^t; with beta2 close to 1 the second moment is underestimated far more, so uncorrected early steps are several times too large."
+  - q: "What is the difference between L2 regularization and decoupled weight decay in Adam?"
+    a: "L2 adds lambda theta to the gradient, which Adam then divides by sqrt(v), so weights with large gradients decay less; AdamW shrinks the weights directly by eta lambda theta, at the same rate for every weight."
+  - q: "Where does He initialization come from?"
+    a: "Keeping the second moment of activations constant through a ReLU layer: Var(z) = n_in s^2 E[x^2] and ReLU halves the second moment, so s^2 = 2/n_in."
+  - q: "Why warm up the learning rate?"
+    a: "Early in training the curvature is high and Adam's second-moment estimates are based on few gradients, so large steps are unstable; ramping the rate up over the first steps avoids early divergence."
+katas: [e02, e05, e06]

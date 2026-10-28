@@ -20,11 +20,15 @@ export function Colab({ b }: { b: C }) {
   };
   return (
     <div className="card colab">
-      <div className="card-kicker">GPU notebook</div>
-      <p>
-        Open the notebook in Google Colab, choose <em>Runtime, Change runtime type, T4 GPU</em>, then run all cells. The final cell prints a
-        completion code.
-      </p>
+      <div className="card-kicker">{b.gpu ? 'GPU notebook' : 'Colab notebook'}</div>
+      {b.gpu ? (
+        <p>
+          Open the notebook in Google Colab, choose <em>Runtime, Change runtime type, T4 GPU</em>, then run all cells. The final cell prints a
+          completion code.
+        </p>
+      ) : (
+        <p>Open the notebook in Google Colab and run all cells; the default CPU runtime is enough. The final cell prints a completion code.</p>
+      )}
       <a className="btn primary" href={colabUrl(b.notebook)} target="_blank" rel="noreferrer">
         Open in Colab
       </a>

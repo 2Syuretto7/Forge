@@ -19,7 +19,7 @@ reuses:
   - {from: L01, concept: "least squares and the normal equations"}
   - {from: L02, concept: "maximum likelihood and Gaussian priors"}
 annotations:
-  - {target: L01, anchor: "least squares", text: "Least squares is maximum likelihood when the noise is Gaussian; ridge regression adds a Gaussian prior (L05)."}
+  - {target: L01, movement: m2-derivation, anchor: "Projection onto a subspace, and least squares", text: "Least squares is maximum likelihood when the noise is Gaussian; ridge regression adds a Gaussian prior (L05)."}
   - {target: L02, anchor: "Gaussian prior", text: "L05 turns this into ridge regression and weight decay: the MAP estimate of a linear model."}
 concepts:
   - q: "Why is squared error the right loss for linear regression?"

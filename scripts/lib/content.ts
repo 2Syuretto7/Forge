@@ -49,7 +49,7 @@ export interface LessonYaml {
   movements: { file: string; mode: Mode; minutes: number }[];
   hooks?: Hook[];
   reuses?: Reuse[];
-  annotations?: { target: string; anchor: string; text: string }[];
+  annotations?: { target: string; movement?: string; anchor: string; text: string }[];
   concepts?: { q: string; a: string }[];
   katas?: string[];
 }

@@ -19,7 +19,7 @@ reuses:
   - {from: L03, concept: "reverse-mode differentiation and vector-Jacobian products"}
   - {from: L07, concept: "hand-written backward passes for an MLP"}
 annotations:
-  - {target: L07, anchor: "Backpropagation", text: "L08 automates exactly this: each operation records its inputs and a VJP on a tape, and backward() replays the tape in reverse."}
+  - {target: L07, movement: m2-derivation, anchor: "4. Backpropagation", text: "L08 automates exactly this: each operation records its inputs and a VJP on a tape, and backward() replays the tape in reverse."}
 concepts:
   - q: "Why must an autograd engine visit nodes in reverse topological order during backward?"
     a: "A node's gradient is complete only after every node that uses it has passed its contribution back; reverse topological order guarantees all consumers are processed first."

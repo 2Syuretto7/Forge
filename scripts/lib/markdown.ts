@@ -243,7 +243,9 @@ export function compileMarkdown(source: string, where: string): CompileResult {
       case 'colab': {
         const nb = attr(d, 'notebook');
         if (!nb) issues.push({ message: `${where}: colab without notebook` });
-        return { t: 'colab', notebook: (nb ?? '').toUpperCase(), tests: [] };
+        const runtime = attr(d, 'runtime') ?? 'gpu';
+        if (runtime !== 'gpu' && runtime !== 'cpu') issues.push({ message: `${where}: colab runtime must be gpu or cpu` });
+        return { t: 'colab', notebook: (nb ?? '').toUpperCase(), tests: [], gpu: runtime !== 'cpu' };
       }
       case 'aside': {
         const labelIdx = d.children.findIndex(

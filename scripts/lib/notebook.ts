@@ -94,7 +94,7 @@ function toSource(lines: string[]) {
   return lines.map((l, i) => (i < lines.length - 1 ? l + '\n' : l));
 }
 
-export function buildNotebook(id: string, src: string, tests: string, variant: 'learner' | 'solved') {
+export function buildNotebook(id: string, src: string, tests: string, variant: 'learner' | 'solved', gpu = true) {
   const cells = splitCells(src);
   const nbCells = cells.map((c, i) => {
     const lines = c.kind === 'code' ? (variant === 'learner' ? learnerLines(c.lines) : solvedLines(c.lines)) : c.lines;
@@ -121,8 +121,7 @@ export function buildNotebook(id: string, src: string, tests: string, variant: '
   const nb = {
     cells: nbCells,
     metadata: {
-      accelerator: 'GPU',
-      colab: { provenance: [], gpuType: 'T4' },
+      ...(gpu ? { accelerator: 'GPU', colab: { provenance: [], gpuType: 'T4' } } : { colab: { provenance: [] } }),
       kernelspec: { display_name: 'Python 3', language: 'python', name: 'python3' },
       language_info: { name: 'python' },
     },

@@ -102,7 +102,7 @@ export type Block =
   | { t: 'widget'; name: string; props: Record<string, string> }
   | { t: 'edge'; dir: 'to' | 'from'; lesson: string; text: string }
   | { t: 'feynman'; id: string; prompt: string; keyPoints: string[]; rubric: 'concept' | 'design' }
-  | { t: 'colab'; notebook: string; tests: string[] }
+  | { t: 'colab'; notebook: string; tests: string[]; gpu: boolean }
   | { t: 'aside'; title: string; blocks: Block[] };
 
 export interface Movement extends MovementSummary {

@@ -7,7 +7,7 @@ This notebook does not need a GPU; a CPU runtime is fine.
 :::exercise{ref=capstone}
 :::
 
-:::colab{notebook=L08}
+:::colab{notebook=L08 runtime=cpu}
 :::
 
 ## When you finish

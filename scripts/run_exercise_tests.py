@@ -9,6 +9,11 @@ import os
 import sys
 import time
 
+# One BLAS thread per worker: the pool already uses every core, and nested
+# BLAS threads oversubscribe them and distort the timing check.
+for _var in ('OPENBLAS_NUM_THREADS', 'OMP_NUM_THREADS', 'MKL_NUM_THREADS'):
+    os.environ.setdefault(_var, '1')
+
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(ROOT, 'src', 'code'))
 SLOW_SECONDS = 6.0  # Pyodide is a few times slower; keep checks well under 20 s there.
