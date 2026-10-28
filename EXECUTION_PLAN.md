@@ -589,7 +589,7 @@ Implementation notes (decided during Phase 1):
 ### Phase 5: Frontier (L20 to L24)
 - [x] 5.1 Widgets: `RewardKLTradeoff`, `KVCacheMeter`, `FeatureDictionary`.
 - [x] 5.2 Write L20, L21.
-- [ ] 5.3 Write L22, L23.
+- [x] 5.3 Write L22, L23.
 - [ ] 5.4 Write L24 with the design-document rubric.
 - [ ] 5.5 Remove the `--phase` flag; full validator must pass for all 24 lessons.
 

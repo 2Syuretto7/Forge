@@ -1,0 +1,235 @@
+[
+ {
+  "id": "L22/d0/s1",
+  "lesson": "L22",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>A model with 6.74 billion parameters in 16-bit precision takes about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> GB.</p>",
+  "answer": "13.48|tol=0.01",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L22/d0/s2",
+  "lesson": "L22",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>Reading it once from a GPU with 2 TB/s of bandwidth takes about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> ms.</p>",
+  "answer": "6.74|tol=0.01",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L22/d0/s3",
+  "lesson": "L22",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>So one sequence decodes at most about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> tokens per second, however fast the arithmetic is.</p>",
+  "answer": "148|tol=1",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L22/p1",
+  "lesson": "L22",
+  "kind": "prediction",
+  "prompt": "<p>How many tokens per second can one sequence generate?</p>",
+  "answer": "b",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>About 20,000: 300 trillion divided by 14 billion.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>About 150: every token reads all 13.5 GB of weights from memory, at about 2 TB/s.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>About 1, because attention is quadratic.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>It depends only on the length of the prompt.</p>"
+   }
+  ],
+  "explain": "<p>Generating a token touches every weight once but does only two operations per weight: an arithmetic intensity of about 1 FLOP per byte, far below the A100's ridge point of about 150 (L11). The bandwidth sets the speed, about 150 tokens per second, using under 1% of the arithmetic. Serving many sequences at once reuses each weight read for every sequence in the batch, which is where all of inference's tricks begin.</p>"
+ },
+ {
+  "id": "L22/p2",
+  "lesson": "L22",
+  "kind": "prediction",
+  "prompt": "<p>Llama 2 7B stores 0.5 MiB of keys and values per token. How many GiB does the cache of one 4,096-token sequence take?</p>",
+  "answer": "2",
+  "answerKind": "numeric",
+  "tol": 0.05,
+  "options": [],
+  "explain": "<p><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>4096</mn><mo>×</mo><mn>0.5</mn></mrow><annotation encoding=\"application/x-tex\">4096 \\times 0.5</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">4096</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.5</span></span></span></span> MiB <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo>=</mo><mn>2</mn></mrow><annotation encoding=\"application/x-tex\">= 2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.3669em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">2</span></span></span></span> GiB. Thirty such sequences take 60 GiB, more than the model itself. Grouped-query attention, which shares each key-value head among several query heads, divides this by the group size: Mistral 7B and Llama 2 70B use 8 key-value heads.</p>"
+ },
+ {
+  "id": "L22/d1/s1",
+  "lesson": "L22",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Decode on the roofline</p><p>At batch 1 with 16-bit weights, decode's intensity is about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> FLOP per byte.</p>",
+  "answer": "1",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L22/d1/s2",
+  "lesson": "L22",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Decode on the roofline</p><p>To reach an A100's ridge point of 312 TFLOP/s over 2.04 TB/s, a batch of about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> sequences would be needed (ignoring the caches).</p>",
+  "answer": "153|tol=1",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L22/d2/s1",
+  "lesson": "L22",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Cache arithmetic</p><p>Llama 2 7B (32 layers, 32 key-value heads of dimension 128, 16-bit) stores <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>2</mn><mo>⋅</mo><mn>32</mn><mo>⋅</mo><mn>32</mn><mo>⋅</mo><mn>128</mn><mo>⋅</mo><mn>2</mn><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">2 \\cdot 32 \\cdot 32 \\cdot 128 \\cdot 2 =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">32</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">32</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">128</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> bytes per token.</p>",
+  "answer": "524288",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L22/d2/s2",
+  "lesson": "L22",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Cache arithmetic</p><p>With 8 key-value heads instead of 32 that becomes <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> bytes.</p>",
+  "answer": "131072",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L22/d3/s1",
+  "lesson": "L22",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Bytes saved</p><p>In int8, the 6.74-billion-parameter model takes about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> GB instead of 13.48: the decode step roughly halves.</p>",
+  "answer": "6.74|tol=0.01",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L22/d4/s1",
+  "lesson": "L22",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Speculative speedup</p><p>With <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>α</mi><mo>=</mo><mn>0.8</mn></mrow><annotation encoding=\"application/x-tex\">\\alpha = 0.8</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0037em;\">α</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.8</span></span></span></span> and <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>γ</mi><mo>=</mo><mn>4</mn></mrow><annotation encoding=\"application/x-tex\">\\gamma = 4</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0556em;\">γ</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">4</span></span></span></span>, each target pass yields <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo stretchy=\"false\">(</mo><mn>1</mn><mo>−</mo><msup><mn>0.8</mn><mn>5</mn></msup><mo stretchy=\"false\">)</mo><mi mathvariant=\"normal\">/</mi><mn>0.2</mn><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">(1 - 0.8^5)/0.2 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\">1</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">−</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\">0.</span><span class=\"mord\"><span class=\"mord\">8</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">5</span></span></span></span></span></span></span></span><span class=\"mclose\">)</span><span class=\"mord\">/0.2</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> tokens.</p>",
+  "answer": "3.36|tol=0.01",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L22/d4/s2",
+  "lesson": "L22",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Speculative speedup</p><p>If the draft costs 5% of the target per token, the speedup is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>3.36</mn><mi mathvariant=\"normal\">/</mi><mo stretchy=\"false\">(</mo><mn>4</mn><mo>⋅</mo><mn>0.05</mn><mo>+</mo><mn>1</mn><mo stretchy=\"false\">)</mo><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">3.36/(4 \\cdot 0.05 + 1) \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">3.36/</span><span class=\"mopen\">(</span><span class=\"mord\">4</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">0.05</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">1</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "2.8|tol=0.02",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L22/p3",
+  "lesson": "L22",
+  "kind": "prediction",
+  "prompt": "<p>A draft model's tokens are accepted 80% of the time, and it proposes 4 tokens per target pass. How many tokens does each target pass produce on average?</p>",
+  "answer": "3.36",
+  "answerKind": "numeric",
+  "tol": 0.05,
+  "options": [],
+  "explain": "<p><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo stretchy=\"false\">(</mo><mn>1</mn><mo>−</mo><msup><mn>0.8</mn><mn>5</mn></msup><mo stretchy=\"false\">)</mo><mi mathvariant=\"normal\">/</mi><mo stretchy=\"false\">(</mo><mn>1</mn><mo>−</mo><mn>0.8</mn><mo stretchy=\"false\">)</mo><mo>≈</mo><mn>3.36</mn></mrow><annotation encoding=\"application/x-tex\">(1 - 0.8^5)/(1 - 0.8) \\approx 3.36</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\">1</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">−</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\">0.</span><span class=\"mord\"><span class=\"mord\">8</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">5</span></span></span></span></span></span></span></span><span class=\"mclose\">)</span><span class=\"mord\">/</span><span class=\"mopen\">(</span><span class=\"mord\">1</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">−</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">0.8</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">3.36</span></span></span></span>: the accepted prefix of the draft plus one token from the target (a correction or a bonus token). Raising acceptance to 0.9 gives 4.1. A draft distilled from the target, or one sharing its tokenizer and training data, accepts more often.</p>"
+ },
+ {
+  "id": "L22/p4",
+  "lesson": "L22",
+  "kind": "prediction",
+  "prompt": "<p>A cached generator gives each new token the position embedding of the token before it. What do you see?</p>",
+  "answer": "c",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>An index error on the first generated token.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>Identical output, since positions are approximate anyway.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>Plausible output that differs from what the model would produce without the cache, noticed only by comparing the two.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>Output that is all one repeated token.</p>"
+   }
+  ],
+  "explain": "<p>Nothing crashes: the shapes are right and the text is fluent enough. The model is simply running on slightly wrong inputs. Comparing cached generation with full recomputation, token by token, finds the first divergence (exercise 11); run that comparison on every change to an inference engine.</p>"
+ },
+ {
+  "id": "L22/concept1",
+  "lesson": "L22",
+  "kind": "concept",
+  "prompt": "Why is decoding memory-bound?",
+  "answer": "Each decode step reads every weight once but does only about two operations per weight per sequence, an arithmetic intensity far below the GPU's ridge point unless many sequences share the step.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L22/concept2",
+  "lesson": "L22",
+  "kind": "concept",
+  "prompt": "How large is the key-value cache per token?",
+  "answer": "Two times the number of layers times the number of key-value heads times the head dimension times the bytes per number.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L22/concept3",
+  "lesson": "L22",
+  "kind": "concept",
+  "prompt": "What does continuous batching change?",
+  "answer": "It schedules at every decode step, so finished sequences leave at once and waiting requests take their slots instead of waiting for the whole batch to finish.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L22/concept4",
+  "lesson": "L22",
+  "kind": "concept",
+  "prompt": "What does paged attention fix?",
+  "answer": "It allocates each sequence's cache in fixed-size pages as it grows, so memory is not reserved for tokens never generated and shared prefixes can share pages.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L22/concept5",
+  "lesson": "L22",
+  "kind": "concept",
+  "prompt": "Why does weight-only quantization speed up decoding?",
+  "answer": "Decode time is mostly spent reading weights, so storing them in 8 or 4 bits cuts the bytes per step almost proportionally, if a kernel dequantizes as it loads.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L22/concept6",
+  "lesson": "L22",
+  "kind": "concept",
+  "prompt": "Why does speculative decoding preserve the output distribution?",
+  "answer": "Each draft token is accepted with probability min(1, p/q) and a rejection resamples from the normalized residual max(0, p - q), which together give exactly p.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L22/kata/e02",
+  "lesson": "L22",
+  "kind": "kata",
+  "prompt": "The KV cache",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e02"
+ },
+ {
+  "id": "L22/kata/e03",
+  "lesson": "L22",
+  "kind": "kata",
+  "prompt": "Attention with a cache",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e03"
+ },
+ {
+  "id": "L22/kata/e09",
+  "lesson": "L22",
+  "kind": "kata",
+  "prompt": "Speculative decoding",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e09"
+ }
+]

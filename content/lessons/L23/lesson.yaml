@@ -1,0 +1,38 @@
+id: L23
+hours: 10
+capstone: "Train a small attention-only model, locate the induction circuit by attention scores and activation patching, and validate it with ablations against random baselines and a prediction on new inputs"
+teaser: "Measure a model honestly and look inside it: confidence intervals over items, linear probes and their controls, superposition, sparse autoencoders, and activation patching to find circuits."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 20}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 35}
+  - {file: m2-derivation.md, mode: theory,   minutes: 190}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 45}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 25}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: L24, text: "The final capstone evaluates its own model with intervals over items."}
+reuses:
+  - {from: L02, concept: "the bootstrap"}
+  - {from: L13, concept: "attention heads and the residual stream"}
+  - {from: L21, concept: "a model shaped by rewards"}
+annotations:
+  - {target: L02, movement: m2-derivation, anchor: "8. The bootstrap", text: "L23 resamples benchmark items to put confidence intervals on evaluations and to compare two models item by item."}
+  - {target: L13, movement: m2-derivation, anchor: "4. Multiple heads", text: "L23 finds two heads in different layers that compose into an induction circuit, and proves it by patching."}
+concepts:
+  - q: "Why does a benchmark score need a confidence interval?"
+    a: "The items are a sample from the tasks the benchmark stands for, so the score is an average with a standard error of about sqrt(p(1 - p)/n) over items."
+  - q: "Why compare two models item by item?"
+    a: "Models find the same items hard, so their per-item scores are positively correlated and the variance of the paired difference is smaller than the sum of the separate variances."
+  - q: "What does a linear probe show?"
+    a: "That a property can be read linearly from the activations on held-out inputs; not that the model uses it, which needs a control task or random baseline and an intervention."
+  - q: "What is superposition?"
+    a: "Representing more features than dimensions as nearly orthogonal directions, which works when features are sparse, at the cost of small interference between them."
+  - q: "What does a sparse autoencoder optimize?"
+    a: "Reconstruction error plus an L1 penalty on its latent activations, with unit-norm decoder rows, so that each input is explained by a few feature directions."
+  - q: "What does activation patching measure?"
+    a: "The fraction of the output difference between a clean and a corrupted input that is restored when one component's activation in the corrupted run is replaced by its clean value."
+  - q: "How does an induction head work?"
+    a: "A previous-token head writes the identity of the preceding token into each position; the induction head's query for the current token matches that key at the position after its earlier occurrence and copies the token there."
+katas: [e01, e04, e07]
