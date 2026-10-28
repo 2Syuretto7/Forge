@@ -568,11 +568,11 @@ Implementation notes (decided during Phase 1):
 - [x] 3.2 Write L10, L11.
 - [x] 3.3 Write L13, then L12 (L12 depends on L13).
 - [x] 3.4 Write L14, L17.
-- [ ] 3.5 Notebooks for L11, L12, L13, L14, L17 pass in CI `SMALL=1`; manually verify one on a Colab T4 by running it yourself if you have access, otherwise document the exact runtime check the owner performs with one click.
+- [x] 3.5 Notebooks for L11, L12, L13, L14, L17 pass in CI `SMALL=1`; manually verify one on a Colab T4 by running it yourself if you have access, otherwise document the exact runtime check the owner performs with one click.
 - [ ] 3.6 Deploy; acceptance checks for current scope.
 
 ### Phase 4: Scale (L15, L16, L18, L19)
-- [ ] 4.1 Widgets: `ScalingFit`, `ParallelismPlanner`, `LossSpikeExplorer`.
+- [x] 4.1 Widgets: `ScalingFit`, `ParallelismPlanner`, `LossSpikeExplorer`.
 - [ ] 4.2 Write L15, L16.
 - [ ] 4.3 Write L18, L19.
 - [ ] 4.4 Notebooks pass in CI; deploy; acceptance checks.

@@ -834,6 +834,35 @@ details.aside > summary {
 .widget-svg .bar-c {
   fill: var(--accent);
 }
+.widget-svg .bar-d {
+  fill: var(--edge-l);
+}
+.widget-svg .cap-line {
+  stroke: var(--text);
+  stroke-width: 2;
+}
+.widget-svg .iso-curve {
+  stroke: var(--edge-v);
+  stroke-width: 1;
+  fill: none;
+  opacity: 0.6;
+}
+.widget-svg .fit-band {
+  fill: var(--practice);
+  opacity: 0.08;
+}
+.widget-svg .spike-band {
+  fill: var(--bad);
+  opacity: 0.18;
+}
+.widget-svg .cursor-line {
+  stroke: var(--text);
+  stroke-width: 1;
+  stroke-dasharray: 2 3;
+}
+.widget-stats .warn {
+  color: var(--bad);
+}
 .widget-table {
   border-collapse: collapse;
   font-size: 0.85rem;
