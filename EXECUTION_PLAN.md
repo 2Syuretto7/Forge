@@ -524,6 +524,11 @@ Implementation notes (decided during Phase 1):
 - L15's sweep is sized for Tiny Shakespeare (the only corpus the notebooks can verify offline): four layers at five widths, every run 1,950 steps with the batch growing with the token budget, at most four epochs. At this scale the runs are early in training and the fitted floor $E$ is constrained to be non-negative; the held-out prediction must land within 8%.
 - L18's capstone needs no GPU: four CPU processes joined by `torch.distributed` (gloo) through `fork`, using only `all_reduce`, `all_gather` and point-to-point messages, which every PyTorch version's gloo backend supports.
 - L19's reference run is the nanoGPT-sized character model for 5,000 steps, roughly 15 to 25 minutes on a T4 rather than several hours: a longer run on Tiny Shakespeare would only overfit. The script checkpoints to Google Drive when mounted and resumes after a disconnection, so the same code serves a multi-hour run on a larger corpus.
+- L20's capstone replays pretraining text during fine-tuning (both LoRA and full fine-tuning): without it, measured forgetting on the small pretrained model was over 1.9 nats per byte for either method, so the "forgetting margin" target is only meaningful with replay.
+- L21's capstone fine-tunes on demonstrations of two-digit addition in which 30% of answers contain a slip, then runs RL against an exact verifier. Clean addition is mastered by supervision alone, and on harder tasks (multiplication) RL mostly sharpened memorized answers; noisy demonstrations give the verifier something it reliably fixes and make the reward-KL tradeoff monotone. The KL penalty uses the `exp(u) - 1 - u` estimator, whose gradient is that of KL(reference || policy); the reported KL is computed exactly per position.
+- L22 compares throughput at saturation (all requests queued) and measures latency on the arriving workload: with arrivals at a fixed rate, throughput is capped by the arrivals rather than the server.
+- L23's toy model uses relative position biases instead of absolute position embeddings. With absolute positions the same task is solved by a different circuit (a layer-0 head that finds the earlier copy of the current token and copies its position); relative positions leave the classic previous-token head plus induction head. The notebook mentions both.
+- L24 provides the solved tools of L16 to L22 and asks the learner for the plan, the cleaning order, the stage evaluation, the reward, the manifest and the report.
 
 ---
 
@@ -583,7 +588,7 @@ Implementation notes (decided during Phase 1):
 
 ### Phase 5: Frontier (L20 to L24)
 - [x] 5.1 Widgets: `RewardKLTradeoff`, `KVCacheMeter`, `FeatureDictionary`.
-- [ ] 5.2 Write L20, L21.
+- [x] 5.2 Write L20, L21.
 - [ ] 5.3 Write L22, L23.
 - [ ] 5.4 Write L24 with the design-document rubric.
 - [ ] 5.5 Remove the `--phase` flag; full validator must pass for all 24 lessons.

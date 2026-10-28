@@ -1,0 +1,38 @@
+id: L20
+hours: 9
+capstone: "A LoRA fine-tune of a pretrained character model on instruction tasks that reaches a target accuracy on unseen inputs while its base loss stays within a stated margin, compared with full fine-tuning"
+teaser: "Teach a pretrained model new tasks: mask the prompt, train low-rank adapters, distill from a teacher, and measure what the model forgets."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 20}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 35}
+  - {file: m2-derivation.md, mode: theory,   minutes: 165}
+  - {file: m3-build.md,      mode: practice, minutes: 130}
+  - {file: m4-scale.md,      mode: practice, minutes: 55}
+  - {file: m5-break.md,      mode: both,     minutes: 45}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 25}
+  - {file: m7-capstone.md,   mode: practice, minutes: 65}
+hooks:
+  - {to: L21, text: "Reinforcement learning starts from the fine-tuned model."}
+  - {to: L22, text: "A distilled student makes a fast draft model for speculative decoding."}
+  - {to: L24, text: "The final capstone fine-tunes the model it pretrained."}
+reuses:
+  - {from: L01, concept: "the SVD and the best low-rank approximation"}
+  - {from: L13, concept: "the weight matrices of a transformer block"}
+  - {from: L19, concept: "a pretrained model and its base evaluation"}
+annotations:
+  - {target: L01, movement: m2-derivation, anchor: "8. Low-rank approximation explains puzzle 2", text: "L20 uses this theorem to explain why LoRA's low-rank updates are enough to fine-tune large models."}
+  - {target: L19, movement: m2-derivation, anchor: "6. Evaluation you can trust", text: "L20 reruns this evaluation after fine-tuning to measure how much the model forgot."}
+concepts:
+  - q: "Why is the prompt masked out of the fine-tuning loss?"
+    a: "The model's job is the response; training on prompt tokens spends the gradient on reproducing inputs and teaches the model to generate prompts."
+  - q: "What does LoRA train?"
+    a: "A low-rank update (alpha / r) B A added to each frozen weight, with B starting at zero; it trains r (d_in + d_out) parameters per matrix and can be merged into the weight afterwards."
+  - q: "Why is a low-rank update usually enough for fine-tuning?"
+    a: "Fine-tuning updates have quickly decaying singular values, so by Eckart-Young a truncated SVD of low rank captures most of the update."
+  - q: "What is catastrophic forgetting, and how is it limited?"
+    a: "The loss on the pretraining distribution rises as fine-tuning moves the weights; small learning rates, replaying pretraining data, a penalty toward the pretrained weights and training fewer parameters limit it."
+  - q: "Why does distillation use a temperature, and why the T squared factor?"
+    a: "Softening both distributions exposes the teacher's small probabilities on wrong answers; the gradient of the softened KL scales as 1/T, so T squared keeps its size independent of T."
+  - q: "How do you pack several examples into one sequence correctly?"
+    a: "Use an attention mask that only lets positions attend within their own example, and restart the position ids at each example."
+katas: [e01, e03, e07]
