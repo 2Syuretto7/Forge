@@ -1,0 +1,35 @@
+id: L11
+hours: 9
+capstone: "A profiling report that explains a provided slow training step and a rewrite that runs it at least twice as fast on a T4 with the same losses"
+teaser: "How a GPU executes your tensor operations, why most of them are limited by memory rather than arithmetic, and how to measure the difference."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 20}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 130}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 40}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 20}
+  - {file: m7-capstone.md,   mode: practice, minutes: 60}
+hooks:
+  - {to: L12, text: "Tiling and fusion, modeled here, become real kernels you write in Triton."}
+  - {to: L17, text: "Half precision doubles the bytes per second and multiplies the FLOPs per second; L17 makes it numerically safe."}
+  - {to: L18, text: "The same bandwidth-against-compute reasoning decides how to split training across GPUs."}
+reuses:
+  - {from: L08, concept: "the operations an autograd engine records and replays"}
+annotations:
+  - {target: L08, movement: m2-derivation, anchor: "Mapping onto PyTorch", text: "On a GPU each of these recorded operations is at least one kernel launch; L11 measures what each costs and why many small ones are slow."}
+concepts:
+  - q: "What is the arithmetic intensity of a kernel, and how does the roofline use it?"
+    a: "FLOPs divided by bytes moved to and from memory; attainable throughput is the smaller of peak compute and bandwidth times intensity, so kernels below the ridge point are memory-bound."
+  - q: "Why is an n by n by n matrix multiplication compute-bound for large n while an elementwise addition is always memory-bound?"
+    a: "The matmul does 2n^3 FLOPs on 3n^2 values, so its intensity grows like n; the addition does one FLOP per three values moved, whatever the size."
+  - q: "Why does calling .item() on a GPU loss every step slow training?"
+    a: "It forces the CPU to wait until the GPU has finished all queued work, so the CPU can no longer issue the next step's kernels while the GPU computes, and the two stop overlapping."
+  - q: "How does tiling raise the arithmetic intensity of a matrix multiplication?"
+    a: "Each block loads a tile of A and B into fast on-chip memory and reuses every loaded value tile times, so traffic to global memory falls by the tile size."
+  - q: "What is kernel fusion and why does it help memory-bound operations?"
+    a: "Combining several elementwise steps into one kernel keeps intermediate values in registers instead of writing them to memory and reading them back, which cuts the bytes moved."
+  - q: "Roughly how many FLOPs does one training step cost per token for a model with N parameters?"
+    a: "About 6N: 2N for the forward pass and 4N for the backward pass, which computes gradients with respect to both inputs and weights."
+katas: [e02, e03, e07]

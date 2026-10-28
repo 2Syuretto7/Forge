@@ -1,0 +1,271 @@
+[
+ {
+  "id": "L11/d0/s1",
+  "lesson": "L11",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>A matrix product of a <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>64</mn><mo>×</mo><mn>512</mn></mrow><annotation encoding=\"application/x-tex\">64 \\times 512</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">64</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">512</span></span></span></span> matrix with a <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>512</mn><mo>×</mo><mn>512</mn></mrow><annotation encoding=\"application/x-tex\">512 \\times 512</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">512</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">512</span></span></span></span> matrix costs <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>2</mn><mo>⋅</mo><mn>64</mn><mo>⋅</mo><mn>512</mn><mo>⋅</mo><mn>512</mn><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">2 \\cdot 64 \\cdot 512 \\cdot 512 =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">64</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">512</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">512</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> FLOPs (each multiply-add counts as two).</p>",
+  "answer": "33554432",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L11/d0/s2",
+  "lesson": "L11",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>Its backward pass computes two matrix products of the same size, so it costs <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> times the forward pass.</p>",
+  "answer": "2",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L11/d0/s3",
+  "lesson": "L11",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>Adding two vectors of <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>10</mn><mn>6</mn></msup></mrow><annotation encoding=\"application/x-tex\">10^6</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">6</span></span></span></span></span></span></span></span></span></span></span> fp32 numbers reads two vectors and writes one, moving <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>3</mn><mo>⋅</mo><mn>4</mn><mo>⋅</mo><msup><mn>10</mn><mn>6</mn></msup><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">3 \\cdot 4 \\cdot 10^6 =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">3</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">4</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">6</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> bytes for <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>10</mn><mn>6</mn></msup></mrow><annotation encoding=\"application/x-tex\">10^6</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">6</span></span></span></span></span></span></span></span></span></span></span> FLOPs.</p>",
+  "answer": "12000000",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L11/p1",
+  "lesson": "L11",
+  "kind": "prediction",
+  "prompt": "<p>The T4 moves at most 320 GB/s between its memory and its cores. A half-precision vector addition reads 2 bytes from each input and writes 2 bytes per element, for one FLOP. What is the highest throughput it can reach, in TFLOP/s?</p>",
+  "answer": "0.053",
+  "answerKind": "numeric",
+  "tol": 0.01,
+  "options": [],
+  "explain": "<p>Each FLOP needs 6 bytes, so at 320 GB/s the addition can do at most <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>320</mn><mo>×</mo><msup><mn>10</mn><mn>9</mn></msup><mi mathvariant=\"normal\">/</mi><mn>6</mn><mo>≈</mo><mn>5.3</mn><mo>×</mo><msup><mn>10</mn><mn>10</mn></msup></mrow><annotation encoding=\"application/x-tex\">320 \\times 10^9 / 6 \\approx 5.3 \\times 10^{10}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">320</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">9</span></span></span></span></span></span></span></span><span class=\"mord\">/6</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">5.3</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">10</span></span></span></span></span></span></span></span></span></span></span></span> FLOP/s, about 0.053 TFLOP/s: less than a tenth of a percent of the peak. Its speed is set entirely by memory bandwidth. Most operations in a neural network, everything except matrix products and convolutions, are like this.</p>"
+ },
+ {
+  "id": "L11/p2",
+  "lesson": "L11",
+  "kind": "prediction",
+  "prompt": "<p>The T4 has 40 streaming multiprocessors, each with 64 fp32 cores, running at up to 1.59 GHz, and each core completes one fused multiply-add (2 FLOPs) per cycle. What is its peak fp32 throughput in TFLOP/s?</p>",
+  "answer": "8.14",
+  "answerKind": "numeric",
+  "tol": 0.2,
+  "options": [],
+  "explain": "<p><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>40</mn><mo>×</mo><mn>64</mn><mo>×</mo><mn>1.59</mn><mo>×</mo><msup><mn>10</mn><mn>9</mn></msup><mo>×</mo><mn>2</mn><mo>≈</mo><mn>8.14</mn><mo>×</mo><msup><mn>10</mn><mn>12</mn></msup></mrow><annotation encoding=\"application/x-tex\">40 \\times 64 \\times 1.59 \\times 10^9 \\times 2 \\approx 8.14 \\times 10^{12}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">40</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">64</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">1.59</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">9</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">8.14</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">12</span></span></span></span></span></span></span></span></span></span></span></span> FLOP/s, the 8.1 TFLOP/s on the datasheet. The 65 TFLOP/s figure comes from the separate tensor cores, which multiply small half-precision matrices in one instruction.</p>"
+ },
+ {
+  "id": "L11/d1/s2",
+  "lesson": "L11",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Peak throughput</p><p>Peak fp32 throughput is SMs times cores per SM times clock times 2 FLOPs per fused multiply-add: <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>40</mn><mo>⋅</mo><mn>64</mn><mo>⋅</mo><mn>1.59</mn><mo>×</mo><msup><mn>10</mn><mn>9</mn></msup><mo>⋅</mo><mn>2</mn><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">40 \\cdot 64 \\cdot 1.59 \\times 10^9 \\cdot 2 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">40</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">64</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">1.59</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">9</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> TFLOP/s.</p>",
+  "answer": "8.14|tol=0.05",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L11/d2/s1",
+  "lesson": "L11",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Ridge points of the T4</p><p>With tensor cores, <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>I</mi><mo>⋆</mo></msup><mo>=</mo><mn>65</mn><mo>×</mo><msup><mn>10</mn><mn>12</mn></msup><mi mathvariant=\"normal\">/</mi><mn>320</mn><mo>×</mo><msup><mn>10</mn><mn>9</mn></msup><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">I^\\star = 65 \\times 10^{12} / 320 \\times 10^9 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6887em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.0785em;\">I</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.6887em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mbin mtight\">⋆</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">65</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">12</span></span></span></span></span></span></span></span></span><span class=\"mord\">/320</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">9</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> FLOP/byte.</p>",
+  "answer": "203.1|tol=0.5",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L11/d2/s2",
+  "lesson": "L11",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Ridge points of the T4</p><p>In fp32, <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>I</mi><mo>⋆</mo></msup><mo>=</mo><mn>8.1</mn><mo>×</mo><msup><mn>10</mn><mn>12</mn></msup><mi mathvariant=\"normal\">/</mi><mn>320</mn><mo>×</mo><msup><mn>10</mn><mn>9</mn></msup><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">I^\\star = 8.1 \\times 10^{12} / 320 \\times 10^9 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6887em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.0785em;\">I</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.6887em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mbin mtight\">⋆</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">8.1</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">12</span></span></span></span></span></span></span></span></span><span class=\"mord\">/320</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">9</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> FLOP/byte. Half precision raises the compute roof eightfold but the memory roof only twofold (half the bytes per number).</p>",
+  "answer": "25.3|tol=0.2",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L11/d3/s1",
+  "lesson": "L11",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Intensity of a tiled matmul</p><p>For <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>n</mi><mo>×</mo><mi>n</mi><mo>×</mo><mi>n</mi></mrow><annotation encoding=\"application/x-tex\">n \\times n \\times n</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">n</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">n</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">n</span></span></span></span> with <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>T</mi><mo>×</mo><mi>T</mi></mrow><annotation encoding=\"application/x-tex\">T \\times T</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span></span></span></span> output blocks, there are <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo stretchy=\"false\">(</mo><mi>n</mi><mi mathvariant=\"normal\">/</mi><mi>T</mi><msup><mo stretchy=\"false\">)</mo><mn>2</mn></msup></mrow><annotation encoding=\"application/x-tex\">(n/T)^2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">n</span><span class=\"mord\">/</span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span><span class=\"mclose\"><span class=\"mclose\">)</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span></span></span> blocks, each reading <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>2</mn><mi>n</mi><mi>T</mi></mrow><annotation encoding=\"application/x-tex\">2nT</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6833em;\"></span><span class=\"mord\">2</span><span class=\"mord mathnormal\">n</span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span></span></span></span> values. Ignoring the output, the traffic is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>2</mn><msup><mi>n</mi><mn>3</mn></msup><mi mathvariant=\"normal\">/</mi><mi>T</mi></mrow><annotation encoding=\"application/x-tex\">2n^3/T</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\">2</span><span class=\"mord\"><span class=\"mord mathnormal\">n</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">3</span></span></span></span></span></span></span></span><span class=\"mord\">/</span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span></span></span></span> values, so the intensity is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>2</mn><msup><mi>n</mi><mn>3</mn></msup><mi mathvariant=\"normal\">/</mi><mo stretchy=\"false\">(</mo><mn>2</mn><msup><mi>n</mi><mn>3</mn></msup><mi>b</mi><mi mathvariant=\"normal\">/</mi><mi>T</mi><mo stretchy=\"false\">)</mo><mo>=</mo><mi>T</mi><mi mathvariant=\"normal\">/</mi><mi>b</mi></mrow><annotation encoding=\"application/x-tex\">2n^3/(2n^3 b / T) = T/b</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\">2</span><span class=\"mord\"><span class=\"mord mathnormal\">n</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">3</span></span></span></span></span></span></span></span><span class=\"mord\">/</span><span class=\"mopen\">(</span><span class=\"mord\">2</span><span class=\"mord\"><span class=\"mord mathnormal\">n</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">3</span></span></span></span></span></span></span></span><span class=\"mord mathnormal\">b</span><span class=\"mord\">/</span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span><span class=\"mord\">/</span><span class=\"mord mathnormal\">b</span></span></span></span>. In fp16 with <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>T</mi><mo>=</mo><mn>64</mn></mrow><annotation encoding=\"application/x-tex\">T = 64</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">64</span></span></span></span> that is <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> FLOP/byte.</p>",
+  "answer": "32",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L11/d3/s2",
+  "lesson": "L11",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Intensity of a tiled matmul</p><p>To reach the fp16 ridge of about 203 FLOP/byte from device memory alone would need <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>T</mi><mo>≈</mo><mn>406</mn></mrow><annotation encoding=\"application/x-tex\">T \\approx 406</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">406</span></span></span></span>, and two <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>512</mn><mo>×</mo><mn>512</mn></mrow><annotation encoding=\"application/x-tex\">512 \\times 512</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">512</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">512</span></span></span></span> fp16 tiles occupy <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> bytes, sixteen times a T4 SM's 64 KB of shared memory.</p>",
+  "answer": "1048576",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L11/d4/s1",
+  "lesson": "L11",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Overheads</p><p>1000 kernels that each need 2 microseconds of GPU time, each launched with 10 microseconds of overhead, take about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> ms rather than 2.</p>",
+  "answer": "10",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L11/d4/s2",
+  "lesson": "L11",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Overheads</p><p>A step needs 3 ms of CPU time to issue and 5 ms of GPU time. Overlapped, a step costs 5 ms; with a <code>.item()</code> at the end of every step it costs <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> ms.</p>",
+  "answer": "8",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L11/d4/s3",
+  "lesson": "L11",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Overheads</p><p>Copying 64 MiB (<span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>64</mn><mo>⋅</mo><msup><mn>2</mn><mn>20</mn></msup></mrow><annotation encoding=\"application/x-tex\">64 \\cdot 2^{20}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">64</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">20</span></span></span></span></span></span></span></span></span></span></span></span> bytes) at 12 GB/s takes about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> ms.</p>",
+  "answer": "5.59|tol=0.05",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L11/p3",
+  "lesson": "L11",
+  "kind": "prediction",
+  "prompt": "<p>A kernel uses blocks of 256 threads and 128 registers per thread on a T4 SM (65536 registers, at most 32 warps). What is its occupancy?</p>",
+  "answer": "b",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>100 percent.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>50 percent.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>25 percent.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>12.5 percent.</p>"
+   }
+  ],
+  "explain": "<p>Each block needs <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>256</mn><mo>⋅</mo><mn>128</mn><mo>=</mo><mn>32768</mn></mrow><annotation encoding=\"application/x-tex\">256 \\cdot 128 = 32768</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">256</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">128</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">32768</span></span></span></span> registers, so only two blocks fit: 16 warps of the possible 32, an occupancy of 50 percent. Heavy register use is the most common occupancy limiter, and it is often worth it: registers are where tiled kernels keep their reused values.</p>"
+ },
+ {
+  "id": "L11/p4",
+  "lesson": "L11",
+  "kind": "prediction",
+  "prompt": "<p>Activation checkpointing stores only the input of a block and recomputes the rest during the backward pass. For an MLP block <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>y</mi><mo>=</mo><mi mathvariant=\"normal\">gelu</mi><mo>⁡</mo><mo stretchy=\"false\">(</mo><mi>x</mi><msub><mi>W</mi><mn>1</mn></msub><mo stretchy=\"false\">)</mo><msub><mi>W</mi><mn>2</mn></msub></mrow><annotation encoding=\"application/x-tex\">y = \\operatorname{gelu}(xW_1)W_2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mop\"><span class=\"mord mathrm\">gelu</span></span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">x</span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">W</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3011em;\"><span style=\"top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.15em;\"><span></span></span></span></span></span></span><span class=\"mclose\">)</span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">W</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3011em;\"><span style=\"top:-2.55em;margin-left:-0.1389em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.15em;\"><span></span></span></span></span></span></span></span></span></span> with hidden width four times the input width, what does it cost?</p>",
+  "answer": "c",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>Nothing: the gradients are computed differently, and the result is cheaper.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>Twice the memory, half the compute.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>About one extra forward pass of compute in exchange for most of the block's activation memory.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>Approximate gradients.</p>"
+   }
+  ],
+  "explain": "<p>The backward pass recomputes the hidden activations from the stored input, one extra forward pass, and the gradients are exactly the same. In exchange, the block no longer stores <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>h</mi></mrow><annotation encoding=\"application/x-tex\">h</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6944em;\"></span><span class=\"mord mathnormal\">h</span></span></span></span> and <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi mathvariant=\"normal\">gelu</mi><mo>⁡</mo><mo stretchy=\"false\">(</mo><mi>h</mi><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">\\operatorname{gelu}(h)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mop\"><span class=\"mord mathrm\">gelu</span></span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">h</span><span class=\"mclose\">)</span></span></span></span>, each four times the size of the input. Exercise 10 measures both.</p>"
+ },
+ {
+  "id": "L11/p5",
+  "lesson": "L11",
+  "kind": "prediction",
+  "prompt": "<p>A training loop logs <code>loss.item()</code> after every step. Each step needs 2 ms of CPU time to launch its kernels and 6 ms of GPU time. How much slower is the loop than one that logs only every 100 steps?</p>",
+  "answer": "a",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>About a third slower: 8 ms per step instead of 6.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>No slower: logging is cheap.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>Twice as slow.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>About 100 times slower.</p>"
+   }
+  ],
+  "explain": "<p>Without synchronization, the CPU issues step <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>i</mi><mo>+</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">i + 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7429em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">i</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span> while the GPU runs step <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>i</mi></mrow><annotation encoding=\"application/x-tex\">i</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6595em;\"></span><span class=\"mord mathnormal\">i</span></span></span></span>, so a step costs <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>max</mi><mo>⁡</mo><mo stretchy=\"false\">(</mo><mn>2</mn><mo separator=\"true\">,</mo><mn>6</mn><mo stretchy=\"false\">)</mo><mo>=</mo><mn>6</mn></mrow><annotation encoding=\"application/x-tex\">\\max(2, 6) = 6</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mop\">max</span><span class=\"mopen\">(</span><span class=\"mord\">2</span><span class=\"mpunct\">,</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">6</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">6</span></span></span></span> ms. With <code>.item()</code> every step, the CPU waits for the GPU, then the GPU waits while the CPU issues the next step: <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>2</mn><mo>+</mo><mn>6</mn><mo>=</mo><mn>8</mn></mrow><annotation encoding=\"application/x-tex\">2 + 6 = 8</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">6</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">8</span></span></span></span> ms. The loss is the same; only the overlap is lost. When the CPU and GPU times are close, synchronizing every step nearly doubles the time.</p>"
+ },
+ {
+  "id": "L11/concept1",
+  "lesson": "L11",
+  "kind": "concept",
+  "prompt": "What is the arithmetic intensity of a kernel, and how does the roofline use it?",
+  "answer": "FLOPs divided by bytes moved to and from memory; attainable throughput is the smaller of peak compute and bandwidth times intensity, so kernels below the ridge point are memory-bound.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L11/concept2",
+  "lesson": "L11",
+  "kind": "concept",
+  "prompt": "Why is an n by n by n matrix multiplication compute-bound for large n while an elementwise addition is always memory-bound?",
+  "answer": "The matmul does 2n^3 FLOPs on 3n^2 values, so its intensity grows like n; the addition does one FLOP per three values moved, whatever the size.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L11/concept3",
+  "lesson": "L11",
+  "kind": "concept",
+  "prompt": "Why does calling .item() on a GPU loss every step slow training?",
+  "answer": "It forces the CPU to wait until the GPU has finished all queued work, so the CPU can no longer issue the next step's kernels while the GPU computes, and the two stop overlapping.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L11/concept4",
+  "lesson": "L11",
+  "kind": "concept",
+  "prompt": "How does tiling raise the arithmetic intensity of a matrix multiplication?",
+  "answer": "Each block loads a tile of A and B into fast on-chip memory and reuses every loaded value tile times, so traffic to global memory falls by the tile size.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L11/concept5",
+  "lesson": "L11",
+  "kind": "concept",
+  "prompt": "What is kernel fusion and why does it help memory-bound operations?",
+  "answer": "Combining several elementwise steps into one kernel keeps intermediate values in registers instead of writing them to memory and reading them back, which cuts the bytes moved.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L11/concept6",
+  "lesson": "L11",
+  "kind": "concept",
+  "prompt": "Roughly how many FLOPs does one training step cost per token for a model with N parameters?",
+  "answer": "About 6N: 2N for the forward pass and 4N for the backward pass, which computes gradients with respect to both inputs and weights.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L11/kata/e02",
+  "lesson": "L11",
+  "kind": "kata",
+  "prompt": "The roofline as code",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e02"
+ },
+ {
+  "id": "L11/kata/e03",
+  "lesson": "L11",
+  "kind": "kata",
+  "prompt": "Tiling a matrix product",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e03"
+ },
+ {
+  "id": "L11/kata/e07",
+  "lesson": "L11",
+  "kind": "kata",
+  "prompt": "Launch overhead",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e07"
+ }
+]
