@@ -582,7 +582,7 @@ Implementation notes (decided during Phase 1):
 - [ ] 4.4 Notebooks pass in CI; deploy; acceptance checks.
 
 ### Phase 5: Frontier (L20 to L24)
-- [ ] 5.1 Widgets: `RewardKLTradeoff`, `KVCacheMeter`, `FeatureDictionary`.
+- [x] 5.1 Widgets: `RewardKLTradeoff`, `KVCacheMeter`, `FeatureDictionary`.
 - [ ] 5.2 Write L20, L21.
 - [ ] 5.3 Write L22, L23.
 - [ ] 5.4 Write L24 with the design-document rubric.
