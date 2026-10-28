@@ -23,7 +23,12 @@ export function SettingsPage() {
     setTesting(true);
     const r = await testKey(key.trim(), model.trim() || DEFAULT_MODEL);
     setTesting(false);
-    setKeyMsg({ ok: r.ok, text: r.message });
+    // A key that works is kept, so testing it is enough.
+    if (r.ok) {
+      await saveSetting('apiKey', key.trim());
+      await saveSetting('modelId', model.trim() || DEFAULT_MODEL);
+    }
+    setKeyMsg({ ok: r.ok, text: r.ok ? `${r.message} Saved in this browser only.` : r.message });
   };
 
   const doExport = async () => {

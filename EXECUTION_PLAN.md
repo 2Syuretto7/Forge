@@ -560,7 +560,7 @@ Implementation notes (decided during Phase 1):
 - [x] 1.7 Prediction blocks and derivation step checker.
 - [x] 1.8 Widgets used by L01 (`MatrixTransform`).
 - [x] 1.9 Write L01 completely; pytest passes.
-- [ ] 1.10 Deploy; run acceptance checks 1, 2, 9 for the current scope; send the owner the URL.
+- [x] 1.10 Deploy; run acceptance checks 1, 2, 9 for the current scope; send the owner the URL.
 
 ### Phase 2: Math and Core ML (L02 to L09)
 - [x] 2.1 Feynman grader (Section 9) with fallback self-assessment.
@@ -571,7 +571,7 @@ Implementation notes (decided during Phase 1):
 - [x] 2.6 Write L05, L06, L07.
 - [x] 2.7 Write L08 (browser part and notebook), L09.
 - [x] 2.8 Retro-annotations engine.
-- [ ] 2.9 Deploy; acceptance checks for current scope.
+- [x] 2.9 Deploy; acceptance checks for current scope.
 
 ### Phase 3: Architectures and Systems (L10 to L14, L17)
 - [x] 3.1 Widgets: `Roofline`, `AttentionHeatmap`, `TokenizerStepper`, `FloatFormats`.
@@ -579,13 +579,13 @@ Implementation notes (decided during Phase 1):
 - [x] 3.3 Write L13, then L12 (L12 depends on L13).
 - [x] 3.4 Write L14, L17.
 - [x] 3.5 Notebooks for L11, L12, L13, L14, L17 pass in CI `SMALL=1`; manually verify one on a Colab T4 by running it yourself if you have access, otherwise document the exact runtime check the owner performs with one click.
-- [ ] 3.6 Deploy; acceptance checks for current scope.
+- [x] 3.6 Deploy; acceptance checks for current scope.
 
 ### Phase 4: Scale (L15, L16, L18, L19)
 - [x] 4.1 Widgets: `ScalingFit`, `ParallelismPlanner`, `LossSpikeExplorer`.
 - [x] 4.2 Write L15, L16.
 - [x] 4.3 Write L18, L19.
-- [ ] 4.4 Notebooks pass in CI; deploy; acceptance checks.
+- [x] 4.4 Notebooks pass in CI; deploy; acceptance checks.
 
 ### Phase 5: Frontier (L20 to L24)
 - [x] 5.1 Widgets: `RewardKLTradeoff`, `KVCacheMeter`, `FeatureDictionary`.

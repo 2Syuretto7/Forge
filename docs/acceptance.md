@@ -4,7 +4,7 @@ Status of each criterion on the working branch, with how it was checked.
 
 | # | Criterion | Status | Evidence |
 | --- | --- | --- | --- |
-| 1 | The deployed site opens with no console errors | Waiting on the owner | The `deploy` workflow builds the site and stops at `configure-pages` ("Resource not accessible by integration") until the repository's **Settings, Pages, Source** is set to **GitHub Actions**. The same build, served locally, loads the map and every lesson with no console errors (`npm run e2e`, `npm run e2e:path`). |
+| 1 | The deployed site opens with no console errors | Deployed | The `deploy` workflow publishes to https://2syuretto7.github.io/Forge/ (deployment reported success). The build it publishes loads the map and every lesson with no console errors when served locally (`npm run e2e`, `npm run e2e:path`); the live page itself could not be opened from the build environment, whose network policy blocks github.io. |
 | 2 | The map shows 24 nodes and every edge, with three edge styles and toggles | Met | The map draws 24 nodes and 61 edges (45 prerequisite, 7 cross-track, 9 long-range, as in `content/graph.yaml`); each toggle hides exactly its own style. |
 | 3 | All 24 lessons complete per the validator | Met | `npm run validate` checks all 24 lessons with no phase list: hours, theory share, exercises, gradient checks, directives, edges, annotations, notebooks. |
 | 4 | Every exercise's solution passes and starter fails; every notebook runs in `SMALL=1` | Met | CI runs `npm run pytest` (307 exercises in CPython), `npm run pyodide-test` (the same in Pyodide) and `npm run notebooks` (all 15 notebooks). |
