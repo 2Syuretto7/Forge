@@ -10,7 +10,7 @@ produces.
 
 1. Open one of the links below. Until a `main` branch exists, use the working branch name
    `ccr-4523d778-nctfqo` in place of `main`.
-2. In Colab: **Runtime, Change runtime type, T4 GPU, Save**. (L08 and L18 also run on the CPU runtime.)
+2. In Colab: **Runtime, Change runtime type, T4 GPU, Save**. (L08, L18, L21 and L23 also run on the CPU runtime.)
 3. **Runtime, Run all**, and wait for the last cell.
 4. The last cell prints one `PASS` line per test and then `Completion code: ...`. It should match the
    table. Any `FAIL` or `SKIP` line changes the code and names the test to look at.
@@ -27,6 +27,11 @@ produces.
 | L17 mixed precision | `https://colab.research.google.com/github/2Syuretto7/Forge/blob/main/notebooks/solved/L17.ipynb` | `FORGE-L17-834b5911` | a few minutes |
 | L18 distributed training | `https://colab.research.google.com/github/2Syuretto7/Forge/blob/main/notebooks/solved/L18.ipynb` | `FORGE-L18-4b32bd11` | under a minute (CPU runtime is enough) |
 | L19 pretraining run | `https://colab.research.google.com/github/2Syuretto7/Forge/blob/main/notebooks/solved/L19.ipynb` | `FORGE-L19-6ce319d2` | 15 to 25 minutes |
+| L20 fine-tuning with LoRA | `https://colab.research.google.com/github/2Syuretto7/Forge/blob/main/notebooks/solved/L20.ipynb` | `FORGE-L20-4bd4514e` | about 5 minutes |
+| L21 RL with a verifier | `https://colab.research.google.com/github/2Syuretto7/Forge/blob/main/notebooks/solved/L21.ipynb` | `FORGE-L21-9363f36f` | a few minutes |
+| L22 inference server | `https://colab.research.google.com/github/2Syuretto7/Forge/blob/main/notebooks/solved/L22.ipynb` | `FORGE-L22-26986541` | about 5 minutes |
+| L23 induction circuit | `https://colab.research.google.com/github/2Syuretto7/Forge/blob/main/notebooks/solved/L23.ipynb` | `FORGE-L23-2e7d993b` | a few minutes |
+| L24 the whole pipeline | `https://colab.research.google.com/github/2Syuretto7/Forge/blob/main/notebooks/solved/L24.ipynb` | `FORGE-L24-bf03fbd2` | 10 to 20 minutes |
 
 If only one is checked, check **L12**: its Triton kernels are compiled for the GPU only there, while the
 other notebooks use standard PyTorch operations whose CPU and GPU paths are the same code. If a second is
@@ -48,6 +53,18 @@ checked, check **L19**: its full run is the only one that could not be executed 
   position 900): the spike was flagged at position 900, the run rolled back to the checkpoint at step 750 and
   skipped to position 921, and the final validation loss (1.886) improved on the pre-spike value (2.108),
   with every test passing except the full-size loss target, which does not apply to that configuration.
+- The L20, L21 and L23 notebooks were run at full size on a CPU with all tests passing. L20's LoRA model reached
+  0.89 and 0.90 accuracy on the two tasks with 0.022 nats of forgetting; L21's weak-penalty policy raised sampled
+  accuracy by 0.35 with a KL of 0.45 against 0.21 and 0.15 for the strong penalty; L23 found one previous-token
+  head and four induction heads whose ablation sends the loss back to chance.
+- The L22 notebook was run on a CPU with the full-size model (trained for only 20 steps, which does not change
+  the serving measurements) and passed all tests: a 4.8x speedup at saturation, 20 ms 95th-percentile inter-token
+  latency and 204 ms to first token, every served output matching recomputation. Int8 quality was checked
+  separately on a trained model: validation loss changed by 0.0001 and 95% of greedy tokens were unchanged.
+- The L24 notebook was run on a CPU in a medium configuration (4 layers, width 192, 2,000 pretraining steps) and
+  passed all tests: validation loss 1.57, 97% greedy accuracy on capitals after fine-tuning, an RL gain in sampled
+  reversal accuracy of 0.11 [0.08, 0.13], and serving that matched recomputation. Its full configuration (the
+  10.8-million-parameter model for 3,000 steps) needs the T4.
 
 The learner versions (`notebooks/<ID>.ipynb`, opened by the lesson's Colab button) have the solution
 regions replaced by `NotImplementedError` and stop at the first one, as intended.

@@ -507,6 +507,7 @@ Long-range: L06-L16 (test-set leakage returns as train/eval contamination), L07-
 | `npm run validate` | `validate_content.ts` |
 | `npm run test` | Vitest unit tests |
 | `npm run e2e` | Playwright: open map, open L01, pass one exercise, see progress persist after reload |
+| `npm run e2e:path` | Playwright: a simulated learner completes all 24 lessons in prerequisite order with the solutions |
 | `npm run pytest` | `run_exercise_tests.py`: every `solution.py` passes its `tests.py`; every `starter.py` fails at least one test |
 | `npm run notebooks` | `run_notebooks.py` with `SMALL=1` |
 | `npm run check` | validate + typecheck + lint + test + pytest + build (notebooks run in CI only) |
@@ -594,7 +595,7 @@ Implementation notes (decided during Phase 1):
 - [x] 5.5 Remove the `--phase` flag; full validator must pass for all 24 lessons.
 
 ### Phase 6: Hardening and handoff
-- [ ] 6.1 Full Playwright suite across a complete simulated learner path (L01 to L24 with solutions).
+- [x] 6.1 Full Playwright suite across a complete simulated learner path (L01 to L24 with solutions).
 - [ ] 6.2 Accessibility and mobile pass (Lighthouse at least 90).
 - [ ] 6.3 Content review pass: re-read every derivation; every numeric claim backed by a test or a derivation in the lesson.
 - [ ] 6.4 Run all 10 acceptance criteria; fix until all pass.
