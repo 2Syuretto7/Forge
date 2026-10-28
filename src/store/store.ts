@@ -136,9 +136,10 @@ export async function completeMovement(lessonId: string, movementId: string, all
     startedAt: p.startedAt ?? Date.now(),
     completedAt: complete ? (p.completedAt ?? Date.now()) : null,
   };
-  set({ progress: { ...state.progress, [lessonId]: next } });
+  // Persist before showing the movement as done, so a reload right after cannot lose it.
   await put('progress', next);
   if (complete && p.status !== 'complete') await scheduleReviews(reviewItemIds);
+  set({ progress: { ...state.progress, [lessonId]: next } });
 }
 
 // ---- exercises ------------------------------------------------------------
