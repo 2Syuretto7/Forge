@@ -591,7 +591,7 @@ Implementation notes (decided during Phase 1):
 - [x] 5.2 Write L20, L21.
 - [x] 5.3 Write L22, L23.
 - [x] 5.4 Write L24 with the design-document rubric.
-- [ ] 5.5 Remove the `--phase` flag; full validator must pass for all 24 lessons.
+- [x] 5.5 Remove the `--phase` flag; full validator must pass for all 24 lessons.
 
 ### Phase 6: Hardening and handoff
 - [ ] 6.1 Full Playwright suite across a complete simulated learner path (L01 to L24 with solutions).
