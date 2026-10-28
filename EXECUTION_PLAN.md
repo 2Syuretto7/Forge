@@ -564,7 +564,7 @@ Implementation notes (decided during Phase 1):
 - [ ] 2.9 Deploy; acceptance checks for current scope.
 
 ### Phase 3: Architectures and Systems (L10 to L14, L17)
-- [ ] 3.1 Widgets: `Roofline`, `AttentionHeatmap`, `TokenizerStepper`, `FloatFormats`.
+- [x] 3.1 Widgets: `Roofline`, `AttentionHeatmap`, `TokenizerStepper`, `FloatFormats`.
 - [ ] 3.2 Write L10, L11.
 - [ ] 3.3 Write L13, then L12 (L12 depends on L13).
 - [ ] 3.4 Write L14, L17.
