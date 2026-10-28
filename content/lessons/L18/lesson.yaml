@@ -1,0 +1,38 @@
+id: L18
+hours: 12
+capstone: "A written parallelism plan for a 13-billion-parameter model on 64 GPUs with its memory verified, and a working CPU simulation of data parallelism, ZeRO, tensor parallelism and checkpointing"
+teaser: "Account for every byte of a training run, derive what collectives cost, and split a model across GPUs with data, ZeRO, tensor and pipeline parallelism."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 230}
+  - {file: m3-build.md,      mode: practice, minutes: 180}
+  - {file: m4-scale.md,      mode: practice, minutes: 70}
+  - {file: m5-break.md,      mode: both,     minutes: 50}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 25}
+  - {file: m7-capstone.md,   mode: practice, minutes: 100}
+hooks:
+  - {to: L19, text: "The pretraining run uses data parallelism with checkpointed, resumable state."}
+reuses:
+  - {from: L08, concept: "tensors saved for backward"}
+  - {from: L11, concept: "bandwidth, the roofline and overlapping work"}
+  - {from: L15, concept: "compute-optimal model sizes"}
+  - {from: L17, concept: "bytes per parameter in mixed precision"}
+annotations:
+  - {target: L08, movement: m2-derivation, anchor: "5. What has to be saved", text: "L18 counts these saved tensors for a whole transformer, and trades them for recomputation with activation checkpointing."}
+  - {target: L17, movement: m2-derivation, anchor: "4. Mixed-precision training", text: "L18 turns these bytes into the 16 bytes per parameter that ZeRO shards across GPUs."}
+  - {target: L11, movement: m2-derivation, anchor: "6. Launch overhead, synchronization and transfers", text: "L18 applies the same latency and bandwidth reasoning to communication between GPUs."}
+concepts:
+  - q: "How many bytes per parameter does mixed-precision Adam training need for model states?"
+    a: "About 16: 2 for 16-bit weights, 2 for 16-bit gradients, and 12 for fp32 master weights, momentum and variance."
+  - q: "What does each GPU send in a ring all-reduce of n bytes over P GPUs?"
+    a: "2 (P - 1) / P times n bytes: a reduce-scatter and an all-gather, each moving (P - 1) / P of the data, almost independent of P."
+  - q: "What do ZeRO stages 1, 2 and 3 shard?"
+    a: "Stage 1 the optimizer states, stage 2 also the gradients, stage 3 also the weights, each over the data-parallel ranks."
+  - q: "How does Megatron-style tensor parallelism split an MLP?"
+    a: "The first layer by columns and the second by rows, so each GPU computes a slice of the hidden units and a partial output, and one all-reduce sums the outputs."
+  - q: "What is the pipeline bubble?"
+    a: "The idle fraction (p - 1) / (m + p - 1) of a pipeline with p stages and m micro-batches, while the pipeline fills and drains."
+  - q: "What does activation checkpointing trade?"
+    a: "Memory for compute: it keeps only some activations and recomputes the rest during backward, at the cost of about one extra forward pass."
+katas: [e02, e05, e08]

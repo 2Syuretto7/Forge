@@ -1,0 +1,38 @@
+id: L19
+hours: 11
+capstone: "A full pretraining run of a 10.7-million-parameter GPT with exact checkpoints, an injected data corruption detected and rolled back automatically, an evaluation harness with error bars, and a run report"
+teaser: "Write the training script of a real run: exact checkpoints, logging, an evaluation harness, and the detection and recovery of loss spikes."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 35}
+  - {file: m2-derivation.md, mode: theory,   minutes: 205}
+  - {file: m3-build.md,      mode: practice, minutes: 160}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 50}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 25}
+  - {file: m7-capstone.md,   mode: practice, minutes: 100}
+hooks:
+  - {to: L20, text: "The pretrained model is the starting point for fine-tuning."}
+  - {to: L24, text: "The final capstone runs this training script end to end."}
+reuses:
+  - {from: L09, concept: "learning-rate schedules and warmup"}
+  - {from: L15, concept: "sizing a run from a scaling fit"}
+  - {from: L16, concept: "a resumable data pipeline"}
+  - {from: L18, concept: "memory and data parallelism"}
+annotations:
+  - {target: L09, movement: m2-derivation, anchor: "5. Schedules", text: "L19 shows what a broken schedule does to a real run, and how to catch it in the logs."}
+  - {target: L16, movement: m2-derivation, anchor: "8. Pipelines that can stop and resume", text: "L19 saves the data position with the model and checks that a resumed run is bitwise identical."}
+concepts:
+  - q: "What must a checkpoint contain for an exact resume?"
+    a: "The model and optimizer states (including Adam's step), the gradient scaler, the step and the data position, the random-number states that dropout and shuffling use, and the configuration."
+  - q: "What is the z-loss?"
+    a: "A small penalty on the square of log Z, the log-sum-exp of the output logits, which keeps the logits from drifting to large values where low-precision arithmetic fails; PaLM used a weight of 1e-4."
+  - q: "Why can Adam take a huge step after a quiet period?"
+    a: "When a parameter's gradients have been near zero, its second-moment estimate decays, so a sudden gradient is divided by a tiny square root and the update can be several times larger than usual; a lower beta2 shortens that memory."
+  - q: "How do large runs recover from a loss spike?"
+    a: "Restart from a checkpoint before the spike and skip the data batches around it, possibly with a lower learning rate."
+  - q: "How often should a run checkpoint?"
+    a: "About every sqrt(2 C M), where C is the time to write a checkpoint and M the mean time between failures (Young and Daly), balancing checkpoint cost against lost work."
+  - q: "Why does QK-layernorm prevent attention logit growth?"
+    a: "Normalized queries and keys have bounded norms, so their scaled dot products are bounded by about the square root of the head dimension times the gains."
+katas: [e01, e04, e06]

@@ -1,0 +1,236 @@
+[
+ {
+  "id": "L19/d0/s1",
+  "lesson": "L19",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>Gradient descent on a quadratic with curvature <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>λ</mi><mo>=</mo><mn>50</mn></mrow><annotation encoding=\"application/x-tex\">\\lambda = 50</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6944em;\"></span><span class=\"mord mathnormal\">λ</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">50</span></span></span></span> is stable for learning rates below <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>2</mn><mi mathvariant=\"normal\">/</mi><mi>λ</mi><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">2/\\lambda =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">2/</span><span class=\"mord mathnormal\">λ</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "0.04",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L19/d0/s2",
+  "lesson": "L19",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>A run of 5000 steps that checkpoints every 250 steps writes <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> checkpoints.</p>",
+  "answer": "20",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L19/d0/s3",
+  "lesson": "L19",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>If it fails at a random time, it loses on average half an interval: <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> steps.</p>",
+  "answer": "125",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L19/p1",
+  "lesson": "L19",
+  "kind": "prediction",
+  "prompt": "<p>Select the learning-rate bug: for 60 steps from step 700, the learning rate was 20 times too high, then the schedule continued correctly. By the end of the run, compared with the healthy run, its validation loss is:</p>",
+  "answer": "b",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>The same: once the rate is back to normal, training recovers.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>Clearly worse, even 400 steps after the bug was over.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>Better, because the higher rate explored more.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>Undefined, because the run diverged.</p>"
+   }
+  ],
+  "explain": "<p>The logged runs end at 1.64 (healthy) and 2.16 nats (learning-rate bug): sixty bad steps cost more than the whole rest of the run could recover. The corrupted data cost much less (1.65), because each bad step's update was limited by clipping. A spike is not always a blip; restoring a checkpoint from before it is often the only fix.</p>"
+ },
+ {
+  "id": "L19/p2",
+  "lesson": "L19",
+  "kind": "prediction",
+  "prompt": "<p>Switch to the two high-learning-rate runs and the lower panel to the largest attention logit. What does the layer norm on queries and keys change?</p>",
+  "answer": "c",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>Nothing: the two runs are identical.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>It makes the loss spike more often.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>It keeps the attention logits around 20 instead of hundreds, and the run ends at a lower loss.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>It lowers the learning rate.</p>"
+   }
+  ],
+  "explain": "<p>Without it, attention logits grow to several hundred, the softmax collapses onto single positions, and training slows (final validation 2.04). With QK-layernorm the logits stay below 20 and the run reaches 1.88. Section 3 of the derivation shows why normalized queries and keys bound the logits.</p>"
+ },
+ {
+  "id": "L19/d1/s1",
+  "lesson": "L19",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Adam after a quiet period</p><p>With <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msub><mi>β</mi><mn>1</mn></msub><mo>=</mo><mn>0.9</mn></mrow><annotation encoding=\"application/x-tex\">\\beta_1 = 0.9</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8889em;vertical-align:-0.1944em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.0528em;\">β</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3011em;\"><span style=\"top:-2.55em;margin-left:-0.0528em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.15em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.9</span></span></span></span> and <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msub><mi>β</mi><mn>2</mn></msub><mo>=</mo><mn>0.999</mn></mrow><annotation encoding=\"application/x-tex\">\\beta_2 = 0.999</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8889em;vertical-align:-0.1944em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.0528em;\">β</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3011em;\"><span style=\"top:-2.55em;margin-left:-0.0528em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.15em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.999</span></span></span></span>, the first update after a long quiet period is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.1</mn><mi mathvariant=\"normal\">/</mi><msqrt><mn>0.001</mn></msqrt><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">0.1/\\sqrt{0.001} \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.1572em;vertical-align:-0.25em;\"></span><span class=\"mord\">0.1/</span><span class=\"mord sqrt\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.9072em;\"><span class=\"svg-align\" style=\"top:-3em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\" style=\"padding-left:0.833em;\"><span class=\"mord\">0.001</span></span></span><span style=\"top:-2.8672em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"hide-tail\" style=\"min-width:0.853em;height:1.08em;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400em\" height=\"1.08em\" viewBox=\"0 0 400000 1080\" preserveAspectRatio=\"xMinYMin slice\"><path d=\"M95,702\nc-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14\nc0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54\nc44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10\ns173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429\nc69,-144,104.5,-217.7,106.5,-221\nl0 -0\nc5.3,-9.3,12,-14,20,-14\nH400000v40H845.2724\ns-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7\nc-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z\nM834 80h400000v40h-400000z\"></path></svg></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.1328em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> times the learning rate.</p>",
+  "answer": "3.162|tol=0.002",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L19/d1/s2",
+  "lesson": "L19",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Adam after a quiet period</p><p>With <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msub><mi>β</mi><mn>2</mn></msub><mo>=</mo><mn>0.95</mn></mrow><annotation encoding=\"application/x-tex\">\\beta_2 = 0.95</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8889em;vertical-align:-0.1944em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.0528em;\">β</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3011em;\"><span style=\"top:-2.55em;margin-left:-0.0528em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.15em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.95</span></span></span></span>, the shorter memory gives <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>: one reason large runs use <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msub><mi>β</mi><mn>2</mn></msub><mo>=</mo><mn>0.95</mn></mrow><annotation encoding=\"application/x-tex\">\\beta_2 = 0.95</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8889em;vertical-align:-0.1944em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.0528em;\">β</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3011em;\"><span style=\"top:-2.55em;margin-left:-0.0528em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.15em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.95</span></span></span></span>.</p>",
+  "answer": "0.447|tol=0.002",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L19/d2/s1",
+  "lesson": "L19",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Bounded logits</p><p>With heads of dimension 64, the logits of normalized queries and keys are at most <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msqrt><mn>64</mn></msqrt><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">\\sqrt{64} =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.04em;vertical-align:-0.1328em;\"></span><span class=\"mord sqrt\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.9072em;\"><span class=\"svg-align\" style=\"top:-3em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\" style=\"padding-left:0.833em;\"><span class=\"mord\">64</span></span></span><span style=\"top:-2.8672em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"hide-tail\" style=\"min-width:0.853em;height:1.08em;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400em\" height=\"1.08em\" viewBox=\"0 0 400000 1080\" preserveAspectRatio=\"xMinYMin slice\"><path d=\"M95,702\nc-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14\nc0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54\nc44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10\ns173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429\nc69,-144,104.5,-217.7,106.5,-221\nl0 -0\nc5.3,-9.3,12,-14,20,-14\nH400000v40H845.2724\ns-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7\nc-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z\nM834 80h400000v40h-400000z\"></path></svg></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.1328em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> (before gains).</p>",
+  "answer": "8",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L19/d3/s1",
+  "lesson": "L19",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">The checkpoint interval</p><p>With <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>C</mi><mo>=</mo><mn>60</mn></mrow><annotation encoding=\"application/x-tex\">C = 60</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0715em;\">C</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">60</span></span></span></span> s and one failure a day (<span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>M</mi><mo>=</mo><mn>86400</mn></mrow><annotation encoding=\"application/x-tex\">M = 86400</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.109em;\">M</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">86400</span></span></span></span> s), <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>T</mi><mo>∗</mo></msup><mo>=</mo><msqrt><mrow><mn>2</mn><mo>⋅</mo><mn>60</mn><mo>⋅</mo><mn>86400</mn></mrow></msqrt><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">T^* = \\sqrt{2 \\cdot 60 \\cdot 86400} \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6887em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.6887em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mbin mtight\">∗</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.04em;vertical-align:-0.1328em;\"></span><span class=\"mord sqrt\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.9072em;\"><span class=\"svg-align\" style=\"top:-3em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\" style=\"padding-left:0.833em;\"><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord\">60</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord\">86400</span></span></span><span style=\"top:-2.8672em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"hide-tail\" style=\"min-width:0.853em;height:1.08em;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400em\" height=\"1.08em\" viewBox=\"0 0 400000 1080\" preserveAspectRatio=\"xMinYMin slice\"><path d=\"M95,702\nc-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14\nc0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54\nc44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10\ns173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429\nc69,-144,104.5,-217.7,106.5,-221\nl0 -0\nc5.3,-9.3,12,-14,20,-14\nH400000v40H845.2724\ns-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7\nc-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z\nM834 80h400000v40h-400000z\"></path></svg></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.1328em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> seconds, about 54 minutes.</p>",
+  "answer": "3220|tol=2",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L19/d3/s2",
+  "lesson": "L19",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">The checkpoint interval</p><p>The total overhead <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>C</mi><mi mathvariant=\"normal\">/</mi><msup><mi>T</mi><mo>∗</mo></msup><mo>+</mo><msup><mi>T</mi><mo>∗</mo></msup><mi mathvariant=\"normal\">/</mi><mn>2</mn><mi>M</mi></mrow><annotation encoding=\"application/x-tex\">C/T^* + T^*/2M</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0715em;\">C</span><span class=\"mord\">/</span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.6887em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mbin mtight\">∗</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.6887em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mbin mtight\">∗</span></span></span></span></span></span></span></span><span class=\"mord\">/2</span><span class=\"mord mathnormal\" style=\"margin-right:0.109em;\">M</span></span></span></span> is then about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> of the run.</p>",
+  "answer": "0.0373|tol=0.0005",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L19/p3",
+  "lesson": "L19",
+  "kind": "prediction",
+  "prompt": "<p>Writing a checkpoint of a large model takes one minute, and the cluster loses a node about once a day. Using the Young/Daly rule, roughly how many minutes apart should checkpoints be?</p>",
+  "answer": "54",
+  "answerKind": "numeric",
+  "tol": 2,
+  "options": [],
+  "explain": "<p><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>T</mi><mo>∗</mo></msup><mo>=</mo><msqrt><mrow><mn>2</mn><mi>C</mi><mi>M</mi></mrow></msqrt><mo>=</mo><msqrt><mrow><mn>2</mn><mo>⋅</mo><mn>60</mn><mo>⋅</mo><mn>86400</mn></mrow></msqrt><mo>≈</mo><mn>3220</mn></mrow><annotation encoding=\"application/x-tex\">T^* = \\sqrt{2 C M} = \\sqrt{2 \\cdot 60 \\cdot 86400} \\approx 3220</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6887em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.6887em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mbin mtight\">∗</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.04em;vertical-align:-0.1133em;\"></span><span class=\"mord sqrt\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.9267em;\"><span class=\"svg-align\" style=\"top:-3em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\" style=\"padding-left:0.833em;\"><span class=\"mord\">2</span><span class=\"mord mathnormal\" style=\"margin-right:0.0715em;\">C</span><span class=\"mord mathnormal\" style=\"margin-right:0.109em;\">M</span></span></span><span style=\"top:-2.8867em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"hide-tail\" style=\"min-width:0.853em;height:1.08em;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400em\" height=\"1.08em\" viewBox=\"0 0 400000 1080\" preserveAspectRatio=\"xMinYMin slice\"><path d=\"M95,702\nc-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14\nc0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54\nc44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10\ns173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429\nc69,-144,104.5,-217.7,106.5,-221\nl0 -0\nc5.3,-9.3,12,-14,20,-14\nH400000v40H845.2724\ns-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7\nc-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z\nM834 80h400000v40h-400000z\"></path></svg></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.1133em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.04em;vertical-align:-0.1328em;\"></span><span class=\"mord sqrt\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.9072em;\"><span class=\"svg-align\" style=\"top:-3em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"mord\" style=\"padding-left:0.833em;\"><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord\">60</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord\">86400</span></span></span><span style=\"top:-2.8672em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"hide-tail\" style=\"min-width:0.853em;height:1.08em;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400em\" height=\"1.08em\" viewBox=\"0 0 400000 1080\" preserveAspectRatio=\"xMinYMin slice\"><path d=\"M95,702\nc-2.7,0,-7.17,-2.7,-13.5,-8c-5.8,-5.3,-9.5,-10,-9.5,-14\nc0,-2,0.3,-3.3,1,-4c1.3,-2.7,23.83,-20.7,67.5,-54\nc44.2,-33.3,65.8,-50.3,66.5,-51c1.3,-1.3,3,-2,5,-2c4.7,0,8.7,3.3,12,10\ns173,378,173,378c0.7,0,35.3,-71,104,-213c68.7,-142,137.5,-285,206.5,-429\nc69,-144,104.5,-217.7,106.5,-221\nl0 -0\nc5.3,-9.3,12,-14,20,-14\nH400000v40H845.2724\ns-225.272,467,-225.272,467s-235,486,-235,486c-2.7,4.7,-9,7,-19,7\nc-6,0,-10,-1,-12,-3s-194,-422,-194,-422s-65,47,-65,47z\nM834 80h400000v40h-400000z\"></path></svg></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.1328em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">3220</span></span></span></span> seconds, about 54 minutes. Checkpointing more often wastes time writing; less often loses more work at each failure. As clusters grow, <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>M</mi></mrow><annotation encoding=\"application/x-tex\">M</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.109em;\">M</span></span></span></span> shrinks and checkpoints must get faster, which is why large runs save them asynchronously and shard them across nodes.</p>"
+ },
+ {
+  "id": "L19/p4",
+  "lesson": "L19",
+  "kind": "prediction",
+  "prompt": "<p>A run is resumed at step 3000 of 6000, but its scheduler object is rebuilt without restoring its step count. What happens to the learning rate?</p>",
+  "answer": "a",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>It goes through warmup again from almost zero and returns to the peak, in the middle of training.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>Nothing: the schedule is stored in the optimizer.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>It stays at the value it had at step 3000.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>It drops to zero.</p>"
+   }
+  ],
+  "explain": "<p>A scheduler that counts its own calls restarts from zero, so the run repeats warmup and then sits at the peak rate when it should be decaying: a learning-rate bug introduced by a restart. Computing the rate from the step alone (exercise 5), and auditing the logged rates after every resume (exercise 12), removes the bug and catches it.</p>"
+ },
+ {
+  "id": "L19/concept1",
+  "lesson": "L19",
+  "kind": "concept",
+  "prompt": "What must a checkpoint contain for an exact resume?",
+  "answer": "The model and optimizer states (including Adam's step), the gradient scaler, the step and the data position, the random-number states that dropout and shuffling use, and the configuration.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L19/concept2",
+  "lesson": "L19",
+  "kind": "concept",
+  "prompt": "What is the z-loss?",
+  "answer": "A small penalty on the square of log Z, the log-sum-exp of the output logits, which keeps the logits from drifting to large values where low-precision arithmetic fails; PaLM used a weight of 1e-4.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L19/concept3",
+  "lesson": "L19",
+  "kind": "concept",
+  "prompt": "Why can Adam take a huge step after a quiet period?",
+  "answer": "When a parameter's gradients have been near zero, its second-moment estimate decays, so a sudden gradient is divided by a tiny square root and the update can be several times larger than usual; a lower beta2 shortens that memory.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L19/concept4",
+  "lesson": "L19",
+  "kind": "concept",
+  "prompt": "How do large runs recover from a loss spike?",
+  "answer": "Restart from a checkpoint before the spike and skip the data batches around it, possibly with a lower learning rate.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L19/concept5",
+  "lesson": "L19",
+  "kind": "concept",
+  "prompt": "How often should a run checkpoint?",
+  "answer": "About every sqrt(2 C M), where C is the time to write a checkpoint and M the mean time between failures (Young and Daly), balancing checkpoint cost against lost work.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L19/concept6",
+  "lesson": "L19",
+  "kind": "concept",
+  "prompt": "Why does QK-layernorm prevent attention logit growth?",
+  "answer": "Normalized queries and keys have bounded norms, so their scaled dot products are bounded by about the square root of the head dimension times the gains.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L19/kata/e01",
+  "lesson": "L19",
+  "kind": "kata",
+  "prompt": "Clipping by the global norm",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e01"
+ },
+ {
+  "id": "L19/kata/e04",
+  "lesson": "L19",
+  "kind": "kata",
+  "prompt": "Detecting a spike",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e04"
+ },
+ {
+  "id": "L19/kata/e06",
+  "lesson": "L19",
+  "kind": "kata",
+  "prompt": "Exact resume",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e06"
+ }
+]

@@ -578,7 +578,7 @@ Implementation notes (decided during Phase 1):
 ### Phase 4: Scale (L15, L16, L18, L19)
 - [x] 4.1 Widgets: `ScalingFit`, `ParallelismPlanner`, `LossSpikeExplorer`.
 - [x] 4.2 Write L15, L16.
-- [ ] 4.3 Write L18, L19.
+- [x] 4.3 Write L18, L19.
 - [ ] 4.4 Notebooks pass in CI; deploy; acceptance checks.
 
 ### Phase 5: Frontier (L20 to L24)

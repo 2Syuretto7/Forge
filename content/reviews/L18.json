@@ -1,0 +1,284 @@
+[
+ {
+  "id": "L18/d0/s1",
+  "lesson": "L18",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>In mixed precision with Adam, each parameter costs <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>2</mn><mo>+</mo><mn>2</mn><mo>+</mo><mn>12</mn><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">2 + 2 + 12 =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">12</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> bytes of model state.</p>",
+  "answer": "16",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L18/d0/s2",
+  "lesson": "L18",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>A 7-billion-parameter model therefore needs <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> GB before any activations.</p>",
+  "answer": "112",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L18/d0/s3",
+  "lesson": "L18",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>The 16-bit weights of a 70-billion-parameter model alone take <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> GB.</p>",
+  "answer": "140",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L18/p1",
+  "lesson": "L18",
+  "kind": "prediction",
+  "prompt": "<p>Plain data parallelism copies the whole model to every GPU and averages gradients. Does it fit?</p>",
+  "answer": "c",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>Yes: eight GPUs have 640 GB between them.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>Yes, if the batch is small enough.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>No: every GPU still holds all 112 GB of model states.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>No, because gradients cannot be averaged across GPUs.</p>"
+   }
+  ],
+  "explain": "<p>Data parallelism splits the <strong>batch</strong>, not the model: every GPU keeps a full copy of weights, gradients and optimizer states. To use the pooled memory you must shard the model states (ZeRO), split the layers' matrices (tensor parallelism) or split the layers themselves (pipeline parallelism). The widget below adds up the memory per GPU for any combination.</p>"
+ },
+ {
+  "id": "L18/p2",
+  "lesson": "L18",
+  "kind": "prediction",
+  "prompt": "<p>Averaging 1 GB of gradients across 8 GPUs with a ring all-reduce, how much does each GPU send?</p>",
+  "answer": "b",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>8 GB: one copy to every other GPU.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>1.75 GB.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>0.125 GB: its eighth of the data.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>1 GB.</p>"
+   }
+  ],
+  "explain": "<p>A ring all-reduce is a reduce-scatter followed by an all-gather. Each moves <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo stretchy=\"false\">(</mo><mi>P</mi><mo>−</mo><mn>1</mn><mo stretchy=\"false\">)</mo><mi mathvariant=\"normal\">/</mi><mi>P</mi></mrow><annotation encoding=\"application/x-tex\">(P-1)/P</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">P</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">−</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">1</span><span class=\"mclose\">)</span><span class=\"mord\">/</span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">P</span></span></span></span> of the data through every GPU, so each sends <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>2</mn><mo>⋅</mo><mn>7</mn><mi mathvariant=\"normal\">/</mi><mn>8</mn><mo>=</mo><mn>1.75</mn></mrow><annotation encoding=\"application/x-tex\">2 \\cdot 7/8 = 1.75</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">7/8</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1.75</span></span></span></span> GB, and that amount barely changes as you add GPUs. The cost of averaging gradients is set by the model size and the link bandwidth, not by the number of GPUs.</p>"
+ },
+ {
+  "id": "L18/d1/s1",
+  "lesson": "L18",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Activations of a large model</p><p>GPT-3 175B has <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>h</mi><mo>=</mo><mn>12288</mn></mrow><annotation encoding=\"application/x-tex\">h = 12288</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6944em;\"></span><span class=\"mord mathnormal\">h</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">12288</span></span></span></span>, <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>a</mi><mo>=</mo><mn>96</mn></mrow><annotation encoding=\"application/x-tex\">a = 96</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">a</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">96</span></span></span></span>, and is trained with <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>s</mi><mo>=</mo><mn>2048</mn></mrow><annotation encoding=\"application/x-tex\">s = 2048</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">s</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">2048</span></span></span></span>. For one sequence, <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>5</mn><mi>a</mi><mi>s</mi><mi mathvariant=\"normal\">/</mi><mi>h</mi><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">5as/h =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">5</span><span class=\"mord mathnormal\">a</span><span class=\"mord mathnormal\">s</span><span class=\"mord\">/</span><span class=\"mord mathnormal\">h</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "80",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L18/d1/s2",
+  "lesson": "L18",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Activations of a large model</p><p>One layer stores <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>2048</mn><mo>⋅</mo><mn>12288</mn><mo>⋅</mo><mn>114</mn><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">2048 \\cdot 12288 \\cdot 114 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">2048</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">12288</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">114</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> bytes.</p>",
+  "answer": "2.87e9|tol=1e7",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L18/d1/s3",
+  "lesson": "L18",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Activations of a large model</p><p>Across 96 layers that is about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> GB, for a single sequence.</p>",
+  "answer": "275|tol=1",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L18/d2/s1",
+  "lesson": "L18",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Ring traffic</p><p>All-reducing 1 GB over 8 GPUs, each GPU sends <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>2</mn><mo>⋅</mo><mfrac><mn>7</mn><mn>8</mn></mfrac><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">2 \\cdot \\frac{7}{8} =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.1901em;vertical-align:-0.345em;\"></span><span class=\"mord\"><span class=\"mopen nulldelimiter\"></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8451em;\"><span style=\"top:-2.655em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">8</span></span></span></span><span style=\"top:-3.23em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"frac-line\" style=\"border-bottom-width:0.04em;\"></span></span><span style=\"top:-3.394em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">7</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.345em;\"><span></span></span></span></span></span><span class=\"mclose nulldelimiter\"></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> GB.</p>",
+  "answer": "1.75",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L18/d2/s2",
+  "lesson": "L18",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Ring traffic</p><p>Over 1024 GPUs it sends about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> GB.</p>",
+  "answer": "2|tol=0.01",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L18/d2/s3",
+  "lesson": "L18",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Ring traffic</p><p>The fp16 gradients of a 7B model are 14 GB; over 64 GPUs each sends <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>2</mn><mo>⋅</mo><mfrac><mn>63</mn><mn>64</mn></mfrac><mo>⋅</mo><mn>14</mn><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">2 \\cdot \\frac{63}{64} \\cdot 14 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">2</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.1901em;vertical-align:-0.345em;\"></span><span class=\"mord\"><span class=\"mopen nulldelimiter\"></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8451em;\"><span style=\"top:-2.655em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">64</span></span></span></span><span style=\"top:-3.23em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"frac-line\" style=\"border-bottom-width:0.04em;\"></span></span><span style=\"top:-3.394em;\"><span class=\"pstrut\" style=\"height:3em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">63</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.345em;\"><span></span></span></span></span></span><span class=\"mclose nulldelimiter\"></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">14</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> GB per step.</p>",
+  "answer": "27.56|tol=0.02",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L18/d3/s1",
+  "lesson": "L18",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">ZeRO for 7.5B parameters on 64 GPUs</p><p>Without sharding: <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>16</mn><mo>⋅</mo><mn>7.5</mn><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">16 \\cdot 7.5 =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">16</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">7.5</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> GB per GPU.</p>",
+  "answer": "120",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L18/d3/s2",
+  "lesson": "L18",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">ZeRO for 7.5B parameters on 64 GPUs</p><p>Stage 1: <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo stretchy=\"false\">(</mo><mn>4</mn><mo>+</mo><mn>12</mn><mi mathvariant=\"normal\">/</mi><mn>64</mn><mo stretchy=\"false\">)</mo><mo>⋅</mo><mn>7.5</mn><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">(4 + 12/64) \\cdot 7.5 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\">4</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">12/64</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">7.5</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> GB.</p>",
+  "answer": "31.4|tol=0.1",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L18/d3/s3",
+  "lesson": "L18",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">ZeRO for 7.5B parameters on 64 GPUs</p><p>Stage 3: <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>16</mn><mo>⋅</mo><mn>7.5</mn><mi mathvariant=\"normal\">/</mi><mn>64</mn><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">16 \\cdot 7.5 / 64 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">16</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">7.5/64</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> GB.</p>",
+  "answer": "1.875|tol=0.001",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L18/d4/s1",
+  "lesson": "L18",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">The bubble</p><p>With 4 stages and 4 micro-batches, the bubble is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>3</mn><mi mathvariant=\"normal\">/</mi><mn>7</mn><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">3/7 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">3/7</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> of the step.</p>",
+  "answer": "0.4286|tol=0.0005",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L18/d4/s2",
+  "lesson": "L18",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">The bubble</p><p>With 32 micro-batches it falls to <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>3</mn><mi mathvariant=\"normal\">/</mi><mn>35</mn><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">3/35 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">3/35</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "0.0857|tol=0.0005",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L18/p3",
+  "lesson": "L18",
+  "kind": "prediction",
+  "prompt": "<p>A model is split into 4 pipeline stages and each step streams 4 micro-batches. What fraction of the step is the bubble?</p>",
+  "answer": "0.4286",
+  "answerKind": "numeric",
+  "tol": 0.01,
+  "options": [],
+  "explain": "<p><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo stretchy=\"false\">(</mo><mi>p</mi><mo>−</mo><mn>1</mn><mo stretchy=\"false\">)</mo><mi mathvariant=\"normal\">/</mi><mo stretchy=\"false\">(</mo><mi>m</mi><mo>+</mo><mi>p</mi><mo>−</mo><mn>1</mn><mo stretchy=\"false\">)</mo><mo>=</mo><mn>3</mn><mi mathvariant=\"normal\">/</mi><mn>7</mn><mo>≈</mo><mn>0.43</mn></mrow><annotation encoding=\"application/x-tex\">(p - 1)/(m + p - 1) = 3/7 \\approx 0.43</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">p</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">−</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">1</span><span class=\"mclose\">)</span><span class=\"mord\">/</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\">m</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7778em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\">p</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">−</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">1</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">3/7</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.43</span></span></span></span>: almost half the time idle. With 32 micro-batches it falls to <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>3</mn><mi mathvariant=\"normal\">/</mi><mn>35</mn><mo>≈</mo><mn>0.09</mn></mrow><annotation encoding=\"application/x-tex\">3/35 \\approx 0.09</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">3/35</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.09</span></span></span></span>, which is why pipelines need many micro-batches per step, and why the global batch limits how deep a pipeline can usefully be.</p>"
+ },
+ {
+  "id": "L18/p4",
+  "lesson": "L18",
+  "kind": "prediction",
+  "prompt": "<p>On one of 8 GPUs the loss comes out NaN, and the training loop's guard <code>if loss.isnan(): continue</code> skips that step on that GPU only. What happens?</p>",
+  "answer": "d",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>That GPU's update is skipped and training continues normally.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>The other GPUs average 7 gradients instead of 8.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>An exception is raised on every GPU.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>The other seven GPUs wait forever in their all-reduce, and the job hangs.</p>"
+   }
+  ],
+  "explain": "<p>A collective completes only when every rank calls it. The rank that skipped moves on to the next step's forward pass while the other seven block in the gradient all-reduce, and from then on the ranks issue their collectives out of step. Nothing crashes; the job just stops making progress until a timeout kills it. Decisions that change which collectives run must be made together, with a collective of their own.</p>"
+ },
+ {
+  "id": "L18/concept1",
+  "lesson": "L18",
+  "kind": "concept",
+  "prompt": "How many bytes per parameter does mixed-precision Adam training need for model states?",
+  "answer": "About 16: 2 for 16-bit weights, 2 for 16-bit gradients, and 12 for fp32 master weights, momentum and variance.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L18/concept2",
+  "lesson": "L18",
+  "kind": "concept",
+  "prompt": "What does each GPU send in a ring all-reduce of n bytes over P GPUs?",
+  "answer": "2 (P - 1) / P times n bytes: a reduce-scatter and an all-gather, each moving (P - 1) / P of the data, almost independent of P.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L18/concept3",
+  "lesson": "L18",
+  "kind": "concept",
+  "prompt": "What do ZeRO stages 1, 2 and 3 shard?",
+  "answer": "Stage 1 the optimizer states, stage 2 also the gradients, stage 3 also the weights, each over the data-parallel ranks.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L18/concept4",
+  "lesson": "L18",
+  "kind": "concept",
+  "prompt": "How does Megatron-style tensor parallelism split an MLP?",
+  "answer": "The first layer by columns and the second by rows, so each GPU computes a slice of the hidden units and a partial output, and one all-reduce sums the outputs.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L18/concept5",
+  "lesson": "L18",
+  "kind": "concept",
+  "prompt": "What is the pipeline bubble?",
+  "answer": "The idle fraction (p - 1) / (m + p - 1) of a pipeline with p stages and m micro-batches, while the pipeline fills and drains.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L18/concept6",
+  "lesson": "L18",
+  "kind": "concept",
+  "prompt": "What does activation checkpointing trade?",
+  "answer": "Memory for compute: it keeps only some activations and recomputes the rest during backward, at the cost of about one extra forward pass.",
+  "answerKind": "text"
+ },
+ {
+  "id": "L18/kata/e02",
+  "lesson": "L18",
+  "kind": "kata",
+  "prompt": "Ring all-reduce",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e02"
+ },
+ {
+  "id": "L18/kata/e05",
+  "lesson": "L18",
+  "kind": "kata",
+  "prompt": "ZeRO stage 1",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e05"
+ },
+ {
+  "id": "L18/kata/e08",
+  "lesson": "L18",
+  "kind": "kata",
+  "prompt": "Pipeline schedules",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e08"
+ }
+]
