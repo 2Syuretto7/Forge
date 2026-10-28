@@ -159,3 +159,15 @@ describe('LossSpikeExplorer', () => {
     expect(ema([0, 10], 0.9)[1]).toBeCloseTo(1, 12);
   });
 });
+
+describe('LshCurve', () => {
+  it('candidate probabilities and thresholds', async () => {
+    const { candidateProbability, lshThreshold, factorizations } = await import('../../src/widgets/LshCurve');
+    expect(candidateProbability(0.8, 16, 8)).toBeCloseTo(1 - (1 - 0.8 ** 8) ** 16, 12);
+    expect(candidateProbability(0.8, 16, 8)).toBeCloseTo(0.947, 3);
+    expect(candidateProbability(0.5, 16, 8)).toBeCloseTo(0.0607, 4);
+    expect(lshThreshold(16, 8)).toBeCloseTo(Math.SQRT1_2, 12);
+    expect(factorizations(128).map(([b, r]) => b * r).every((v) => v === 128)).toBe(true);
+    expect(factorizations(128)).toHaveLength(8);
+  });
+});

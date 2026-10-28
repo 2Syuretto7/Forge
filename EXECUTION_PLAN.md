@@ -520,6 +520,10 @@ Implementation notes (decided during Phase 1):
 - A retro-annotation may name its target movement (`{target: L07, movement: m2-derivation, anchor: ..., text: ...}`); the anchor is matched case-insensitively against the plain text of that movement's blocks, first match wins.
 - Exercise hints live at the end of `prompt.md` under a `## Hints` heading (numbered list, at most 3).
 - Deployment: `deploy.yml` publishes from `main` and, until `main` exists, from the working branch. The build receives `VITE_COLAB_BRANCH` (the branch it built from), so the Colab button opens the notebooks committed next to the deployed site.
+- Widgets beyond Section 7: `LshCurve` (L16) plots the LSH candidate probability for chosen bands and rows. `LossSpikeExplorer` replays real logged CPU runs written by `scripts/gen_spike_runs.py` into `src/widgets/data/spike_runs.json`.
+- L15's sweep is sized for Tiny Shakespeare (the only corpus the notebooks can verify offline): four layers at five widths, every run 1,950 steps with the batch growing with the token budget, at most four epochs. At this scale the runs are early in training and the fitted floor $E$ is constrained to be non-negative; the held-out prediction must land within 8%.
+- L18's capstone needs no GPU: four CPU processes joined by `torch.distributed` (gloo) through `fork`, using only `all_reduce`, `all_gather` and point-to-point messages, which every PyTorch version's gloo backend supports.
+- L19's reference run is the nanoGPT-sized character model for 5,000 steps, roughly 15 to 25 minutes on a T4 rather than several hours: a longer run on Tiny Shakespeare would only overfit. The script checkpoints to Google Drive when mounted and resumes after a disconnection, so the same code serves a multi-hour run on a larger corpus.
 
 ---
 
@@ -573,7 +577,7 @@ Implementation notes (decided during Phase 1):
 
 ### Phase 4: Scale (L15, L16, L18, L19)
 - [x] 4.1 Widgets: `ScalingFit`, `ParallelismPlanner`, `LossSpikeExplorer`.
-- [ ] 4.2 Write L15, L16.
+- [x] 4.2 Write L15, L16.
 - [ ] 4.3 Write L18, L19.
 - [ ] 4.4 Notebooks pass in CI; deploy; acceptance checks.
 

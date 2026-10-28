@@ -1,0 +1,40 @@
+id: L15
+hours: 9
+capstone: "A sweep of small GPTs across model sizes and token counts, a fitted scaling law, and the loss of a larger held-out run predicted before training it"
+teaser: "Count compute, fit scaling laws the way Hoffmann et al. did, derive how to split a budget between parameters and tokens, and predict a run before you train it."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 20}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 35}
+  - {file: m2-derivation.md, mode: theory,   minutes: 165}
+  - {file: m3-build.md,      mode: practice, minutes: 130}
+  - {file: m4-scale.md,      mode: practice, minutes: 55}
+  - {file: m5-break.md,      mode: both,     minutes: 45}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 25}
+  - {file: m7-capstone.md,   mode: practice, minutes: 65}
+hooks:
+  - {to: L18, text: "A compute-optimal model for a large budget no longer fits on one GPU."}
+  - {to: L19, text: "The pretraining run is sized with a scaling fit and checked against its prediction."}
+  - {to: L24, text: "Your fit chooses the model size and token budget of the final capstone."}
+reuses:
+  - {from: L06, concept: "error against capacity and data"}
+  - {from: L09, concept: "learning rates and schedules"}
+  - {from: L14, concept: "the GPT and its validation loss"}
+  - {from: L16, concept: "data quality and repeated data"}
+annotations:
+  - {target: L06, movement: m2-derivation, anchor: "4. More parameters than data", text: "L15 measures how test loss falls when parameters and data grow together, and how to split a budget between them."}
+  - {target: L09, movement: m2-derivation, anchor: "5. Schedules", text: "L15 shows that matching the schedule to each run's length changes a fitted scaling law, and that the best rate shrinks as models grow."}
+  - {target: L14, movement: m2-derivation, anchor: "1. Language modeling is cross-entropy minimization", text: "L15 fits this validation loss against parameters, tokens and compute."}
+concepts:
+  - q: "Why does training a transformer cost about 6ND FLOPs?"
+    a: "Each parameter does one multiply-add per token in the forward pass (2 FLOPs) and two products of the same size in the backward pass (4 FLOPs), for N parameters and D tokens."
+  - q: "How should parameters and tokens grow with the compute budget according to Hoffmann et al.?"
+    a: "About equally: both roughly as the square root of compute, around 20 tokens per parameter."
+  - q: "What is the parametric loss law fitted by Hoffmann et al.?"
+    a: "L(N, D) = E + A / N^alpha + B / D^beta: an irreducible loss plus power-law terms for a finite model and finite data."
+  - q: "Why does a pure power law fitted on a narrow range extrapolate optimistically?"
+    a: "The loss approaches an irreducible floor and bends in log-log coordinates; a straight line keeps falling at the same slope and predicts too low a loss."
+  - q: "Why train a smaller model on more tokens than is compute-optimal?"
+    a: "Serving costs about 2N FLOPs per token, so a model that will serve many tokens is cheaper overall if it is smaller, even though reaching the same loss costs more training."
+  - q: "How do you check a scaling-law fit?"
+    a: "Hold out the largest run, predict its loss from a fit to the others before training it, compare, and bootstrap the runs for uncertainty."
+katas: [e03, e06, e07]
