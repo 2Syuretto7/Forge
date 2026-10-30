@@ -11,4 +11,4 @@ def test_agree():
 
 def test_speedup():
     s = sub.speedup(20000, 32)
-    assert s > 10, f"vectorized search was only {s:.1f} times faster"
+    assert s > 3, f"vectorized search was only {s:.1f} times faster"

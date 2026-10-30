@@ -5,7 +5,7 @@
 - `search_vectorized(query, X, k)`: the same with one matrix-vector product and `np.argpartition` to find the top `k` without sorting everything, then sorting just those `k`.
 - `speedup(n, d, k=5)`: the time of `search_loop` divided by the time of `search_vectorized` on a database of `n` vectors (time each with `time.perf_counter`; repeat the fast one until it takes at least 20 ms).
 
-The tests check that the two searches agree and that vectorizing is at least 10 times faster.
+The tests check that the two searches agree and that vectorizing is at least 3 times faster; on a laptop it is typically 10 to 100 times, less in the browser, where NumPy runs without its fastest libraries.
 
 ## Hints
 

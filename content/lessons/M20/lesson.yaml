@@ -1,0 +1,26 @@
+id: M20
+hours: 10
+capstone: "Sampler toolkit: 5 transforms from uniform noise to target densities, each verified by histogram and by the change-of-variables formula"
+teaser: "Double and triple integrals, Fubini, change of variables with the Jacobian determinant, polar and spherical coordinates, Gaussian normalizers in n dimensions, and how densities transform under maps."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 60}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 35}
+  - {file: m7-capstone.md,   mode: practice, minutes: 60}
+hooks:
+  - {to: M23, text: "The multivariate Gaussian is a linear map of independent standard normals, and its normalizer is a Jacobian determinant."}
+  - {to: M37, text: "Change of variables returns as density transport: flows and diffusion models move probability through invertible maps."}
+reuses:
+  - {from: M17, concept: "integrals, substitution and the Gaussian integral"}
+  - {from: M18, concept: "Jacobians"}
+annotations:
+  - {target: M17, anchor: "the small area element is", text: "M20: that r is the Jacobian determinant of the map from polar to Cartesian coordinates, and every change of variables multiplies by such a factor."}
+  - {target: M10, anchor: "every area is multiplied by", text: "M20: a curved map does the same locally, with the determinant of its Jacobian as the local area factor; this is how probability densities transform."}
+concepts:
+  - q: "How does a probability density change under an invertible map y = g(x), and why?"
+    a: "p_Y(y) = p_X(g^{-1}(y)) |det J_{g^{-1}}(y)|, equivalently p_X(x) / |det J_g(x)|. Probability in a small region is conserved by the map; if the map stretches the region's volume by |det J_g|, the same probability spreads over more volume, so the density divides by that factor."
+katas: [e05]
