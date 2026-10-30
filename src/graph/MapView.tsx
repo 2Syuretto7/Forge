@@ -5,9 +5,9 @@ import { zoom, zoomIdentity, type ZoomBehavior } from 'd3-zoom';
 import { useIndex } from '../content/load';
 import type { ContentIndex, Edge, EdgeType, LessonSummary } from '../content/types';
 import { useStore, type State } from '../store/store';
-import { lessonPercent, nodeState, theoryShare, type NodeState } from '../store/derive';
-import { layout, NODE_R, COL_W, ROW_H, MARGIN } from './layout';
-import { STAGE_LABEL, STATE_LABEL, TRACK_LABEL } from './labels';
+import { closure, lessonPercent, missingPrereqs, nodeState, theoryShare, type NodeState } from '../store/derive';
+import { layout, NODE_R } from './layout';
+import { STAGE_LABEL, STATE_LABEL, STRAND_SHORT, TRACK_LABEL, stageNumber, trackLabel } from './labels';
 import styles from './Map.module.css';
 
 const EDGE_LABEL: Record<EdgeType, string> = {
@@ -27,14 +27,20 @@ function useNarrow(px = 640) {
   return narrow;
 }
 
-function Tooltip({ l, st, idx }: { l: LessonSummary; st: NodeState; idx: ContentIndex }) {
+function Tooltip({ l, st, idx, state }: { l: LessonSummary; st: NodeState; idx: ContentIndex; state: State }) {
   const name = (id: string) => `${id} ${idx.lessons.find((x) => x.id === id)?.title ?? ''}`;
+  const close = st === 'complete' ? closure(state, idx, l.id) : null;
+  const feynman = st === 'locked' ? missingPrereqs(state, idx, l).filter((m) => m.reason === 'feynman') : [];
   return (
     <div className={styles.tip} role="tooltip">
       <div className={styles.tipTitle}>
         {l.id}. {l.title}
       </div>
-      <div className="muted">{STATE_LABEL[st]}</div>
+      <div className="muted">
+        {trackLabel(l)}. {STATE_LABEL[st]}
+        {close && (close.closed ? '; closed by its one-week review check' : '; closes after its one-week review check')}
+      </div>
+      {feynman.length > 0 && <div>Waiting on a passed Feynman explanation in {feynman.map((m) => m.id).join(', ')}.</div>}
       {l.hours > 0 && (
         <div>
           {l.hours} h; theory {Math.round(theoryShare(l) * 100)}% / practice {100 - Math.round(theoryShare(l) * 100)}%
@@ -51,9 +57,9 @@ function Tooltip({ l, st, idx }: { l: LessonSummary; st: NodeState; idx: Content
   );
 }
 
-export function shortTitle(t: string) {
+export function shortTitle(t: string, max = 22) {
   const head = t.split(/[:;,]/)[0];
-  return head.length > 22 ? head.slice(0, 21).replace(/\s+\S*$/, '') + '...' : head;
+  return head.length > max ? head.slice(0, max - 1).replace(/\s+\S*$/, '') + '...' : head;
 }
 
 function edgePath(a: { x: number; y: number }, b: { x: number; y: number }, e: Edge) {
@@ -76,7 +82,7 @@ function edgePath(a: { x: number; y: number }, b: { x: number; y: number }, e: E
 }
 
 function GraphSvg({ idx, state }: { idx: ContentIndex; state: State }) {
-  const { nodes, width, height } = useMemo(() => layout(idx), [idx]);
+  const { nodes, width, height, columns, rows, math } = useMemo(() => layout(idx, { track: TRACK_LABEL, strand: STRAND_SHORT }), [idx]);
   const [show, setShow] = useState<Record<EdgeType, boolean>>({ vertical: true, horizontal: true, long_range: true });
   const [hover, setHover] = useState<string | null>(null);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -88,6 +94,8 @@ function GraphSvg({ idx, state }: { idx: ContentIndex; state: State }) {
     const svg = select(svgRef.current!);
     const z = zoom<SVGSVGElement, unknown>()
       .scaleExtent([0.4, 3])
+      // The map is taller than the window: the wheel scrolls the page, and zooms with Ctrl or Cmd.
+      .filter((ev: Event) => (ev.type === 'wheel' ? (ev as WheelEvent).ctrlKey || (ev as WheelEvent).metaKey : !(ev as MouseEvent).button))
       .on('zoom', (ev) => {
         gRef.current?.setAttribute('transform', ev.transform.toString());
       });
@@ -128,7 +136,13 @@ function GraphSvg({ idx, state }: { idx: ContentIndex; state: State }) {
           </button>
         </span>
       </div>
-      <svg ref={svgRef} className={styles.svg} viewBox={`0 0 ${width} ${height}`} role="group" aria-label="Curriculum map: 24 lessons by track and stage">
+      <svg
+        ref={svgRef}
+        className={styles.svg}
+        viewBox={`0 0 ${width} ${height}`}
+        role="group"
+        aria-label={`Curriculum map: ${idx.lessons.length} lessons by track, strand and stage`}
+      >
         <defs>
           {(['vertical', 'horizontal', 'long_range'] as EdgeType[]).map((t) => (
             <marker key={t} id={`arrow-${t}`} viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -137,19 +151,27 @@ function GraphSvg({ idx, state }: { idx: ContentIndex; state: State }) {
           ))}
         </defs>
         <g ref={gRef}>
-          {idx.tracks.map((t, i) => (
-            <text key={t} x={MARGIN.left + COL_W * (i + 0.5)} y={28} className={styles.colLabel} textAnchor="middle">
-              {TRACK_LABEL[t]}
+          {math && (
+            <g>
+              <text x={(math.x0 + math.x1) / 2} y={24} className={styles.colLabel} textAnchor="middle">
+                {TRACK_LABEL.math}
+              </text>
+              <line x1={math.x0 + 8} x2={math.x1 - 8} y1={32} y2={32} className={styles.mathRule} />
+            </g>
+          )}
+          {columns.map((c) => (
+            <text key={c.key} x={c.x} y={c.strand ? 52 : 24} className={c.strand ? styles.strandLabel : styles.colLabel} textAnchor="middle">
+              {c.label}
             </text>
           ))}
-          {idx.stages.map((s, i) => (
-            <g key={s}>
-              <rect x={6} y={MARGIN.top + ROW_H * i + 2} width={width - 12} height={ROW_H - 4} rx={10} className={i % 2 ? styles.bandA : styles.bandB} />
-              <text x={16} y={MARGIN.top + ROW_H * (i + 0.5) - 4} className={styles.rowLabel}>
-                Stage {i + 1}
+          {rows.map((r, i) => (
+            <g key={r.stage}>
+              <rect x={6} y={r.y + 2} width={width - 12} height={r.h - 4} rx={10} className={i % 2 ? styles.bandA : styles.bandB} />
+              <text x={16} y={r.y + r.h / 2 - 4} className={styles.rowLabel}>
+                Stage {stageNumber(idx.stages, r.stage)}
               </text>
-              <text x={16} y={MARGIN.top + ROW_H * (i + 0.5) + 12} className={styles.rowName}>
-                {STAGE_LABEL[s]}
+              <text x={16} y={r.y + r.h / 2 + 12} className={styles.rowName}>
+                {STAGE_LABEL[r.stage]}
               </text>
             </g>
           ))}
@@ -161,7 +183,7 @@ function GraphSvg({ idx, state }: { idx: ContentIndex; state: State }) {
               const dim = related && !(e.from === hover || e.to === hover);
               return (
                 <path
-                  key={`${e.from}-${e.to}`}
+                  key={`${e.from}-${e.to}-${e.type}`}
                   d={edgePath(a, b, e)}
                   className={`${styles['e_' + e.type]} ${dim ? styles.dim : ''}`}
                   markerEnd={`url(#arrow-${e.type})`}
@@ -214,17 +236,17 @@ function GraphSvg({ idx, state }: { idx: ContentIndex; state: State }) {
                 <text className={styles.nodeId} textAnchor="middle" dy="0.35em">
                   {l.id}
                 </text>
-                <text className={styles.nodeTitle} textAnchor="middle" y={NODE_R + 16}>
-                  {shortTitle(l.title)}
+                <text className={styles.nodeTitle} textAnchor="middle" y={NODE_R + 15}>
+                  {shortTitle(l.title, l.track === 'math' ? 19 : 22)}
                 </text>
               </g>
             );
           })}
         </g>
       </svg>
-      {hovered && <Tooltip l={hovered} st={nodeState(state, idx, hovered)} idx={idx} />}
+      {hovered && <Tooltip l={hovered} st={nodeState(state, idx, hovered)} idx={idx} state={state} />}
       <ul className={styles.legend} aria-label="Node states">
-        {(['available', 'in_progress', 'complete', 'locked'] as NodeState[]).map((s) => (
+        {(['available', 'in_progress', 'complete', 'optional', 'locked'] as NodeState[]).map((s) => (
           <li key={s}>
             <svg width="16" height="16" aria-hidden="true">
               <circle cx="8" cy="8" r="7" className={`${styles.legendDot} ${styles['s_' + s]}`} />
@@ -240,10 +262,10 @@ function GraphSvg({ idx, state }: { idx: ContentIndex; state: State }) {
 function ListMode({ idx, state }: { idx: ContentIndex; state: State }) {
   return (
     <div className={styles.list}>
-      {idx.stages.map((s, i) => (
+      {idx.stages.map((s) => (
         <section key={s} aria-labelledby={`stage-${s}`}>
           <h2 id={`stage-${s}`} className={styles.stageHead}>
-            Stage {i + 1}: {STAGE_LABEL[s]}
+            Stage {stageNumber(idx.stages, s)}: {STAGE_LABEL[s]}
           </h2>
           <ul className={styles.lessonList}>
             {idx.lessons
@@ -265,7 +287,7 @@ function ListMode({ idx, state }: { idx: ContentIndex; state: State }) {
                         </Link>
                       )}
                       <span className="muted small">
-                        {TRACK_LABEL[l.track]}
+                        {trackLabel(l)}
                         {l.hours ? `, ${l.hours} h` : ''}. {STATE_LABEL[st]}
                         {st === 'in_progress' ? ` (${Math.round(lessonPercent(state, l) * 100)}%)` : ''}
                       </span>

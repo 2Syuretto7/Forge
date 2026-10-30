@@ -2,7 +2,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import { loadGraph, loadLesson, hasLesson, ROOT, CONTENT, stripMovementBlocks, type LoadedLesson } from './lib/content';
+import { loadGraph, loadLesson, loadRetired, hasLesson, ROOT, CONTENT, stripMovementBlocks, type LoadedLesson } from './lib/content';
 import { buildNotebook } from './lib/notebook';
 import type { Annotation, ContentIndex, LessonSummary, ReviewItem } from '../src/content/types';
 
@@ -78,6 +78,7 @@ function main() {
         id: g.id,
         title: g.title,
         track: g.track,
+        ...(g.strand ? { strand: g.strand } : {}),
         stage: g.stage,
         gpu: g.gpu,
         hours: 0,
@@ -88,6 +89,7 @@ function main() {
         prereqs,
         unlocks,
         teaser: '',
+        feynman: [],
       });
     }
   }
@@ -109,6 +111,8 @@ function main() {
     annotations,
     reviews,
     available: [...loaded.keys()],
+    strands: graph.strands,
+    retired: loadRetired(),
   };
   fs.writeFileSync(path.join(OUT, 'index.json'), JSON.stringify(index));
   console.log(`build_content: ${loaded.size} lessons, ${graph.edges.length} edges, ${reviews.length} review items`);

@@ -2,7 +2,10 @@
 // consumed by the app. Keep both sides in sync through this file only.
 
 export type Track = 'math' | 'core' | 'arch' | 'sys' | 'llm' | 'all';
-export type Stage = 'foundations' | 'learning' | 'models_gpus' | 'scale' | 'frontier';
+export type Stage = 'prelude' | 'foundations' | 'learning' | 'models_gpus' | 'scale' | 'frontier';
+// Math-track strands (docs/math-track.md): number and information, algebra and proof,
+// linear algebra, calculus, probability, optimization; ALL for the closing lesson.
+export type Strand = 'NUM' | 'ALG' | 'LIN' | 'CAL' | 'PRB' | 'OPT' | 'ALL';
 export type EdgeType = 'vertical' | 'horizontal' | 'long_range';
 export type Mode = 'theory' | 'practice' | 'both';
 
@@ -26,6 +29,7 @@ export interface LessonSummary {
   id: string;
   title: string;
   track: Track;
+  strand?: Strand;
   stage: Stage;
   gpu: boolean;
   hours: number;
@@ -36,6 +40,8 @@ export interface LessonSummary {
   prereqs: string[];
   unlocks: string[];
   teaser: string;
+  // Ids of the lesson's Feynman blocks: dependents unlock only once each has passed.
+  feynman: string[];
 }
 
 export interface Annotation {
@@ -71,6 +77,14 @@ export interface ContentIndex {
   annotations: Annotation[];
   reviews: ReviewItem[];
   available: string[];
+  strands: Strand[];
+  // Lessons retired from the curriculum, and where their progress moved.
+  retired: Retired;
+}
+
+export interface Retired {
+  lessons: Record<string, string>;
+  exercises: Record<string, string>;
 }
 
 export interface DerivationStep {

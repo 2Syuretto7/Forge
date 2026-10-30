@@ -219,6 +219,11 @@
   background: var(--good);
   color: #fff;
 }
+.s_optional .badge {
+  border-color: var(--good);
+  border-style: dashed;
+  color: var(--good);
+}
 .lessonBody {
   flex: 1;
   min-width: 0;
@@ -255,7 +260,8 @@ a.lessonTitle:hover {
   background: var(--accent-soft);
   color: var(--accent);
 }
-.st_complete {
+.st_complete,
+.st_optional {
   background: var(--good-soft);
   color: var(--good);
 }

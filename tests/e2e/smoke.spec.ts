@@ -24,7 +24,8 @@ test('dashboard, map, lesson, pass an exercise in the workspace, progress surviv
 
   await page.goto('./#/map');
   await expect(page.locator('[aria-label^="L01 "]')).toBeVisible();
-  await expect(page.locator('g[role="link"]')).toHaveCount(24);
+  const lessons = (fs.readFileSync(path.resolve('content/graph.yaml'), 'utf8').match(/^\s+- \{id: /gm) ?? []).length;
+  await expect(page.locator('g[role="link"]')).toHaveCount(lessons);
   await page.locator('[aria-label^="L01 "]').click();
   await expect(page).toHaveURL(/#\/lesson\/L01/);
 

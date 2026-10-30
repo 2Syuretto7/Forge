@@ -3,7 +3,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 
-// A simulated learner takes the whole curriculum, L01 to L24 in order: every
+// A simulated learner takes the whole curriculum in order, one lesson at a time: every
 // prediction committed, every exercise and browser capstone passed with its
 // solution, every Feynman block self-assessed, every Colab capstone verified
 // with the code its autograder prints, every movement completed. After each
@@ -12,10 +12,13 @@ import path from 'node:path';
 
 const root = path.resolve('content/lessons');
 const graph = fs.readFileSync(path.resolve('content/graph.yaml'), 'utf8');
-const ids = [...graph.matchAll(/^\s+- \{id: (L\d\d),/gm)].map((m) => m[1]);
+// Published lessons only: while a track is being written, the graph also lists lessons without content.
+const ids = [...graph.matchAll(/^\s+- \{id: ([LM]\d\d),/gm)].map((m) => m[1]).filter((id) => fs.existsSync(path.join(root, id, 'lesson.yaml')));
 const prereqs = (id: string) =>
-  [...graph.matchAll(/^\s+- \{from: (L\d\d), to: (L\d\d), type: vertical/gm)].filter((m) => m[2] === id).map((m) => m[1]);
-// Lesson order: the lowest-numbered lesson whose prerequisites are all done (L13 comes before L12).
+  [...graph.matchAll(/^\s+- \{from: ([LM]\d\d), to: ([LM]\d\d), type: vertical/gm)]
+    .filter((m) => m[2] === id && ids.includes(m[1]))
+    .map((m) => m[1]);
+// Lesson order: the first lesson in graph order whose prerequisites are all done (L13 comes before L12).
 const lessonIds: string[] = [];
 while (lessonIds.length < ids.length) {
   lessonIds.push(ids.find((l) => !lessonIds.includes(l) && prereqs(l).every((p) => lessonIds.includes(p)))!);

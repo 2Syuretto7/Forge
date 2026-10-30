@@ -1,13 +1,16 @@
-// Enforces every content rule in EXECUTION_PLAN.md Sections 2 and 6.5.
-// Usage: tsx scripts/validate_content.ts [--phase L01,L02,...]
+// Enforces every content rule in EXECUTION_PLAN.md Sections 2 and 6.5, and the math-track
+// rules of docs/math-track.md for lessons M01-M38.
+// Usage: tsx scripts/validate_content.ts [--allow-unpublished]
+//   --allow-unpublished: lessons listed in graph.yaml without content yet are shown as
+//   unpublished instead of failing the build (used while a track is being written).
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadGraph, hasLesson, loadLesson, lessonDir, ROOT, type LoadedLesson, type Graph } from './lib/content';
+import { loadGraph, loadRetired, hasLesson, loadLesson, lessonDir, ROOT, type LoadedLesson, type Graph } from './lib/content';
 import { collectDirectives } from './lib/markdown';
 import { findAnnotations, notebookFor } from './build_content';
 import { reviewItemsFor } from './gen_reviews';
 import { validateBlank } from '../src/lib/expr';
-import type { Block } from '../src/content/types';
+import type { Block, Edge } from '../src/content/types';
 
 const BANNED_CS = ['TODO', 'TBD'];
 const BANNED_CI = ['lorem', 'coming soon', 'placeholder'];
@@ -31,26 +34,57 @@ function walk(dir: string, acc: string[] = []): string[] {
   return acc;
 }
 
+// The lessons that may start a path with no inbound edge. L01 to L03 stay roots until
+// their material has moved into the math track (docs/math-track.md, Migration).
+const ROOTS = ['M01', 'L01', 'L02', 'L03'];
+
+// An edge chip, hook or reuse may follow an edge in its direction, or a horizontal
+// edge either way: a horizontal link is mutual.
+export function linked(edges: Edge[], from: string, to: string) {
+  return edges.some((e) => (e.from === from && e.to === to) || (e.type === 'horizontal' && e.from === to && e.to === from));
+}
+
+export function neighbours(edges: Edge[], id: string, dir: 'in' | 'out') {
+  const s = new Set<string>();
+  for (const e of edges) {
+    if ((dir === 'out' ? e.from : e.to) === id) s.add(dir === 'out' ? e.to : e.from);
+    if (e.type === 'horizontal' && (dir === 'out' ? e.to : e.from) === id) s.add(dir === 'out' ? e.from : e.to);
+  }
+  return s;
+}
+
 export function graphErrors(graph: Graph): string[] {
   const errs: string[] = [];
   const ids = new Set(graph.lessons.map((l) => l.id));
   const stageIdx = new Map(graph.stages.map((s, i) => [s, i]));
   const lessonStage = new Map(graph.lessons.map((l) => [l.id, stageIdx.get(l.stage) ?? -1]));
   const seen = new Set<string>();
+  const lessonOf = new Map(graph.lessons.map((l) => [l.id, l]));
   for (const l of graph.lessons) {
     if (!graph.tracks.includes(l.track) && l.track !== 'all') errs.push(`${l.id}: unknown track ${l.track}`);
     if (!stageIdx.has(l.stage)) errs.push(`${l.id}: unknown stage ${l.stage}`);
+    if (l.track === 'math' && !l.strand) errs.push(`${l.id}: math lesson without a strand`);
+    if (l.strand && l.strand !== 'ALL' && !graph.strands.includes(l.strand)) errs.push(`${l.id}: unknown strand ${l.strand}`);
   }
   for (const e of graph.edges) {
     const key = `${e.from}->${e.to}`;
-    if (seen.has(key)) errs.push(`duplicate edge ${key}`);
-    seen.add(key);
+    const typed = `${key} (${e.type})`;
+    // The same pair may be both a prerequisite and a long-range thread (M13 to M32), never twice the same type.
+    if (seen.has(typed)) errs.push(`duplicate edge ${typed}`);
+    seen.add(typed);
     if (!ids.has(e.from) || !ids.has(e.to)) errs.push(`edge ${key} references a missing lesson`);
     if (!['vertical', 'horizontal', 'long_range'].includes(e.type)) errs.push(`edge ${key} has bad type ${e.type}`);
     if (e.type === 'vertical' && (lessonStage.get(e.from) ?? 0) > (lessonStage.get(e.to) ?? 0))
       errs.push(`vertical edge ${key} points from a later stage to an earlier one`);
     if (e.type === 'horizontal' && lessonStage.get(e.from) !== lessonStage.get(e.to))
       errs.push(`horizontal edge ${key} crosses stages`);
+    const a = lessonOf.get(e.from);
+    const b = lessonOf.get(e.to);
+    // Horizontal edges link different tracks, or two math lessons in different strands.
+    if (e.type === 'horizontal' && a && b && a.track === b.track && !(a.track === 'math' && a.strand !== b.strand))
+      errs.push(`horizontal edge ${key} stays within one track and strand`);
+    if (e.type === 'long_range' && lessonStage.get(e.from) === lessonStage.get(e.to))
+      errs.push(`long-range edge ${key} stays within one stage`);
   }
   // DAG check on vertical edges.
   const adj = new Map<string, string[]>();
@@ -70,12 +104,52 @@ export function graphErrors(graph: Graph): string[] {
   for (const l of graph.lessons) {
     const inbound = graph.edges.filter((e) => e.to === l.id);
     const outbound = graph.edges.filter((e) => e.from === l.id);
-    const roots = ['L01', 'L02', 'L03'];
+    const roots = ROOTS;
     if (!roots.includes(l.id) && inbound.length === 0) errs.push(`${l.id}: no inbound edge`);
     if (l.id !== last && outbound.length === 0) errs.push(`${l.id}: no outbound edge`);
     if (![...inbound, ...outbound].some((e) => e.type !== 'vertical')) errs.push(`${l.id}: no horizontal or long-range edge`);
   }
   void first;
+  return errs;
+}
+
+// docs/math-track.md, "Lesson template" and "Minimum density per lesson".
+export function mathTrackErrors(l: LoadedLesson, graph: Graph, all: Block[]): string[] {
+  const errs: string[] = [];
+  const { lesson, yaml } = l;
+  const id = lesson.id;
+  const n = Number(id.slice(1));
+  const total = yaml.movements.reduce((s, m) => s + m.minutes, 0);
+  if (yaml.hours !== 10 && yaml.hours !== 12) errs.push(`${id}: math lessons are 10 or 12 hours, not ${yaml.hours}`);
+  if (yaml.movements.length !== 8) errs.push(`${id}: math lessons have all eight movements`);
+  if (lesson.theoryMinutes * 2 !== total) errs.push(`${id}: theory ${lesson.theoryMinutes} of ${total} minutes is not exactly half`);
+  const exIds = Object.keys(lesson.exercises).filter((e) => e !== 'capstone');
+  if (exIds.length < 14 || exIds.length > 16) errs.push(`${id}: ${exIds.length} exercises (math lessons have 14 to 16 plus the capstone)`);
+  const prefix = n >= 15 ? 'test_grad' : 'test_invariant';
+  const checked = exIds.filter((e) => lesson.exercises[e].testNames.some((t) => t.startsWith(prefix)));
+  if (checked.length < 3) errs.push(`${id}: ${checked.length} exercises with a ${prefix}* check (need 3)`);
+  const count = (t: Block['t']) => all.filter((b) => b.t === t).length;
+  if (count('predict') < 5) errs.push(`${id}: ${count('predict')} predictions (need 5)`);
+  if (count('derivation') < 4) errs.push(`${id}: ${count('derivation')} derivations (need 4)`);
+  const widgetsIn = (prefixes: string[]) =>
+    lesson.movements.filter((m) => prefixes.some((p) => m.id.startsWith(p))).flatMap((m) => collectDirectives(m.blocks)).filter((b) => b.t === 'widget').length;
+  if (widgetsIn(['m1', 'm2']) < 1) errs.push(`${id}: no widget in the puzzle or derivation`);
+  if (widgetsIn(['m4', 'm5']) < 1) errs.push(`${id}: no widget in scale or break it`);
+  const feynman = all.filter((b): b is Extract<Block, { t: 'feynman' }> => b.t === 'feynman');
+  const explain = feynman.filter((f) => !f.id.startsWith('proof'));
+  if (explain.length !== 1) errs.push(`${id}: ${explain.length} plain-language Feynman blocks (need exactly 1)`);
+  for (const f of explain)
+    if (f.keyPoints.length < 4 || f.keyPoints.length > 6) errs.push(`${id}: feynman ${f.id} has ${f.keyPoints.length} key points (need 4 to 6)`);
+  const proofs = feynman.filter((f) => f.id.startsWith('proof'));
+  if (lesson.stage !== 'prelude' && proofs.length < 1) errs.push(`${id}: no written proof (a feynman block with id proof*)`);
+  for (const f of proofs) if (f.rubric !== 'concept') errs.push(`${id}: proof ${f.id} must use the concept rubric`);
+  const chips = (dir: 'to' | 'from') => new Set(all.flatMap((b) => (b.t === 'edge' && b.dir === dir ? [b.lesson] : []))).size;
+  const ins = neighbours(graph.edges, id, 'in').size;
+  const outs = neighbours(graph.edges, id, 'out').size;
+  if (chips('from') < Math.min(2, ins)) errs.push(`${id}: ${chips('from')} edge chips from earlier lessons (need ${Math.min(2, ins)})`);
+  if (chips('to') < Math.min(2, outs)) errs.push(`${id}: ${chips('to')} edge chips to later lessons (need ${Math.min(2, outs)})`);
+  const cards = reviewItemsFor(l).length;
+  if (cards < 8 || cards > 12) errs.push(`${id}: ${cards} review cards (need 8 to 12)`);
   return errs;
 }
 
@@ -98,7 +172,8 @@ export function lessonErrors(l: LoadedLesson, graph: Graph, loaded: Map<string, 
   if (exIds.length < 12) errs.push(`${id}: ${exIds.length} exercises (need 12)`);
   if (!lesson.exercises.capstone) errs.push(`${id}: no capstone`);
   const gradEx = exIds.filter((e) => lesson.exercises[e].testNames.some((n) => n.startsWith('test_grad')));
-  if (gradEx.length < 3) errs.push(`${id}: ${gradEx.length} exercises with a test_grad* gradient check (need 3)`);
+  // Math-track lessons follow their own rule (test_invariant* before M15), in mathTrackErrors.
+  if (gradEx.length < 3 && !/^M\d\d$/.test(id)) errs.push(`${id}: ${gradEx.length} exercises with a test_grad* gradient check (need 3)`);
   for (const e of [...exIds, 'capstone']) {
     const ex = lesson.exercises[e];
     if (ex && ex.testNames.length === 0) errs.push(`${id}/${e}: tests.py defines no test_* functions`);
@@ -130,10 +205,7 @@ export function lessonErrors(l: LoadedLesson, graph: Graph, loaded: Map<string, 
     if (b.t === 'widget' && !fs.existsSync(path.join(ROOT, 'src', 'widgets', `${b.name}.tsx`)))
       errs.push(`${id}: widget ${b.name} has no src/widgets/${b.name}.tsx`);
     if (b.t === 'edge') {
-      const ok =
-        b.dir === 'to'
-          ? graph.edges.some((e) => e.from === id && e.to === b.lesson)
-          : graph.edges.some((e) => e.to === id && e.from === b.lesson);
+      const ok = b.dir === 'to' ? linked(graph.edges, id, b.lesson) : linked(graph.edges, b.lesson, id);
       if (!ok) errs.push(`${id}: edge marker ${b.dir} ${b.lesson} has no matching graph edge`);
     }
     if (b.t === 'derivation')
@@ -147,10 +219,9 @@ export function lessonErrors(l: LoadedLesson, graph: Graph, loaded: Map<string, 
   }
   for (const e of [...exIds, 'capstone']) if (lesson.exercises[e] && !refs.has(e)) errs.push(`${id}: exercise ${e} is never embedded`);
 
-  for (const r of lesson.reuses)
-    if (!graph.edges.some((e) => e.from === r.from && e.to === id)) errs.push(`${id}: reuses ${r.from} without an edge into ${id}`);
-  for (const h of lesson.hooks)
-    if (!graph.edges.some((e) => e.from === id && e.to === h.to)) errs.push(`${id}: hook to ${h.to} without an edge out of ${id}`);
+  for (const r of lesson.reuses) if (!linked(graph.edges, r.from, id)) errs.push(`${id}: reuses ${r.from} without an edge into ${id}`);
+  for (const h of lesson.hooks) if (!linked(graph.edges, id, h.to)) errs.push(`${id}: hook to ${h.to} without an edge out of ${id}`);
+  if (lesson.track === 'math' && /^M\d\d$/.test(id)) errs.push(...mathTrackErrors(l, graph, all));
   for (const a of yaml.annotations ?? []) if (!graph.lessons.some((g) => g.id === a.target)) errs.push(`${id}: annotation target ${a.target} unknown`);
   for (const k of yaml.katas ?? []) if (!lesson.exercises[k]) errs.push(`${id}: kata ${k} is not an exercise`);
 
@@ -198,20 +269,23 @@ export function lessonErrors(l: LoadedLesson, graph: Graph, loaded: Map<string, 
 }
 
 function main() {
-  const argv = process.argv.slice(2);
-  const pi = argv.indexOf('--phase');
+  const allowUnpublished = process.argv.includes('--allow-unpublished');
   const graph = loadGraph();
-  const expected = pi >= 0 ? argv[pi + 1].split(',').map((s) => s.trim()) : graph.lessons.map((l) => l.id);
   const errs = graphErrors(graph);
   const loaded = new Map<string, LoadedLesson>();
-  for (const id of expected) {
-    if (!graph.lessons.some((l) => l.id === id)) errs.push(`--phase lists unknown lesson ${id}`);
-    else if (!hasLesson(id)) errs.push(`${id}: content/lessons/${id}/lesson.yaml missing`);
-  }
+  for (const g of graph.lessons) if (!allowUnpublished && !hasLesson(g.id)) errs.push(`${g.id}: content/lessons/${g.id}/lesson.yaml missing`);
+  for (const d of fs.readdirSync(path.join(ROOT, 'content', 'lessons')))
+    if (!graph.lessons.some((g) => g.id === d)) errs.push(`content/lessons/${d} is not in graph.yaml`);
   for (const g of graph.lessons) if (hasLesson(g.id)) loaded.set(g.id, loadLesson(g.id, graph));
-  for (const id of loaded.keys()) {
-    if (!expected.includes(id)) errs.push(`${id}: present but not listed in --phase`);
-    errs.push(...lessonErrors(loaded.get(id)!, graph, loaded));
+  for (const id of loaded.keys()) errs.push(...lessonErrors(loaded.get(id)!, graph, loaded));
+  const retired = loadRetired();
+  for (const [from, to] of Object.entries(retired.lessons)) {
+    if (graph.lessons.some((g) => g.id === from)) errs.push(`retired.yaml: ${from} is still in graph.yaml`);
+    if (!graph.lessons.some((g) => g.id === to)) errs.push(`retired.yaml: ${from} maps to unknown lesson ${to}`);
+  }
+  for (const [from, to] of Object.entries(retired.exercises)) {
+    const [lid, ex] = to.split('/');
+    if (!loaded.get(lid)?.lesson.exercises[ex]) errs.push(`retired.yaml: exercise ${from} maps to missing ${to}`);
   }
   const { missing } = findAnnotations(loaded);
   errs.push(...missing);

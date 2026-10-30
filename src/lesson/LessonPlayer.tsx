@@ -2,22 +2,81 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { useIndex, useLesson } from '../content/load';
 import type { ContentIndex, Lesson, Movement } from '../content/types';
-import { completeMovement, logTime, rememberPath, touchLesson, useStore } from '../store/store';
-import { exercisePassed, exerciseSteps, lessonComplete, lessonReviewIds, movementRequirements } from '../store/derive';
+import { completeMovement, logTime, openMovement, rememberPath, useStore } from '../store/store';
+import {
+  SESSION_MINUTES,
+  dueReviewIds,
+  exercisePassed,
+  exerciseSteps,
+  lessonComplete,
+  lessonGate,
+  lessonReviewIds,
+  movementRequirements,
+  reviewsFirst,
+  type LessonGate,
+} from '../store/derive';
 import { AnnotatedBlock, type BlockCtx } from './BlockView';
 import { RecallBridge } from '../review/RecallBridge';
+import { ReviewQueue } from '../review/ReviewPage';
 import { Meter } from './Meter';
 import { Check, ChevronLeft, ChevronRight, Code, Cross, Menu } from '../app/icons';
 import styles from './Lesson.module.css';
+
+// Minutes of visible study in this browser session (a session is about 90 minutes).
+let sessionMinutes = 0;
 
 function useTimeLog(lessonId: string | undefined) {
   useEffect(() => {
     if (!lessonId) return;
     const t = window.setInterval(() => {
-      if (document.visibilityState === 'visible') void logTime(lessonId, 1 / 60);
+      if (document.visibilityState !== 'visible') return;
+      sessionMinutes += 1;
+      void logTime(lessonId, 1 / 60);
     }, 60_000);
     return () => window.clearInterval(t);
   }, [lessonId]);
+}
+
+function GateBanner({ gate }: { gate: LessonGate }) {
+  if (!gate) return null;
+  if (gate.kind === 'busy')
+    return (
+      <p className="banner">
+        One lesson at a time: you are working on{' '}
+        <Link to={`/lesson/${gate.other}`}>{gate.other}</Link>. Finish it before starting this one; you can read here meanwhile.
+      </p>
+    );
+  const incomplete = gate.missing.filter((m) => m.reason === 'incomplete').map((m) => m.id);
+  const feynman = gate.missing.filter((m) => m.reason === 'feynman').map((m) => m.id);
+  return (
+    <p className="banner">
+      Preview: this lesson builds on {[...incomplete, ...feynman].join(', ')}.{' '}
+      {incomplete.length > 0 && <>Complete {incomplete.join(', ')} first. </>}
+      {feynman.length > 0 && (
+        <>
+          Pass the Feynman explanation of {feynman.join(', ')} (14 of 20 or better, graded or self-assessed) to unlock it.{' '}
+        </>
+      )}
+      You can read everything here meanwhile.
+    </p>
+  );
+}
+
+function ReviewsFirst({ count, index }: { count: number; index: ContentIndex }) {
+  const reviews = useStore((s) => s.reviews);
+  // Snapshot the queue on entry; grading the last item opens the step.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const ids = useMemo(() => dueReviewIds({ reviews } as never, index), [index]);
+  return (
+    <section className="card gate" aria-label="Reviews first">
+      <div className="card-kicker">Reviews first</div>
+      <p>
+        {count} review{count === 1 ? ' is' : 's are'} due. Each session starts with the review queue: clear it, then this step opens. Recalling
+        what you learned before is what makes the next step stick.
+      </p>
+      <ReviewQueue ids={ids} />
+    </section>
+  );
 }
 
 const MODE_LABEL = { theory: 'Theory', practice: 'Practice', both: 'Theory and practice' } as const;
@@ -85,13 +144,27 @@ function Syllabus({ lesson, current, done, onClose }: { lesson: Lesson; current:
   );
 }
 
-function MovementBody({ lesson, index, movement, ctx }: { lesson: Lesson; index: ContentIndex; movement: Movement; ctx: BlockCtx }) {
+function MovementBody({
+  lesson,
+  index,
+  movement,
+  ctx,
+  gate,
+  dueFirst,
+}: {
+  lesson: Lesson;
+  index: ContentIndex;
+  movement: Movement;
+  ctx: BlockCtx;
+  gate: LessonGate;
+  dueFirst: number;
+}) {
   const state = useStore((s) => s);
   const progress = state.progress[lesson.id];
   const navigate = useNavigate();
   const reqs = movementRequirements(state, lesson, movement);
   const done = progress?.movementsDone.includes(movement.id) ?? false;
-  const ready = reqs.every((r) => r.done);
+  const ready = reqs.every((r) => r.done) && !gate && !dueFirst;
   const pos = lesson.movements.findIndex((m) => m.id === movement.id);
   const prev = lesson.movements[pos - 1];
   const next = lesson.movements[pos + 1];
@@ -124,7 +197,7 @@ function MovementBody({ lesson, index, movement, ctx }: { lesson: Lesson; index:
         </div>
         <h1>{movement.title}</h1>
       </header>
-      {pos === 0 && (
+      {pos === 0 && !dueFirst && (
         <>
           <RecallBridge lesson={lesson} index={index} />
           {lesson.reuses.length > 0 && (
@@ -140,9 +213,11 @@ function MovementBody({ lesson, index, movement, ctx }: { lesson: Lesson; index:
           )}
         </>
       )}
-      {movement.blocks.map((b, i) => (
-        <AnnotatedBlock key={i} b={b} ctx={ctx} notes={notes.filter((n) => n.block === i)} />
-      ))}
+      {dueFirst > 0 ? (
+        <ReviewsFirst count={dueFirst} index={index} />
+      ) : (
+        movement.blocks.map((b, i) => <AnnotatedBlock key={i} b={b} ctx={ctx} notes={notes.filter((n) => n.block === i)} />)
+      )}
       {isLast && lesson.hooks.length > 0 && (
         <section className="card hooks" aria-label="Where this goes next">
           <div className="card-kicker">Where this goes next</div>
@@ -208,7 +283,17 @@ function MovementBody({ lesson, index, movement, ctx }: { lesson: Lesson; index:
           )
         ) : (
           <button className="btn primary" disabled={!ready} onClick={() => void complete()}>
-            {ready ? (isLast ? 'Complete movement and lesson' : 'Complete movement') : 'Finish the tasks to continue'}
+            {ready
+              ? isLast
+                ? 'Complete movement and lesson'
+                : 'Complete movement'
+              : gate
+                ? gate.kind === 'busy'
+                  ? `Finish ${gate.other} first`
+                  : 'Locked: preview only'
+                : dueFirst
+                  ? 'Clear your reviews first'
+                  : 'Finish the tasks to continue'}
           </button>
         )}
       </footer>
@@ -223,13 +308,8 @@ export function LessonPlayer() {
   const { data: lesson, error } = useLesson(lessonId);
   const progress = useStore((s) => s.progress[lessonId]);
   const state = useStore((s) => s);
-  const prereqsDone = lesson ? lesson.prereqs.filter((p) => !lessonComplete(state, p)) : [];
   const [navOpen, setNavOpen] = useState(false);
   useTimeLog(lesson?.id);
-
-  useEffect(() => {
-    if (lesson) void touchLesson(lesson.id);
-  }, [lesson]);
 
   const movement = useMemo(() => {
     if (!lesson) return null;
@@ -242,9 +322,17 @@ export function LessonPlayer() {
   useEffect(() => {
     document.title = lesson ? `${lesson.id} ${lesson.title} | Forge` : 'Forge';
   }, [lesson]);
+  const gate = lesson && index ? lessonGate(state, index, lesson) : null;
+  const dueFirst = lesson && index && movement && !gate ? reviewsFirst(state, index, lesson.id, movement.id) : 0;
+  const canOpen = !!lesson && !!index && !!movement && !gate && !dueFirst;
   useEffect(() => {
-    if (lesson && movement) void rememberPath(`/lesson/${lesson.id}/${movement.id}`);
-  }, [lesson, movement]);
+    if (canOpen) void openMovement(lesson!.id, movement!.id);
+  }, [canOpen, lesson, movement]);
+  // Remember only screens the learner can work on, so Resume never lands on a preview.
+  useEffect(() => {
+    if (canOpen) void rememberPath(`/lesson/${lesson!.id}/${movement!.id}`);
+  }, [canOpen, lesson, movement]);
+  const [breakDue] = useState(() => sessionMinutes >= SESSION_MINUTES);
   useEffect(() => {
     if (!navOpen) return;
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setNavOpen(false);
@@ -310,13 +398,14 @@ export function LessonPlayer() {
         </>
       )}
       <main className={styles.center} id="main">
-        {prereqsDone.length > 0 && (
+        <GateBanner gate={gate} />
+        {breakDue && !gate && (
           <p className="banner">
-            Preview: this lesson builds on {prereqsDone.join(', ')}, which you have not completed. Everything here works; the map unlocks it fully once
-            those are done.
+            You have studied for {SESSION_MINUTES} minutes in this session, and a movement boundary is a natural place to stop. Come back tomorrow and
+            start with your reviews: slow and steady is how this sticks.
           </p>
         )}
-        <MovementBody key={movement.id} lesson={lesson} index={index} movement={movement} ctx={ctx} />
+        <MovementBody key={movement.id} lesson={lesson} index={index} movement={movement} ctx={ctx} gate={gate} dueFirst={dueFirst} />
       </main>
     </div>
   );

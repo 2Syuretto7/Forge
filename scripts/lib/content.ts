@@ -10,8 +10,10 @@ import type {
   Lesson,
   Mode,
   Movement,
+  Retired,
   Reuse,
   Stage,
+  Strand,
   Track,
 } from '../../src/content/types';
 import { unified } from 'unified';
@@ -29,6 +31,7 @@ export interface GraphLesson {
   id: string;
   title: string;
   track: Track;
+  strand?: Strand;
   stage: Stage;
   gpu: boolean;
   compute: 'browser' | 'browser+colab' | 'colab';
@@ -37,6 +40,7 @@ export interface GraphLesson {
 export interface Graph {
   tracks: Track[];
   stages: Stage[];
+  strands: Strand[];
   lessons: GraphLesson[];
   edges: Edge[];
 }
@@ -57,7 +61,16 @@ export interface LessonYaml {
 export function loadGraph(): Graph {
   const g = YAML.parse(fs.readFileSync(path.join(CONTENT, 'graph.yaml'), 'utf8')) as Graph;
   g.edges = g.edges.map((e) => ({ ...e, from: String(e.from), to: String(e.to) }));
+  g.strands = g.strands ?? [];
   return g;
+}
+
+// content/retired.yaml: lessons taken out of the curriculum and where their progress maps.
+export function loadRetired(): Retired {
+  const p = path.join(CONTENT, 'retired.yaml');
+  if (!fs.existsSync(p)) return { lessons: {}, exercises: {} };
+  const r = YAML.parse(fs.readFileSync(p, 'utf8')) as Partial<Retired>;
+  return { lessons: r.lessons ?? {}, exercises: r.exercises ?? {} };
 }
 
 export function lessonDir(id: string) {
@@ -199,6 +212,7 @@ export function loadLesson(id: string, graph: Graph): LoadedLesson {
     id,
     title: meta?.title ?? id,
     track: meta?.track ?? 'math',
+    ...(meta?.strand ? { strand: meta.strand } : {}),
     stage: meta?.stage ?? 'foundations',
     gpu: meta?.gpu ?? false,
     hours: yaml.hours,
@@ -212,6 +226,7 @@ export function loadLesson(id: string, graph: Graph): LoadedLesson {
     exercises,
     hooks: yaml.hooks ?? [],
     reuses: yaml.reuses ?? [],
+    feynman: movements.flatMap((m) => collectDirectives(m.blocks)).flatMap((b) => (b.t === 'feynman' ? [b.id] : [])),
   };
   return { lesson, yaml, issues, plainText, files, notebookSource };
 }

@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useIndex } from '../content/load';
 import { gradeReview, useStore } from '../store/store';
-import { dueItems } from '../store/derive';
+import { dueReviewIds } from '../store/derive';
 import { localDate } from './sm2';
 import { ReviewCard, resolveItem } from './ReviewCard';
 
@@ -32,10 +32,11 @@ export function ReviewQueue({ ids, onEmpty }: { ids: string[]; onEmpty?: React.R
 
 export function ReviewPage() {
   const reviews = useStore((s) => s.reviews);
+  const { data: index } = useIndex();
   const today = localDate();
-  // Snapshot the queue when the page opens so graded items leave it cleanly.
+  // Snapshot the queue when the page opens (and the index has loaded) so graded items leave it cleanly.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  const ids = useMemo(() => dueItems({ reviews } as never, today).map((r) => r.itemId).sort(), []);
+  const ids = useMemo(() => (index ? dueReviewIds({ reviews } as never, index, today) : []), [index]);
   const upcoming = Object.values(reviews).filter((r) => r.due > today).length;
   return (
     <main className="page narrow" id="main">

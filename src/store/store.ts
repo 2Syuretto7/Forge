@@ -17,6 +17,7 @@ import {
   type ExerciseStatus,
 } from './db';
 import { grade as sm2Grade, localDate, newReview } from '../review/sm2';
+import type { ContentIndex } from '../content/types';
 
 export interface Settings {
   apiKey: string;
@@ -120,6 +121,50 @@ function progressOf(lessonId: string): ProgressRec {
       hoursLogged: 0,
     }
   );
+}
+
+// Opening a movement starts its lesson and records the movement as opened, so a review
+// that falls due later does not lock the learner out of work already begun.
+export async function openMovement(lessonId: string, movementId: string) {
+  const p = progressOf(lessonId);
+  const opened = p.movementsOpened ?? [];
+  if (p.status !== 'not_started' && opened.includes(movementId)) return;
+  const next: ProgressRec = {
+    ...p,
+    status: p.status === 'not_started' ? 'in_progress' : p.status,
+    startedAt: p.startedAt ?? Date.now(),
+    movementsOpened: opened.includes(movementId) ? opened : [...opened, movementId],
+  };
+  set({ progress: { ...state.progress, [lessonId]: next } });
+  await put('progress', next);
+}
+
+// Carries progress from retired lessons into the lessons that replaced them
+// (content/retired.yaml): a completed retired lesson completes its successor, and
+// exercise records move to their new ids. Idempotent; runs once the index is loaded.
+export async function migrateRetired(idx: ContentIndex) {
+  const retired = idx.retired ?? { lessons: {}, exercises: {} };
+  for (const [from, to] of Object.entries(retired.lessons)) {
+    const old = state.progress[from];
+    const target = idx.lessons.find((l) => l.id === to);
+    if (old?.status !== 'complete' || !target || !idx.available.includes(to) || idx.available.includes(from)) continue;
+    if (state.progress[to]?.status === 'complete') continue;
+    const next: ProgressRec = {
+      ...progressOf(to),
+      status: 'complete',
+      movementsDone: target.movements.map((m) => m.id),
+      startedAt: state.progress[to]?.startedAt ?? old.startedAt,
+      completedAt: old.completedAt ?? Date.now(),
+      via: from,
+    };
+    await put('progress', next);
+    set({ progress: { ...state.progress, [to]: next } });
+  }
+  for (const [from, to] of Object.entries(retired.exercises)) {
+    const old = state.exercises[from];
+    if (!old || state.exercises[to] || idx.available.includes(from.split('/')[0])) continue;
+    await saveExercise({ ...old, id: to });
+  }
 }
 
 export async function touchLesson(lessonId: string) {

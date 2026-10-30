@@ -4,10 +4,13 @@ import { useIndex } from '../content/load';
 import type { ContentIndex, LessonSummary } from '../content/types';
 import { useStore, type State } from '../store/store';
 import {
-  dueItems,
+  blockingLesson,
+  closure,
+  dueReviewIds,
   exercisesSolved,
   hoursDone,
   lessonPercent,
+  missingPrereqs,
   nodeState,
   resumeTarget,
   streak,
@@ -15,7 +18,7 @@ import {
   totalXp,
   type NodeState,
 } from '../store/derive';
-import { STAGE_LABEL, TRACK_LABEL } from '../graph/labels';
+import { STAGE_LABEL, stageNumber, trackLabel } from '../graph/labels';
 import { Bolt, Book, Check, Clock, Cloud, Code, Flame, Lock, Play } from '../app/icons';
 import styles from './Dashboard.module.css';
 
@@ -23,6 +26,7 @@ const ACTION: Record<NodeState, string> = {
   available: 'Start',
   in_progress: 'Continue',
   complete: 'Review',
+  optional: 'Review',
   locked: 'Preview',
   unpublished: '',
 };
@@ -31,9 +35,12 @@ const STATUS: Record<NodeState, string> = {
   available: 'Not started',
   in_progress: 'In progress',
   complete: 'Completed',
+  optional: 'Optional review',
   locked: 'Locked',
   unpublished: 'Coming later',
 };
+
+const day = (t: number) => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
 function Progress({ value, label }: { value: number; label: string }) {
   return (
@@ -50,7 +57,7 @@ function Resume({ state, idx }: { state: State; idx: ContentIndex }) {
       <section className={styles.hero} aria-label="Your progress">
         <div className={styles.heroText}>
           <div className={styles.kicker}>Path complete</div>
-          <h2 className={styles.heroTitle}>You have finished all 24 lessons.</h2>
+          <h2 className={styles.heroTitle}>You have finished all {idx.lessons.length} lessons.</h2>
           <p className={styles.heroSub}>Keep your reviews going so it stays with you.</p>
         </div>
       </section>
@@ -58,7 +65,7 @@ function Resume({ state, idx }: { state: State; idx: ContentIndex }) {
   const lesson = idx.lessons.find((l) => l.id === target.lessonId)!;
   const started = !!state.progress[lesson.id];
   const done = state.progress[lesson.id]?.movementsDone.length ?? 0;
-  const mid = /\/lesson\/L\d\d\/(m\d-[a-z]+)/.exec(target.path)?.[1];
+  const mid = /\/lesson\/[LM]\d\d\/(m\d-[a-z]+)/.exec(target.path)?.[1];
   const movement = lesson.movements.find((m) => m.id === mid);
   const onExercise = target.path.includes('/ex/');
   return (
@@ -137,6 +144,17 @@ function LessonRow({ l, state, idx }: { l: LessonSummary; state: State; idx: Con
   const st = nodeState(state, idx, l);
   const pct = lessonPercent(state, l);
   const done = state.progress[l.id]?.movementsDone.length ?? 0;
+  const close = st === 'complete' ? closure(state, idx, l.id) : null;
+  const waitFor = st === 'available' || st === 'optional' ? blockingLesson(state, idx, l.id) : null;
+  const status = close
+    ? close.closed
+      ? 'Closed'
+      : Date.now() < close.from
+        ? `Week check from ${day(close.from)}`
+        : `Week check: ${close.passed} of ${close.total} cards`
+    : waitFor
+      ? `After ${waitFor}`
+      : STATUS[st];
   return (
     <li className={`${styles.lesson} ${styles['s_' + st]}`}>
       <span className={styles.badge} aria-hidden="true">
@@ -152,15 +170,22 @@ function LessonRow({ l, state, idx }: { l: LessonSummary; state: State; idx: Con
               {l.title}
             </Link>
           )}
-          <span className={`${styles.status} ${styles['st_' + st]}`}>{STATUS[st]}</span>
+          <span className={`${styles.status} ${styles['st_' + st]}`}>{status}</span>
         </div>
         <div className={styles.meta}>
-          <span>{TRACK_LABEL[l.track]}</span>
+          <span>{trackLabel(l)}</span>
           <span>
             <Clock size={13} /> {l.hours} h
           </span>
           <span>{l.gpu ? <><Cloud size={13} /> Colab GPU capstone</> : <><Book size={13} /> In the browser</>}</span>
-          {st === 'locked' && <span>Needs {l.prereqs.filter((p) => state.progress[p]?.status !== 'complete').join(', ')}</span>}
+          {st === 'locked' && (
+            <span>
+              Needs{' '}
+              {missingPrereqs(state, idx, l)
+                .map((m) => (m.reason === 'feynman' ? `${m.id} (Feynman pass)` : m.id))
+                .join(', ')}
+            </span>
+          )}
         </div>
         {(st === 'in_progress' || st === 'complete') && (
           <div className={styles.lessonProgress}>
@@ -188,16 +213,16 @@ function Syllabus({ state, idx }: { state: State; idx: ContentIndex }) {
   return (
     <section aria-labelledby="syllabus-h">
       <h2 id="syllabus-h" className={styles.sectionTitle}>
-        Your path: 24 lessons, {totalHours(idx)} hours
+        Your path: {idx.lessons.length} lessons, {totalHours(idx)} hours
       </h2>
-      {idx.stages.map((s, i) => {
+      {idx.stages.map((s) => {
         const lessons = idx.lessons.filter((l) => l.stage === s);
         const complete = lessons.filter((l) => state.progress[l.id]?.status === 'complete').length;
         return (
           <section key={s} className={styles.stage} aria-labelledby={`stage-${s}`}>
             <header className={styles.stageHead}>
               <div>
-                <div className={styles.kicker}>Stage {i + 1}</div>
+                <div className={styles.kicker}>Stage {stageNumber(idx.stages, s)}</div>
                 <h3 id={`stage-${s}`} className={styles.stageTitle}>
                   {STAGE_LABEL[s]}
                 </h3>
@@ -224,7 +249,7 @@ function Syllabus({ state, idx }: { state: State; idx: ContentIndex }) {
 export function Dashboard() {
   const { data: idx, error } = useIndex();
   const state = useStore((s) => s);
-  const due = dueItems(state).length;
+  const due = idx ? dueReviewIds(state, idx).length : 0;
   useEffect(() => {
     document.title = 'Learn | Forge';
   }, []);

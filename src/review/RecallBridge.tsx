@@ -4,11 +4,17 @@ import { useStore } from '../store/store';
 import { dueItems } from '../store/derive';
 import { ReviewQueue } from './ReviewPage';
 
-// Movement 0: due reviews filtered to the lesson's prerequisites (every lesson
-// with an edge into this one).
+// Movement 0: due reviews filtered to the lessons this one builds on.
 export function RecallBridge({ lesson, index }: { lesson: Lesson; index: ContentIndex }) {
   const reviews = useStore((s) => s.reviews);
-  const sources = useMemo(() => new Set(index.edges.filter((e) => e.to === lesson.id).map((e) => e.from)), [index, lesson.id]);
+  // Every lesson with an edge into this one; a horizontal edge links both ways.
+  const sources = useMemo(
+    () =>
+      new Set(
+        index.edges.flatMap((e) => (e.to === lesson.id ? [e.from] : e.type === 'horizontal' && e.from === lesson.id ? [e.to] : [])),
+      ),
+    [index, lesson.id],
+  );
   const ids = useMemo(
     () =>
       dueItems({ reviews } as never)

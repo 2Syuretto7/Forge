@@ -13,6 +13,10 @@ export interface ProgressRec {
   startedAt: number | null;
   completedAt: number | null;
   hoursLogged: number;
+  // Movements the learner has opened (a new one opens only when no review is due).
+  movementsOpened?: string[];
+  // Set when the lesson was completed by migration from a retired lesson (docs/math-track.md).
+  via?: string;
 }
 
 export interface ExerciseRec {

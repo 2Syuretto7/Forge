@@ -1,11 +1,51 @@
-# Single source of truth for the curriculum graph (EXECUTION_PLAN.md Section 10).
+# Single source of truth for the curriculum graph. The math track (M01-M38) follows
+# docs/math-track.md; the other tracks follow EXECUTION_PLAN.md Section 10.
 tracks: [math, core, arch, sys, llm]
-stages: [foundations, learning, models_gpus, scale, frontier]
+stages: [prelude, foundations, learning, models_gpus, scale, frontier]
+strands: [NUM, ALG, LIN, CAL, PRB, OPT]
 lessons:
-  - {id: L01, title: "Linear algebra as the geometry of data", track: math, stage: foundations, gpu: false, compute: browser}
-  - {id: L02, title: "Probability, likelihood and estimation", track: math, stage: foundations, gpu: false, compute: browser}
-  - {id: L03, title: "Calculus, Jacobians and automatic differentiation", track: math, stage: foundations, gpu: false, compute: browser}
-  - {id: L04, title: "Information theory: entropy, cross-entropy, KL", track: math, stage: foundations, gpu: false, compute: browser}
+  - {id: M01, title: "Numbers, magnitudes and estimation", track: math, strand: NUM, stage: prelude, gpu: false, compute: browser}
+  - {id: M02, title: "Algebra: the art of the unknown", track: math, strand: ALG, stage: prelude, gpu: false, compute: browser}
+  - {id: M03, title: "Logic, sets and proof", track: math, strand: ALG, stage: prelude, gpu: false, compute: browser}
+  - {id: M04, title: "Functions and their graphs", track: math, strand: ALG, stage: prelude, gpu: false, compute: browser}
+  - {id: M05, title: "Sequences, series and induction", track: math, strand: CAL, stage: prelude, gpu: false, compute: browser}
+  - {id: M06, title: "Exponentials and logarithms", track: math, strand: ALG, stage: prelude, gpu: false, compute: browser}
+  - {id: M07, title: "Trigonometry, the plane and complex numbers", track: math, strand: LIN, stage: prelude, gpu: false, compute: browser}
+  - {id: M08, title: "Counting and chance", track: math, strand: PRB, stage: prelude, gpu: false, compute: browser}
+  - {id: M09, title: "Vectors and the dot product", track: math, strand: LIN, stage: foundations, gpu: false, compute: browser}
+  - {id: M10, title: "Matrices as linear maps", track: math, strand: LIN, stage: foundations, gpu: false, compute: browser}
+  - {id: M11, title: "Linear systems, elimination and rank", track: math, strand: LIN, stage: foundations, gpu: false, compute: browser}
+  - {id: M12, title: "Orthogonality, projections and least squares", track: math, strand: LIN, stage: foundations, gpu: false, compute: browser}
+  - {id: M13, title: "Eigenvalues, eigenvectors and quadratic forms", track: math, strand: LIN, stage: foundations, gpu: false, compute: browser}
+  - {id: M14, title: "The singular value decomposition", track: math, strand: LIN, stage: foundations, gpu: false, compute: browser}
+  - {id: M15, title: "Limits, continuity and the derivative", track: math, strand: CAL, stage: foundations, gpu: false, compute: browser}
+  - {id: M16, title: "Taylor series, extrema and Newton's method", track: math, strand: CAL, stage: foundations, gpu: false, compute: browser}
+  - {id: M17, title: "Integration and accumulation", track: math, strand: CAL, stage: foundations, gpu: false, compute: browser}
+  - {id: M18, title: "Multivariable calculus: gradients, Jacobians, Hessians", track: math, strand: CAL, stage: foundations, gpu: false, compute: browser}
+  - {id: M19, title: "Matrix calculus and automatic differentiation", track: math, strand: CAL, stage: foundations, gpu: false, compute: browser}
+  - {id: M20, title: "Multiple integrals and change of variables", track: math, strand: CAL, stage: foundations, gpu: false, compute: browser}
+  - {id: M21, title: "Probability spaces, conditioning and Bayes", track: math, strand: PRB, stage: foundations, gpu: false, compute: browser}
+  - {id: M22, title: "Random variables, expectation and variance", track: math, strand: PRB, stage: foundations, gpu: false, compute: browser}
+  - {id: M23, title: "Multivariate distributions and the Gaussian", track: math, strand: PRB, stage: foundations, gpu: false, compute: browser}
+  - {id: M24, title: "Limit theorems and Monte Carlo", track: math, strand: PRB, stage: foundations, gpu: false, compute: browser}
+  - {id: M25, title: "Inference: likelihood, MLE, MAP and the bootstrap", track: math, strand: PRB, stage: foundations, gpu: false, compute: browser}
+  - {id: M26, title: "Floating point and numerical stability", track: math, strand: NUM, stage: foundations, gpu: false, compute: browser}
+  - {id: M27, title: "Information theory: entropy, cross-entropy, KL", track: math, strand: NUM, stage: foundations, gpu: false, compute: browser}
+  - {id: M28, title: "Convexity and the geometry of optimization", track: math, strand: OPT, stage: foundations, gpu: false, compute: browser}
+  - {id: M29, title: "Gradient methods: convergence, momentum and noise", track: math, strand: OPT, stage: learning, gpu: false, compute: browser}
+  - {id: M30, title: "Constrained optimization, Lagrange duality and KKT", track: math, strand: OPT, stage: learning, gpu: false, compute: browser}
+  - {id: M31, title: "Concentration and generalization theory", track: math, strand: PRB, stage: learning, gpu: false, compute: browser}
+  - {id: M32, title: "Markov chains and MCMC", track: math, strand: PRB, stage: learning, gpu: false, compute: browser}
+  - {id: M33, title: "Numerical linear algebra at scale", track: math, strand: NUM, stage: models_gpus, gpu: false, compute: browser}
+  - {id: M34, title: "High-dimensional geometry and random matrices", track: math, strand: LIN, stage: models_gpus, gpu: false, compute: browser}
+  - {id: M35, title: "Power laws, nonlinear fitting and extrapolation", track: math, strand: PRB, stage: scale, gpu: false, compute: browser}
+  - {id: M36, title: "Score functions, gradient estimators and MDPs", track: math, strand: OPT, stage: frontier, gpu: false, compute: browser}
+  - {id: M37, title: "Stochastic differential equations and diffusion", track: math, strand: CAL, stage: frontier, gpu: false, compute: browser}
+  - {id: M38, title: "Capstone: the mathematics of a real paper", track: math, strand: ALL, stage: frontier, gpu: false, compute: browser}
+  - {id: L01, title: "Linear algebra as the geometry of data", track: math, strand: LIN, stage: foundations, gpu: false, compute: browser}
+  - {id: L02, title: "Probability, likelihood and estimation", track: math, strand: PRB, stage: foundations, gpu: false, compute: browser}
+  - {id: L03, title: "Calculus, Jacobians and automatic differentiation", track: math, strand: CAL, stage: foundations, gpu: false, compute: browser}
+  - {id: L04, title: "Information theory: entropy, cross-entropy, KL", track: math, strand: NUM, stage: foundations, gpu: false, compute: browser}
   - {id: L05, title: "Linear and logistic regression, end to end", track: core, stage: learning, gpu: false, compute: browser}
   - {id: L06, title: "Generalization, bias-variance and double descent", track: core, stage: learning, gpu: false, compute: browser}
   - {id: L07, title: "Neural networks and backprop from scratch", track: core, stage: learning, gpu: false, compute: browser}
@@ -28,6 +68,80 @@ lessons:
   - {id: L24, title: "Capstone: train, align, evaluate and serve a small LM", track: all, stage: frontier, gpu: true, compute: colab}
 edges:
   # Vertical (prerequisites)
+  - {from: M01, to: M02, type: vertical}
+  - {from: M02, to: M03, type: vertical}
+  - {from: M02, to: M04, type: vertical}
+  - {from: M02, to: M11, type: vertical}
+  - {from: M03, to: M05, type: vertical}
+  - {from: M03, to: M08, type: vertical}
+  - {from: M04, to: M05, type: vertical}
+  - {from: M04, to: M06, type: vertical}
+  - {from: M04, to: M07, type: vertical}
+  - {from: M04, to: M09, type: vertical}
+  - {from: M05, to: M06, type: vertical}
+  - {from: M05, to: M08, type: vertical}
+  - {from: M05, to: M15, type: vertical}
+  - {from: M06, to: M15, type: vertical}
+  - {from: M06, to: M26, type: vertical}
+  - {from: M06, to: M27, type: vertical}
+  - {from: M07, to: M09, type: vertical}
+  - {from: M08, to: M21, type: vertical}
+  - {from: M09, to: M10, type: vertical}
+  - {from: M10, to: M11, type: vertical}
+  - {from: M10, to: M18, type: vertical}
+  - {from: M11, to: M12, type: vertical}
+  - {from: M12, to: L05, type: vertical}
+  - {from: M12, to: M13, type: vertical}
+  - {from: M13, to: M14, type: vertical}
+  - {from: M13, to: M23, type: vertical}
+  - {from: M13, to: M28, type: vertical}
+  - {from: M13, to: M32, type: vertical}
+  - {from: M14, to: M33, type: vertical}
+  - {from: M14, to: M34, type: vertical}
+  - {from: M15, to: M16, type: vertical}
+  - {from: M15, to: M17, type: vertical}
+  - {from: M15, to: M26, type: vertical}
+  - {from: M16, to: M18, type: vertical}
+  - {from: M16, to: M25, type: vertical}
+  - {from: M17, to: M20, type: vertical}
+  - {from: M17, to: M22, type: vertical}
+  - {from: M18, to: M19, type: vertical}
+  - {from: M18, to: M20, type: vertical}
+  - {from: M18, to: M28, type: vertical}
+  - {from: M19, to: L07, type: vertical}
+  - {from: M19, to: L08, type: vertical}
+  - {from: M20, to: M23, type: vertical}
+  - {from: M21, to: M22, type: vertical}
+  - {from: M22, to: M23, type: vertical}
+  - {from: M22, to: M24, type: vertical}
+  - {from: M22, to: M27, type: vertical}
+  - {from: M22, to: M32, type: vertical}
+  - {from: M23, to: M37, type: vertical}
+  - {from: M24, to: M25, type: vertical}
+  - {from: M24, to: M29, type: vertical}
+  - {from: M24, to: M31, type: vertical}
+  - {from: M25, to: L05, type: vertical}
+  - {from: M25, to: L06, type: vertical}
+  - {from: M25, to: M31, type: vertical}
+  - {from: M25, to: M35, type: vertical}
+  - {from: M26, to: M33, type: vertical}
+  - {from: M27, to: L06, type: vertical}
+  - {from: M27, to: L14, type: vertical}
+  - {from: M27, to: M30, type: vertical}
+  - {from: M27, to: M36, type: vertical}
+  - {from: M28, to: L09, type: vertical}
+  - {from: M28, to: M29, type: vertical}
+  - {from: M28, to: M30, type: vertical}
+  - {from: M29, to: M35, type: vertical}
+  - {from: M29, to: M36, type: vertical}
+  - {from: M30, to: M38, type: vertical}
+  - {from: M31, to: M34, type: vertical}
+  - {from: M32, to: M37, type: vertical}
+  - {from: M33, to: M38, type: vertical}
+  - {from: M34, to: M38, type: vertical}
+  - {from: M35, to: M38, type: vertical}
+  - {from: M36, to: M38, type: vertical}
+  - {from: M37, to: M38, type: vertical}
   - {from: L01, to: L05, type: vertical}
   - {from: L01, to: L09, type: vertical}
   - {from: L01, to: L13, type: vertical}
@@ -73,7 +187,34 @@ edges:
   - {from: L21, to: L24, type: vertical}
   - {from: L22, to: L24, type: vertical}
   - {from: L23, to: L24, type: vertical}
-  # Horizontal (same stage, across tracks)
+  # Horizontal (same stage, across tracks or strands)
+  - {from: M30, to: L05, type: horizontal, note: "Ridge regression is a Lagrangian with a norm constraint"}
+  - {from: M31, to: L06, type: horizontal, note: "Concentration bounds put numbers on the generalization gap"}
+  - {from: M29, to: L09, type: horizontal, note: "Proved rates meet the practical optimizers"}
+  - {from: M34, to: L10, type: horizontal, note: "Variance preservation is what initialization and normalization protect"}
+  - {from: M33, to: L11, type: horizontal, note: "Arithmetic intensity places each kernel on the roofline"}
+  - {from: M34, to: L13, type: horizontal, note: "Near-orthogonality explains the 1/sqrt(d) in attention"}
+  - {from: M35, to: L15, type: horizontal, note: "Your fitting machinery produces the scaling-law fit"}
+  - {from: M36, to: L21, type: horizontal, note: "REINFORCE is the policy-gradient estimator behind RLHF"}
+  - {from: M38, to: L24, type: horizontal, note: "The paper audit method is applied to your capstone model"}
+  - {from: M01, to: M06, type: horizontal, note: "Scientific notation is a logarithm in disguise"}
+  - {from: M01, to: M08, type: horizontal, note: "Orders of magnitude meet the size of sample spaces"}
+  - {from: M06, to: M07, type: horizontal, note: "E to the i theta joins growth and rotation"}
+  - {from: M11, to: M26, type: horizontal, note: "Pivoting is a stability choice, not only an algebra step"}
+  - {from: M12, to: M22, type: horizontal, note: "Variance is a squared length; covariance an inner product"}
+  - {from: M12, to: M25, type: horizontal, note: "Least squares is maximum likelihood under Gaussian noise"}
+  - {from: M13, to: M18, type: horizontal, note: "Hessian eigenvalues decide minimum, maximum or saddle"}
+  - {from: M14, to: M23, type: horizontal, note: "PCA is the eigen-decomposition of the covariance matrix"}
+  - {from: M15, to: M24, type: horizontal, note: "Limits make the law of large numbers precise"}
+  - {from: M17, to: M24, type: horizontal, note: "Monte Carlo is integration by sampling"}
+  - {from: M19, to: M26, type: horizontal, note: "Finite differences fail at tiny steps; autodiff does not"}
+  - {from: M19, to: M27, type: horizontal, note: "The cross-entropy gradient through softmax is p minus y"}
+  - {from: M21, to: M27, type: horizontal, note: "Surprise of an event is minus the log of its probability"}
+  - {from: M24, to: M26, type: horizontal, note: "Summing a million samples needs compensated summation"}
+  - {from: M25, to: M27, type: horizontal, note: "Maximizing likelihood is minimizing cross-entropy"}
+  - {from: M25, to: M28, type: horizontal, note: "Negative log-likelihoods of exponential families are convex"}
+  - {from: M29, to: M32, type: horizontal, note: "Constant-step SGD is a Markov chain with a stationary distribution"}
+  - {from: M33, to: M34, type: horizontal, note: "Randomized SVD works because random projections preserve geometry"}
   - {from: L03, to: L04, type: horizontal, note: "Gradients of log-probabilities meet information measures"}
   - {from: L08, to: L09, type: horizontal, note: "Your autograd engine drives the optimizers"}
   - {from: L11, to: L13, type: horizontal, note: "Attention cost read on the roofline"}
@@ -81,7 +222,26 @@ edges:
   - {from: L17, to: L14, type: horizontal, note: "Train the GPT in reduced precision"}
   - {from: L10, to: L12, type: horizontal, note: "The layer norm derived here becomes a fused kernel"}
   - {from: L20, to: L22, type: horizontal, note: "A distilled student is a natural speculative-decoding draft"}
-  # Long-range (reconnections across stages)
+  # Long-range (an idea planted early returns in a later stage)
+  - {from: M01, to: M35, type: long_range, note: "Orders of magnitude return as compute budgets on log-log axes"}
+  - {from: M02, to: M12, type: long_range, note: "Two equations in two unknowns return as the normal equations"}
+  - {from: M03, to: M31, type: long_range, note: "Quantifiers and proof by contradiction return in generalization bounds"}
+  - {from: M04, to: L07, type: long_range, note: "Sums of shifted ReLUs return as one-hidden-layer networks"}
+  - {from: M05, to: M29, type: long_range, note: "Geometric series return as linear convergence rates"}
+  - {from: M07, to: L13, type: long_range, note: "Planar rotations return as rotary position embeddings"}
+  - {from: M08, to: M31, type: long_range, note: "Counting returns as the union bound and growth functions"}
+  - {from: M09, to: M34, type: long_range, note: "The dot product returns as near-orthogonality in high dimension"}
+  - {from: M10, to: L13, type: long_range, note: "Matrix products are the whole of attention's compute"}
+  - {from: M13, to: M29, type: long_range, note: "Eigenvalues of the Hessian set momentum's optimal value"}
+  - {from: M13, to: M32, type: long_range, note: "A stationary distribution is an eigenvector with eigenvalue 1"}
+  - {from: M14, to: L20, type: long_range, note: "SVD returns as the low-rank update in LoRA"}
+  - {from: M16, to: M29, type: long_range, note: "The second-order Taylor term returns as the step-size limit 2/L"}
+  - {from: M20, to: M37, type: long_range, note: "Change of variables returns as density transport in diffusion"}
+  - {from: M24, to: M36, type: long_range, note: "Monte Carlo returns as gradient estimation"}
+  - {from: M25, to: L23, type: long_range, note: "The bootstrap returns as confidence intervals on evals"}
+  - {from: M26, to: L17, type: long_range, note: "Machine epsilon returns as the limits of bf16 and fp8"}
+  - {from: M27, to: L21, type: long_range, note: "KL divergence returns as the RLHF penalty"}
+  - {from: M30, to: L21, type: long_range, note: "The KL-regularized optimum returns as the basis of DPO"}
   - {from: L01, to: L20, type: long_range, note: "SVD returns as the low-rank update in LoRA"}
   - {from: L04, to: L21, type: long_range, note: "KL divergence returns as the RLHF penalty"}
   - {from: L02, to: L23, type: long_range, note: "The bootstrap returns as confidence intervals on evals"}

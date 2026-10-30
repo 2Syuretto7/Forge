@@ -44,7 +44,7 @@ export function BlockView({ b, ctx }: { b: Block; ctx: BlockCtx }) {
     case 'widget':
       return <WidgetBlock name={b.name} props={b.props} />;
     case 'edge':
-      return <EdgeChip b={b} index={ctx.index} />;
+      return <EdgeChip b={b} index={ctx.index} lessonId={lesson.id} />;
     case 'feynman':
       return <Feynman b={b} lessonId={lesson.id} lessonTitle={lesson.title} />;
     case 'colab':

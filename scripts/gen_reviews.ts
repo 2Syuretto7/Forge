@@ -10,11 +10,15 @@ import type { ReviewItem } from '../src/content/types';
 export function reviewItemsFor(l: LoadedLesson): ReviewItem[] {
   const { lesson, yaml } = l;
   const items: ReviewItem[] = [];
+  const compact = /^M\d\d$/.test(lesson.id);
   for (const mv of lesson.movements) {
     for (const b of collectDirectives(mv.blocks)) {
       if (b.t === 'derivation') {
+        // Math-track lessons keep 8 to 12 cards: one per derivation, its last single-blank step.
+        const last = b.steps.map((s, si) => (s.blanks.length === 1 ? si : -1)).filter((si) => si >= 0).pop();
         b.steps.forEach((s, si) => {
           if (s.blanks.length !== 1) return;
+          if (compact && si !== last) return;
           const spec = parseBlank(s.blanks[0]);
           items.push({
             id: `${lesson.id}/${b.id}/s${si + 1}`,

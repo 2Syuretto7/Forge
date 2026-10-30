@@ -1,6 +1,8 @@
 # Forge: Execution Plan for the AI Coding Agent
 
-This file is the complete, self-contained specification for building **Forge**, a personal learning platform for the ML research and ML engineering skills expected at frontier AI labs. Read it fully before writing code. Execute the phases in order. Do not stop at a partial build: every phase ends with a working, deployed app, and the plan is finished only when all 24 lessons pass the acceptance checks in Section 12.
+This file is the complete, self-contained specification for building **Forge**, a personal learning platform for the ML research and ML engineering skills expected at frontier AI labs. Read it fully before writing code. Execute the phases in order. Do not stop at a partial build: every phase ends with a working, deployed app, and the plan is finished only when every lesson passes the acceptance checks in Section 12.
+
+**Math track (owner request, Phase 7).** The owner replaced the four-lesson math track (L01 to L04) with a 38-lesson track, M01 to M38, specified in [`docs/math-track.md`](docs/math-track.md). That document is binding for the math track: its lessons, edges, lesson template, density minimums, gating rules and migration. Where it and this file disagree, it wins for the math track.
 
 ---
 
@@ -21,7 +23,7 @@ This file is the complete, self-contained specification for building **Forge**, 
 | Topic | Decision |
 | --- | --- |
 | Learner level | Assumes high-school calculus and basic Python. Math lessons start from first principles but move fast. |
-| Pace | Content for all 24 lessons is built; the app unlocks by prerequisites, not by calendar. |
+| Pace | Slow and steady, enforced (docs/math-track.md, Pedagogy): a lesson unlocks when its prerequisites are complete and their Feynman blocks have passed; one lesson in progress at a time; due reviews come before a new movement; a lesson closes at 80% on its own review cards a week after completion. |
 | Compute | Browser only (Pyodide + NumPy) for 9 lessons, browser plus Colab for 3 (L08, L13, L16), free Google Colab (T4 GPU) for 12. No paid compute required. |
 | Target role | Balanced research engineer: ML theory + MLE systems equally weighted. |
 | Hosting | Static site on GitHub Pages, deployed by GitHub Actions on every push to `main`. |
@@ -37,7 +39,7 @@ This file is the complete, self-contained specification for building **Forge**, 
 - **Pedagogy:** the Feynman loop in every lesson: puzzle, derive, build from scratch, explain plainly, break it, reconnect.
 - **50/50 rule:** in every lesson, theory minutes and practice minutes are each between 45% and 55% of the total. Enforced by the content validator.
 - **Long-arc rule:** every lesson has 6 to 12 estimated hours, 6 to 8 movements, at least 12 exercises, and one capstone. Enforced by the validator.
-- **Graph rule:** three edge types (vertical prerequisite, horizontal same-stage cross-track, long-range). Every lesson has at least 1 inbound edge (except L01 to L03), at least 1 outbound edge (except L24), and at least 1 horizontal or long-range edge. Enforced by the validator.
+- **Graph rule:** three edge types (vertical prerequisite, horizontal same-stage across tracks or math strands, long-range across stages). Every lesson has at least 1 inbound edge (except M01), at least 1 outbound edge (except L24), and at least 1 horizontal or long-range edge. Enforced by the validator.
 
 ---
 
@@ -132,8 +134,8 @@ forge/
 - The top bar is shared by every screen: Learn, Map, Reviews (with the due count), Settings, the streak and the XP.
 
 ### 5.1 Map (route `#/map`; it was the home page before the dashboard)
-- Full-screen graph. Columns = 5 tracks (Math, Core ML, Architectures, Systems (MLE), LLM science). Rows = 5 stages (Foundations, Learning, Models + GPUs, Scale, Frontier).
-- Node states: locked (prerequisites incomplete, still clickable for preview), available, in progress (ring shows percent), complete.
+- Full-screen graph. Columns = the six math strands (Number and information, Algebra and proof, Linear algebra, Calculus, Probability, Optimization), then 4 tracks (Core ML, Architectures, Systems (MLE), LLM science). Rows = 6 stages, numbered from 0 (Prelude, Foundations, Learning, Models + GPUs, Scale, Frontier); a math strand's lessons stack down its column.
+- Node states: locked (prerequisites incomplete or their Feynman block not passed, still clickable for preview), available, in progress (ring shows percent), complete, optional review (credited by a retired lesson the learner completed).
 - Edges: vertical = solid gray arrow; horizontal = solid colored double arrow; long-range = dashed colored arrow. Toggle each type on/off.
 - Hover a node: title, hours, theory/practice split, prerequisites, unlocks. Click: open lesson.
 - Header shows: total hours done / total, reviews due today (click to start), Settings.
@@ -145,6 +147,7 @@ forge/
 - Exercises open in a full-screen workspace, as on DataCamp: instructions, hints (each costs XP) and the solution on the left; a dark editor with Run code and Submit answer, and a console with Output and Tests tabs, on the right; Previous, one dot per exercise of the movement, and Next exercise at the bottom. On a phone the three panels become tabs.
 - Edge markers render inline as chips: "Reuses L04: KL divergence" (links back) and "Returns in L21" (links forward; disabled until reachable, shows a one-line teaser).
 - Retro-annotations: when a later lesson is complete, its annotations appear as margin notes in earlier lessons.
+- Gating (docs/math-track.md): a locked lesson, or any lesson while another is in progress, is a preview whose movements cannot be completed; a movement the learner has not opened yet shows the due review queue first and opens once it is cleared; after about 90 minutes of study a movement boundary suggests a break.
 - Progress saves on every exercise pass, movement completion, and prediction submission.
 
 ### 5.3 Exercise runner
@@ -166,7 +169,8 @@ forge/
 
 ### 5.7 Reviews (route `#/review`)
 - Daily queue from the spaced-review engine. Item types: re-derivation (fill in a derivation step), code kata (short exercise from an old lesson), concept check, prediction. SM-2 scheduling with grades 0 to 5.
-- Due reviews also appear as each lesson's Movement 0 (recall bridge), filtered to that lesson's prerequisites.
+- Due reviews also appear as each lesson's Movement 0 (recall bridge), filtered to the lessons with an edge into it (a horizontal edge counts both ways).
+- One-week check: a completed lesson closes when, a week or more after completion, at least 80% of its review cards have been answered correctly; the dashboard shows each completed lesson's check.
 
 ### 5.8 Settings (route `#/settings`)
 - API key (masked, stored locally, "Test key" button), model ID, theme, export progress JSON, import progress JSON, reset progress (with typed confirmation).
@@ -242,6 +246,8 @@ annotations:  # retro-annotations placed into earlier lessons when this lesson c
 6. Edge-count rules from Section 2; every `reuses` entry corresponds to a graph edge into the lesson; every `hooks` entry to an edge out of it.
 7. No banned strings: `TODO`, `TBD`, `lorem`, `coming soon`, `placeholder`, and no emoji code points.
 8. GPU lessons have a notebook with an autograder cell matching Section 5.6.
+9. Math-track lessons (M01 to M38, docs/math-track.md): 10 or 12 hours in all eight movements at exactly 50% theory; 14 to 16 exercises plus the capstone; at least 3 exercises with a `test_grad*` check from M15 on and a `test_invariant*` check before M15; at least 5 predictions, 4 derivations, one widget in the puzzle or derivation and one in scale or break it; one plain-language Feynman block with 4 to 6 key points, plus a written proof (a Feynman block with id `proof*`, concept rubric) from Foundations on; edge chips to at least two lessons each way (fewer only when the graph has fewer); 8 to 12 review cards.
+10. `content/retired.yaml` maps each retired lesson and exercise to its successor, and every target exists.
 
 ---
 
@@ -308,7 +314,9 @@ Pass threshold for movement completion: total at least 14 of 20, or three submis
 
 ---
 
-## 10. Curriculum: all 24 lessons
+## 10. Curriculum
+
+The math track is M01 to M38 in [`docs/math-track.md`](docs/math-track.md); L01 to L04 below are retired into it (Phase 7) and kept here as the record of what moved. The other tracks are L05 to L24 below.
 
 Every lesson follows the movement pattern in 6.2 (recall bridge, puzzle, derivation, build, scale/measure, break it, Feynman, capstone). Hours, content, edges and capstones below are binding. "Exercises" lists the minimum set; add more to reach at least 12 per lesson.
 
@@ -608,6 +616,14 @@ Implementation notes (decided during Phase 1):
 - [ ] 6.4 Run all 10 acceptance criteria; fix until all pass.
 - [x] 6.5 Final README for the owner: the site URL, how to add the API key, how to open Colab lessons. Nothing else.
 - [x] 6.6 Owner request: bring the interface closer to Codecademy and DataCamp (Section 5.0 and 5.2): dashboard with Resume, XP and streak; split-screen exercise workspace; lesson step bar, syllabus drawer and Back/Next bar.
+
+### Phase 7: The math track (owner request; docs/math-track.md)
+- [x] 7.1 Schema and validator: `prelude` stage, strands, the 38 lessons and 120 edges merged into `graph.yaml` with L01 to L04 still present; validator rule 9 and 10; slow-and-steady gating, one-week closure and progress migration in the store; map with strand columns; unit and end-to-end tests.
+- [ ] 7.2 Prelude, M01 to M08, with their eight widgets.
+- [ ] 7.3 Foundations linear algebra and calculus, M09 to M20, with their widgets; migrate L01 and L03 into M12, M14, M15, M18 and M19; retire L01 and L03.
+- [ ] 7.4 Foundations probability and numerics, M21 to M28, with their widgets; migrate L02 and L04 into M22, M24, M25 and M27; retire L02 and L04.
+- [ ] 7.5 Learning stage, M29 to M32, with chips into L05, L06 and L09.
+- [ ] 7.6 M33 to M37 beside their L-lesson partners; M38; retro-annotations from every M lesson into its predecessors; remove `--allow-unpublished`; full check, learner path and deploy.
 
 ---
 

@@ -657,6 +657,9 @@ textarea {
   border-color: var(--edge-l);
   border-style: dashed;
 }
+.edge-chip.across {
+  border-color: var(--edge-h);
+}
 .edge-chip .disabled {
   color: var(--muted);
 }
@@ -1305,6 +1308,12 @@ details.aside > summary {
 }
 .card.colab {
   border-left: 4px solid var(--edge-h);
+}
+.card.gate {
+  border-left: 4px solid var(--xp);
+}
+.card.gate p {
+  margin: 6px 0 12px;
 }
 .card.predict > .card-kicker,
 .card.derivation > .card-kicker,

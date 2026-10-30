@@ -1,11 +1,11 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { useLesson } from '../content/load';
+import { useIndex, useLesson } from '../content/load';
 import type { Exercise, Lesson } from '../content/types';
 import { Editor } from '../code/Editor';
 import { SOLUTION_AFTER_FAILS, useExercise } from '../code/useExercise';
 import { rememberPath, touchLesson, useStore } from '../store/store';
-import { XP, exercisePassed, exerciseSteps, exerciseXp, exerciseXpAvailable, type ExerciseStep } from '../store/derive';
+import { XP, exercisePassed, exerciseSteps, exerciseXp, exerciseXpAvailable, lessonGate, type ExerciseStep } from '../store/derive';
 import { Html } from './blocks/Html';
 import { Bolt, Bulb, Check, ChevronLeft, ChevronRight, Code, Cross, Play, Reset } from '../app/icons';
 import styles from './Workspace.module.css';
@@ -251,13 +251,20 @@ export function ExerciseWorkspace() {
   const { id = '', ex = '' } = useParams();
   const lessonId = id.toUpperCase();
   const { data: lesson, error } = useLesson(lessonId);
+  const { data: index } = useIndex();
+  const state = useStore((s) => s);
+  // Working an exercise starts its lesson only when the lesson may be started (one at a time).
+  const open = !!lesson && !!index && !lessonGate(state, index, lesson);
 
   useEffect(() => {
     if (!lesson) return;
-    void touchLesson(lesson.id);
-    void rememberPath(`/lesson/${lesson.id}/ex/${ex}`);
     document.title = `${lesson.exercises[ex]?.title ?? ex} | ${lesson.id} | Forge`;
   }, [lesson, ex]);
+  useEffect(() => {
+    if (!open) return;
+    void touchLesson(lesson!.id);
+    void rememberPath(`/lesson/${lesson!.id}/ex/${ex}`);
+  }, [open, lesson, ex]);
 
   if (error)
     return (

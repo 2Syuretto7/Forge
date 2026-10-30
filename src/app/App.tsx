@@ -7,8 +7,9 @@ import { Dashboard } from '../home/Dashboard';
 import { ReviewPage } from '../review/ReviewPage';
 import { SettingsPage } from '../settings/SettingsPage';
 import { WidgetGallery } from './WidgetGallery';
-import { useStore } from '../store/store';
-import { dueItems, streak, totalXp } from '../store/derive';
+import { migrateRetired, useStore } from '../store/store';
+import { dueReviewIds, streak, totalXp } from '../store/derive';
+import { useIndex } from '../content/load';
 import { Bolt, Flame } from './icons';
 
 function useTheme() {
@@ -20,9 +21,19 @@ function useTheme() {
   }, [theme]);
 }
 
+// Progress in lessons that have been retired moves to their successors once.
+function useMigration() {
+  const { data: idx } = useIndex();
+  const loaded = useStore((s) => s.loaded);
+  useEffect(() => {
+    if (idx && loaded) void migrateRetired(idx);
+  }, [idx, loaded]);
+}
+
 function Header() {
   const state = useStore((s) => s);
-  const due = dueItems(state).length;
+  const { data: idx } = useIndex();
+  const due = idx ? dueReviewIds(state, idx).length : 0;
   const xp = totalXp(state);
   const days = streak(state);
   return (
@@ -73,6 +84,7 @@ function Header() {
 
 export function App() {
   useTheme();
+  useMigration();
   return (
     <HashRouter>
       <Header />

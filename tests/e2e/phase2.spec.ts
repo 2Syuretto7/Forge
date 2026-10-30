@@ -26,15 +26,36 @@ function progressFile() {
     hoursLogged: 0,
   });
   const l08 = movements('L08');
+  // L08 unlocks once each published prerequisite is complete with its Feynman blocks passed.
+  const graph = fs.readFileSync(path.resolve('content/graph.yaml'), 'utf8');
+  const prereqs = [...graph.matchAll(/^\s+- \{from: ([LM]\d\d), to: L08, type: vertical/gm)]
+    .map((m) => m[1])
+    .filter((id) => fs.existsSync(path.join(lessonDir(id), 'lesson.yaml')));
+  const feynmanIds = (id: string) =>
+    fs
+      .readdirSync(lessonDir(id))
+      .filter((f) => f.endsWith('.md'))
+      .flatMap((f) => [...fs.readFileSync(path.join(lessonDir(id), f), 'utf8').matchAll(/:::feynman\{id=(\w+)/g)].map((m) => m[1]));
+  const passed = (id: string, f: string) => ({
+    id: `${id}/${f}`,
+    text: 'x',
+    scores: {},
+    gaps: [],
+    followUp: '',
+    bestTotal: 20,
+    submissions: 0,
+    selfAssessed: true,
+    at: 1,
+  });
   return {
     schemaVersion: 1,
     app: 'forge',
     exportedAt: new Date(0).toISOString(),
     stores: {
-      progress: [done('L07', movements('L07'), true), done('L08', l08.slice(0, -1), false)],
+      progress: [...prereqs.map((id) => done(id, movements(id), true)), done('L08', l08.slice(0, -1), false)],
       exercises: [],
       predictions: [],
-      feynman: [],
+      feynman: prereqs.flatMap((id) => feynmanIds(id).map((f) => passed(id, f))),
       reviews: [],
       colab: [],
       settings: [],
