@@ -1,0 +1,26 @@
+id: M17
+hours: 12
+capstone: "Adaptive quadrature library hitting 1e-8 on 20 integrals, including the Gaussian and a Beta normalizer, with evaluation counts reported"
+teaser: "Riemann sums, the definite integral, the fundamental theorem of calculus with proof, substitution and integration by parts, improper integrals, the Gaussian integral, and quadrature from trapezoids to adaptive Simpson."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: M20, text: "Integrals over the plane and space, and the Jacobian factor that changing variables brings."}
+  - {to: M22, text: "Expectations and variances of continuous random variables are integrals against a density."}
+  - {to: M24, text: "Monte Carlo replaces a grid of points by random samples, and its error does not grow with the dimension."}
+reuses:
+  - {from: M15, concept: "derivatives, the chain rule and the product rule"}
+annotations:
+  - {target: M15, anchor: "the slopes of the stages multiply", text: "M17: read backwards, the chain rule is integration by substitution, and the product rule is integration by parts."}
+  - {target: M05, anchor: "an infinite sum is defined as the limit of its partial sums", text: "M17: an improper integral is defined the same way, as a limit of integrals over growing intervals; the integral test compares the two, which is why 1/k and 1/x both diverge."}
+concepts:
+  - q: "State the fundamental theorem of calculus and say why it is true."
+    a: "If f is continuous and F(x) is the integral of f from a to x, then F'(x) = f(x); so the integral from a to b equals G(b) - G(a) for any antiderivative G. The reason: adding a thin strip from x to x + h adds about f(x) h of area, so the area grows at rate f(x)."
+katas: [e02]

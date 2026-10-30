@@ -1,0 +1,28 @@
+id: M15
+hours: 12
+capstone: "Differentiator verified on 30 functions: symbolic result checked against central differences at the optimal step, with an error budget for each"
+teaser: "Limits from epsilon-delta, continuity, the derivative as the best local linear approximation, the rules proved from the definition, one-sided derivatives, and why finite differences fail at tiny steps."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: M16, text: "The best linear approximation extends to the best quadratic one, and to Taylor polynomials of any degree."}
+  - {to: M17, text: "Differentiation has an inverse: accumulating a rate gives back the total."}
+  - {to: M26, text: "The V-shaped error of finite differences is the first example of truncation error fighting rounding error."}
+  - {to: M24, text: "The law of large numbers is a limit statement of the same epsilon kind, about averages instead of functions."}
+reuses:
+  - {from: M05, concept: "limits of sequences"}
+  - {from: M06, concept: "the exponential and the logarithm"}
+annotations:
+  - {target: M05, anchor: "Sequences and their limits", text: "M15: the same definition with h in place of 1/n defines the limit of a function, and the derivative is the limit of difference quotients."}
+  - {target: M06, anchor: "which converges for every", text: "M15: differentiating that series term by term gives the series back, which is why the exponential is its own derivative."}
+concepts:
+  - q: "Why does a finite-difference derivative get worse when the step h is extremely small?"
+    a: "The truncation error of (f(x+h) - f(x))/h is about h|f''|/2 and shrinks with h, but f(x+h) - f(x) is computed with a rounding error of about eps|f|, which the division by h amplifies to eps|f|/h. Below h near sqrt(eps), about 1e-8, rounding dominates, and at h = 1e-15 the estimate can be off by tens of percent."
+katas: [e02]

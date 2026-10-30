@@ -1,0 +1,25 @@
+id: M16
+hours: 12
+capstone: "1D optimizer suite with measured convergence orders (linear, superlinear, quadratic) matching theory within 10 percent"
+teaser: "The mean value theorem, Taylor polynomials with remainder, the second-derivative test, convexity, Newton's method and its quadratic convergence, and gradient descent's step-size limit 2/L."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: M18, text: "In many variables the second derivative becomes the Hessian matrix, and Taylor's theorem keeps its form."}
+  - {to: M25, text: "Maximum likelihood is an optimization; Newton's method on the log-likelihood is Fisher scoring."}
+  - {to: M29, text: "The second-order Taylor term returns as the step-size limit 2/L for gradient descent in any dimension."}
+reuses:
+  - {from: M15, concept: "derivatives and the best linear approximation"}
+annotations:
+  - {target: M15, anchor: "the best local linear approximation", text: "M16: adding the term f''(a) h^2 / 2 gives the best quadratic approximation, and each further derivative one more degree: Taylor polynomials, with an error bound from the next derivative."}
+concepts:
+  - q: "Why does Newton's method double the number of correct digits at each step near a simple root?"
+    a: "Taylor's theorem at the current point gives 0 = f(x_k) + f'(x_k)(r - x_k) + f''(xi)(r - x_k)^2 / 2. Newton keeps only the linear part, so the new error is r - x_{k+1} = -f''(xi) / (2 f'(x_k)) times (r - x_k)^2: proportional to the square of the old error. An error of 10^-k becomes about 10^-2k."
+katas: [e03]
