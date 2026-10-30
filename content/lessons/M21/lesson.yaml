@@ -1,0 +1,24 @@
+id: M21
+hours: 10
+capstone: "Naive Bayes filter at a stated accuracy with a reliability diagram and a written note on where independence fails"
+teaser: "Sample spaces, events and the axioms, conditional probability, independence, the law of total probability, Bayes' rule as areas, base rates, and naive Bayes with its calibration."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 60}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 35}
+  - {file: m7-capstone.md,   mode: practice, minutes: 60}
+hooks:
+  - {to: M22, text: "A random variable is a function on the sample space; its distribution, mean and variance summarize it."}
+  - {to: M27, text: "The surprise of an event is minus the logarithm of its probability, and entropy is the average surprise."}
+reuses:
+  - {from: M08, concept: "probability as counting equally likely outcomes"}
+annotations:
+  - {target: M08, anchor: "Probability as counting", text: "M21: counting equally likely outcomes is the special case of a probability measure on a finite space; conditioning on an event just restricts the count to it."}
+concepts:
+  - q: "Why are most positive results of an accurate test for a rare condition false alarms?"
+    a: "Bayes' rule weighs the test's accuracy against the base rate. With 1 ill person in 1,000 and a 1 percent false-positive rate, 1,000 people produce about 1 true positive and about 10 false positives, so P(ill | positive) is about 1/11. The rare condition's few cases are outnumbered by the small error rate applied to the many healthy people."
+katas: [e05]

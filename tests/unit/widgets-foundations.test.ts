@@ -10,6 +10,9 @@ import { lagrangeBound, taylorCoeffs, taylorEval } from '../../src/widgets/Taylo
 import { FUNCS as INTEGRANDS, riemann } from '../../src/widgets/RiemannSum';
 import { SURFACES, contourSegments, eigSym2, hessian, numGrad } from '../../src/widgets/GradientField';
 import { MAPS, jacobian, polygonArea, squareBoundary } from '../../src/widgets/JacobianWarp';
+import { counts as bayesCounts, posterior } from '../../src/widgets/BayesGrid';
+import { conditional, eigSym, ellipse } from '../../src/widgets/GaussianEllipse';
+import { averages, histogram, normalPdf, standardize } from '../../src/widgets/CLTMachine';
 
 describe('VectorPlayground', () => {
   it('computes the dot product, angle, projection and norms', () => {
@@ -162,5 +165,50 @@ describe('JacobianWarp', () => {
     const sq = squareBoundary([0.5, 0.3], 0.01, 32);
     expect(polygonArea(sq)).toBeCloseTo(1e-4, 15);
     expect(polygonArea(sq.map(MAPS.polar.f)) / 1e-4).toBeCloseTo(2 * Math.PI * 0.505, 3);
+  });
+});
+
+
+describe('BayesGrid', () => {
+  it('computes the posterior from areas', () => {
+    expect(posterior(0.001, 0.99, 0.99)).toBeCloseTo(0.99 / (0.99 + 9.99), 12);
+    const c = bayesCounts(1000, 0.01, 0.99, 0.99);
+    expect(c.tp).toBeCloseTo(9.9, 12);
+    expect(c.fp).toBeCloseTo(9.9, 12);
+    expect(c.tp + c.fn + c.fp + c.tn).toBeCloseTo(1000, 9);
+    const p1 = posterior(0.001, 0.99, 0.99);
+    expect(posterior(p1, 0.99, 0.99)).toBeGreaterThan(0.9);
+  });
+});
+
+describe('GaussianEllipse', () => {
+  it('ellipse points have Mahalanobis distance k, and conditioning shrinks the spread', () => {
+    const sx = 1.5;
+    const sy = 1;
+    const rho = 0.7;
+    const c: [number, number, number] = [sx * sx, rho * sx * sy, sy * sy];
+    const det = c[0] * c[2] - c[1] * c[1];
+    for (const [x, y] of ellipse(c, 2, 24)) {
+      const m = (c[2] * x * x - 2 * c[1] * x * y + c[0] * y * y) / det;
+      expect(Math.sqrt(m)).toBeCloseTo(2, 9);
+    }
+    const { l1, l2 } = eigSym(c);
+    expect(l1 + l2).toBeCloseTo(c[0] + c[2], 12);
+    const cd = conditional(sx, sy, rho, 1.5);
+    expect(cd.mean).toBeCloseTo(0.7, 12);
+    expect(cd.sd).toBeCloseTo(Math.sqrt(0.51), 12);
+  });
+});
+
+describe('CLTMachine', () => {
+  it('standardized averages are close to standard normal for a die', () => {
+    const z = standardize(averages('die', 30, 4000), 'die', 30);
+    const m = z.reduce((a, b) => a + b, 0) / z.length;
+    const v = z.reduce((a, b) => a + (b - m) ** 2, 0) / z.length;
+    expect(Math.abs(m)).toBeLessThan(0.06);
+    expect(Math.abs(v - 1)).toBeLessThan(0.08);
+    const h = histogram(z, -4, 4, 16);
+    expect(h.reduce((a, b) => a + b.density * 0.5, 0)).toBeCloseTo(1, 1);
+    expect(normalPdf(0)).toBeCloseTo(0.3989422804, 9);
   });
 });

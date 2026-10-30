@@ -1,0 +1,182 @@
+[
+ {
+  "id": "M21/p1",
+  "lesson": "M21",
+  "kind": "prediction",
+  "prompt": "<p>What is the probability, in percent, that you are ill?</p>",
+  "answer": "9",
+  "answerKind": "numeric",
+  "tol": 1,
+  "options": [],
+  "explain": "<p>About 9 percent. In 100,000 people, 100 are ill and 99 of them test positive; of the 99,900 healthy, 1 percent, 999, also test positive. So 99 of 1,098 positives are ill: 9.0 percent. The test is accurate, but the healthy outnumber the ill so heavily that its small error rate produces ten false alarms for every true case.</p>"
+ },
+ {
+  "id": "M21/p2",
+  "lesson": "M21",
+  "kind": "prediction",
+  "prompt": "<p>You take a second, independent test, and it is positive again. What now?</p>",
+  "answer": "c",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>Still about 9 percent: a second test adds nothing.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>99 percent: the test's accuracy.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>About 91 percent: the first posterior becomes the new prior.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>100 percent.</p>"
+   }
+  ],
+  "explain": "<p>About 91 percent. After the first positive the odds of illness are <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>99</mn><mo>:</mo><mn>999</mn></mrow><annotation encoding=\"application/x-tex\">99 : 999</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">99</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">:</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">999</span></span></span></span>; a second positive multiplies them by <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>99</mn><mo>:</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">99 : 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">99</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">:</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span>, giving <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>9801</mn><mo>:</mo><mn>999</mn></mrow><annotation encoding=\"application/x-tex\">9801 : 999</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">9801</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">:</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">999</span></span></span></span>, about <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>91</mn></mrow><annotation encoding=\"application/x-tex\">91</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">91</span></span></span></span> percent. This relies on the tests being independent given the disease status; two runs of the same flawed test are not, and the second adds less.</p>"
+ },
+ {
+  "id": "M21/d1/s2",
+  "lesson": "M21",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Two dice</p><p>\"At least one six\" is the complement of \"no six\", which has <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>25</mn></mrow><annotation encoding=\"application/x-tex\">25</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">25</span></span></span></span> outcomes, so its probability is <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "11/36",
+  "answerKind": "expr"
+ },
+ {
+  "id": "M21/d2/s2",
+  "lesson": "M21",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Conditioning on a die</p><p>That equals the unconditional <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>1</mn><mi mathvariant=\"normal\">/</mi><mn>6</mn></mrow><annotation encoding=\"application/x-tex\">1/6</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">1/6</span></span></span></span>, so \"first die is 6\" and \"sum is 7\" are <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>, a coincidence of 7 being the middle sum: with \"sum is 8\" they are not.</p>",
+  "answer": "word:independent",
+  "answerKind": "text"
+ },
+ {
+  "id": "M21/d3/s2",
+  "lesson": "M21",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">The puzzle by Bayes' rule</p><p><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>P</mi><mo stretchy=\"false\">(</mo><mtext>ill</mtext><mo>∣</mo><mo>+</mo><mo stretchy=\"false\">)</mo><mo>=</mo><mn>0.00099</mn><mi mathvariant=\"normal\">/</mi><mn>0.01098</mn><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">P(\\text{ill} \\mid +) = 0.00099 / 0.01098 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">P</span><span class=\"mopen\">(</span><span class=\"mord text\"><span class=\"mord\">ill</span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">∣</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">+</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">0.00099/0.01098</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "0.09|tol=0.002",
+  "answerKind": "expr"
+ },
+ {
+  "id": "M21/p3",
+  "lesson": "M21",
+  "kind": "prediction",
+  "prompt": "<p>A disease has prevalence 1 in 1,000, and a test has sensitivity 99 percent. What does \"99 percent\" tell you about <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>P</mi><mo stretchy=\"false\">(</mo><mtext>ill</mtext><mo>∣</mo><mo>+</mo><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">P(\\text{ill} \\mid +)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">P</span><span class=\"mopen\">(</span><span class=\"mord text\"><span class=\"mord\">ill</span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">∣</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">+</span><span class=\"mclose\">)</span></span></span></span> on its own?</p>",
+  "answer": "b",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>It is 99 percent.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>Nothing, until you also know the false-positive rate and the base rate.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>It is at least 50 percent.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>It is 1 percent.</p>"
+   }
+  ],
+  "explain": "<p>Nothing by itself. <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>P</mi><mo stretchy=\"false\">(</mo><mo>+</mo><mo>∣</mo><mtext>ill</mtext><mo stretchy=\"false\">)</mo><mo>=</mo><mn>0.99</mn></mrow><annotation encoding=\"application/x-tex\">P(+ \\mid \\text{ill}) = 0.99</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">P</span><span class=\"mopen\">(</span><span class=\"mord\">+</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">∣</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord text\"><span class=\"mord\">ill</span></span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.99</span></span></span></span> and <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>P</mi><mo stretchy=\"false\">(</mo><mtext>ill</mtext><mo>∣</mo><mo>+</mo><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">P(\\text{ill} \\mid +)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">P</span><span class=\"mopen\">(</span><span class=\"mord text\"><span class=\"mord\">ill</span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">∣</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">+</span><span class=\"mclose\">)</span></span></span></span> are different conditional probabilities; confusing them is the <strong>base-rate fallacy</strong> (in courtrooms, the prosecutor's fallacy). With a specificity of 99.99 percent the posterior would be 91 percent; with 99 percent, 9 percent.</p>"
+ },
+ {
+  "id": "M21/d4/s2",
+  "lesson": "M21",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Scoring with log-odds</p><p>A phrase of two such words that always appear together is really one piece of evidence, but naive Bayes adds its score <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> times, doubling its weight.</p>",
+  "answer": "2",
+  "answerKind": "expr"
+ },
+ {
+  "id": "M21/d5/s1",
+  "lesson": "M21",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Temperature</p><p>A log-odds of <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>4</mn></mrow><annotation encoding=\"application/x-tex\">4</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">4</span></span></span></span> means a probability of <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>1</mn><mi mathvariant=\"normal\">/</mi><mo stretchy=\"false\">(</mo><mn>1</mn><mo>+</mo><msup><mi>e</mi><mrow><mo>−</mo><mn>4</mn></mrow></msup><mo stretchy=\"false\">)</mo><mo>≈</mo><mn>0.982</mn></mrow><annotation encoding=\"application/x-tex\">1/(1 + e^{-4}) \\approx 0.982</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">1/</span><span class=\"mopen\">(</span><span class=\"mord\">1</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">e</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">4</span></span></span></span></span></span></span></span></span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.982</span></span></span></span>. With <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>T</mi><mo>=</mo><mn>2</mn></mrow><annotation encoding=\"application/x-tex\">T = 2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">2</span></span></span></span> it becomes <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>1</mn><mi mathvariant=\"normal\">/</mi><mo stretchy=\"false\">(</mo><mn>1</mn><mo>+</mo><msup><mi>e</mi><mrow><mo>−</mo><mn>2</mn></mrow></msup><mo stretchy=\"false\">)</mo><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">1/(1 + e^{-2}) \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">1/</span><span class=\"mopen\">(</span><span class=\"mord\">1</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">e</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span></span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "0.881|tol=0.001",
+  "answerKind": "expr"
+ },
+ {
+  "id": "M21/p4",
+  "lesson": "M21",
+  "kind": "prediction",
+  "prompt": "<p>Naive Bayes counts each word of a phrase as independent evidence. How do you expect its predicted probabilities to compare with the observed frequencies?</p>",
+  "answer": "a",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>Too extreme: among messages it calls 99 percent spam, fewer than 99 percent are.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>Too timid: they cluster near 50 percent.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>Exactly right: Bayes' rule is exact.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>Random: no relation to the frequencies.</p>"
+   }
+  ],
+  "explain": "<p>Too extreme. Counting correlated evidence several times pushes the log-odds too far, so the probabilities sit too close to 0 and 1. The reliability diagram shows it, and a temperature fitted on held-out data, here near 2, pulls them back.</p>"
+ },
+ {
+  "id": "M21/p5",
+  "lesson": "M21",
+  "kind": "prediction",
+  "prompt": "<p>Without smoothing, a ham message contains one word that appeared only in spam during training. What does naive Bayes say?</p>",
+  "answer": "d",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>It mostly ignores the word.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>It lowers the ham probability a little.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>It refuses to classify.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>The ham probability is exactly 0, whatever the other hundred words say.</p>"
+   }
+  ],
+  "explain": "<p>Exactly 0: the estimated <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>P</mi><mo stretchy=\"false\">(</mo><mi>w</mi><mo>∣</mo><mtext>ham</mtext><mo stretchy=\"false\">)</mo><mo>=</mo><mn>0</mn></mrow><annotation encoding=\"application/x-tex\">P(w \\mid \\text{ham}) = 0</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">P</span><span class=\"mopen\">(</span><span class=\"mord mathnormal\" style=\"margin-right:0.0269em;\">w</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">∣</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord text\"><span class=\"mord\">ham</span></span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0</span></span></span></span> makes the whole product 0, and in logarithms <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo>−</mo><mi mathvariant=\"normal\">∞</mi></mrow><annotation encoding=\"application/x-tex\">-\\infty</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord\">−</span><span class=\"mord\">∞</span></span></span></span> overwhelms everything. Laplace smoothing adds a pseudo-count to every word, turning \"never seen\" into \"rare\", which can be outvoted.</p>"
+ },
+ {
+  "id": "M21/concept1",
+  "lesson": "M21",
+  "kind": "concept",
+  "prompt": "Why are most positive results of an accurate test for a rare condition false alarms?",
+  "answer": "Bayes' rule weighs the test's accuracy against the base rate. With 1 ill person in 1,000 and a 1 percent false-positive rate, 1,000 people produce about 1 true positive and about 10 false positives, so P(ill | positive) is about 1/11. The rare condition's few cases are outnumbered by the small error rate applied to the many healthy people.",
+  "answerKind": "text"
+ },
+ {
+  "id": "M21/kata/e05",
+  "lesson": "M21",
+  "kind": "kata",
+  "prompt": "Training naive Bayes",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e05"
+ }
+]
