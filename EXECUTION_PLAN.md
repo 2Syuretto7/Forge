@@ -2,7 +2,7 @@
 
 This file is the complete, self-contained specification for building **Forge**, a personal learning platform for the ML research and ML engineering skills expected at frontier AI labs. Read it fully before writing code. Execute the phases in order. Do not stop at a partial build: every phase ends with a working, deployed app, and the plan is finished only when every lesson passes the acceptance checks in Section 12.
 
-**Math track (owner request, Phase 7).** The owner replaced the four-lesson math track (L01 to L04) with a 38-lesson track, M01 to M38, specified in [`docs/math-track.md`](docs/math-track.md). That document is binding for the math track: its lessons, edges, lesson template, density minimums, gating rules and migration. Where it and this file disagree, it wins for the math track.
+**Math track (owner request, Phase 7).** The owner replaced the four-lesson math track (L01 to L04) with a 38-lesson track, M01 to M38, specified in [`docs/math-track.md`](docs/math-track.md). That document is binding for the math track: its lessons, edges, lesson template, density minimums and gating rules. Where it and this file disagree, it wins for the math track, with one exception decided by the owner: progress is **reset** when the new curriculum first loads instead of being migrated from L01 to L04 (the API key, model and theme stay).
 
 ---
 
@@ -135,7 +135,7 @@ forge/
 
 ### 5.1 Map (route `#/map`; it was the home page before the dashboard)
 - Full-screen graph. Columns = the six math strands (Number and information, Algebra and proof, Linear algebra, Calculus, Probability, Optimization), then 4 tracks (Core ML, Architectures, Systems (MLE), LLM science). Rows = 6 stages, numbered from 0 (Prelude, Foundations, Learning, Models + GPUs, Scale, Frontier); a math strand's lessons stack down its column.
-- Node states: locked (prerequisites incomplete or their Feynman block not passed, still clickable for preview), available, in progress (ring shows percent), complete, optional review (credited by a retired lesson the learner completed).
+- Node states: locked (prerequisites incomplete or their Feynman block not passed, still clickable for preview), available, in progress (ring shows percent), complete.
 - Edges: vertical = solid gray arrow; horizontal = solid colored double arrow; long-range = dashed colored arrow. Toggle each type on/off.
 - Hover a node: title, hours, theory/practice split, prerequisites, unlocks. Click: open lesson.
 - Header shows: total hours done / total, reviews due today (click to start), Settings.
@@ -247,7 +247,7 @@ annotations:  # retro-annotations placed into earlier lessons when this lesson c
 7. No banned strings: `TODO`, `TBD`, `lorem`, `coming soon`, `placeholder`, and no emoji code points.
 8. GPU lessons have a notebook with an autograder cell matching Section 5.6.
 9. Math-track lessons (M01 to M38, docs/math-track.md): 10 or 12 hours in all eight movements at exactly 50% theory; 14 to 16 exercises plus the capstone; at least 3 exercises with a `test_grad*` check from M15 on and a `test_invariant*` check before M15; at least 5 predictions, 4 derivations, one widget in the puzzle or derivation and one in scale or break it; one plain-language Feynman block with 4 to 6 key points, plus a written proof (a Feynman block with id `proof*`, concept rubric) from Foundations on; edge chips to at least two lessons each way (fewer only when the graph has fewer); 8 to 12 review cards.
-10. `content/retired.yaml` maps each retired lesson and exercise to its successor, and every target exists.
+10. Every lesson folder under `content/lessons` is listed in `graph.yaml`.
 
 ---
 
@@ -618,10 +618,10 @@ Implementation notes (decided during Phase 1):
 - [x] 6.6 Owner request: bring the interface closer to Codecademy and DataCamp (Section 5.0 and 5.2): dashboard with Resume, XP and streak; split-screen exercise workspace; lesson step bar, syllabus drawer and Back/Next bar.
 
 ### Phase 7: The math track (owner request; docs/math-track.md)
-- [x] 7.1 Schema and validator: `prelude` stage, strands, the 38 lessons and 120 edges merged into `graph.yaml` with L01 to L04 still present; validator rule 9 and 10; slow-and-steady gating, one-week closure and progress migration in the store; map with strand columns; unit and end-to-end tests.
+- [x] 7.1 Schema and validator: `prelude` stage, strands, the 38 lessons and 120 edges merged into `graph.yaml` with L01 to L04 still present; validator rule 9 and 10; slow-and-steady gating and one-week closure in the store; a one-time progress reset when the new curriculum first loads (owner request, replacing the migration of docs/math-track.md); map with strand columns; unit and end-to-end tests.
 - [ ] 7.2 Prelude, M01 to M08, with their eight widgets.
-- [ ] 7.3 Foundations linear algebra and calculus, M09 to M20, with their widgets; migrate L01 and L03 into M12, M14, M15, M18 and M19; retire L01 and L03.
-- [ ] 7.4 Foundations probability and numerics, M21 to M28, with their widgets; migrate L02 and L04 into M22, M24, M25 and M27; retire L02 and L04.
+- [ ] 7.3 Foundations linear algebra and calculus, M09 to M20, with their widgets; move the material of L01 and L03 into M12, M14, M15, M18 and M19; retire L01 and L03.
+- [ ] 7.4 Foundations probability and numerics, M21 to M28, with their widgets; move the material of L02 and L04 into M22, M24, M25 and M27; retire L02 and L04.
 - [ ] 7.5 Learning stage, M29 to M32, with chips into L05, L06 and L09.
 - [ ] 7.6 M33 to M37 beside their L-lesson partners; M38; retro-annotations from every M lesson into its predecessors; remove `--allow-unpublished`; full check, learner path and deploy.
 

@@ -17,7 +17,6 @@ import {
   type ExerciseStatus,
 } from './db';
 import { grade as sm2Grade, localDate, newReview } from '../review/sm2';
-import type { ContentIndex } from '../content/types';
 
 export interface Settings {
   apiKey: string;
@@ -27,10 +26,16 @@ export interface Settings {
   activityDays: string[];
   // The last lesson screen visited, for "Resume".
   lastPath: string;
+  // The curriculum the stored progress belongs to (see startCurriculum).
+  curriculum: string;
 }
 
 export const DEFAULT_MODEL = 'claude-sonnet-5-5';
-export const DEFAULT_SETTINGS: Settings = { apiKey: '', modelId: DEFAULT_MODEL, theme: 'system', activityDays: [], lastPath: '' };
+export const DEFAULT_SETTINGS: Settings = { apiKey: '', modelId: DEFAULT_MODEL, theme: 'system', activityDays: [], lastPath: '', curriculum: '' };
+
+// The math track (M01 to M38) replaced L01 to L04. At the owner's request, progress made
+// under an earlier curriculum is reset once rather than carried over.
+export const CURRICULUM = 'math-track-2026-10';
 
 export interface State {
   loaded: boolean;
@@ -137,34 +142,6 @@ export async function openMovement(lessonId: string, movementId: string) {
   };
   set({ progress: { ...state.progress, [lessonId]: next } });
   await put('progress', next);
-}
-
-// Carries progress from retired lessons into the lessons that replaced them
-// (content/retired.yaml): a completed retired lesson completes its successor, and
-// exercise records move to their new ids. Idempotent; runs once the index is loaded.
-export async function migrateRetired(idx: ContentIndex) {
-  const retired = idx.retired ?? { lessons: {}, exercises: {} };
-  for (const [from, to] of Object.entries(retired.lessons)) {
-    const old = state.progress[from];
-    const target = idx.lessons.find((l) => l.id === to);
-    if (old?.status !== 'complete' || !target || !idx.available.includes(to) || idx.available.includes(from)) continue;
-    if (state.progress[to]?.status === 'complete') continue;
-    const next: ProgressRec = {
-      ...progressOf(to),
-      status: 'complete',
-      movementsDone: target.movements.map((m) => m.id),
-      startedAt: state.progress[to]?.startedAt ?? old.startedAt,
-      completedAt: old.completedAt ?? Date.now(),
-      via: from,
-    };
-    await put('progress', next);
-    set({ progress: { ...state.progress, [to]: next } });
-  }
-  for (const [from, to] of Object.entries(retired.exercises)) {
-    const old = state.exercises[from];
-    if (!old || state.exercises[to] || idx.available.includes(from.split('/')[0])) continue;
-    await saveExercise({ ...old, id: to });
-  }
 }
 
 export async function touchLesson(lessonId: string) {
@@ -306,6 +283,8 @@ export async function exportProgress() {
 export async function importProgress(data: unknown) {
   await importAll(data);
   await loadStore();
+  // An imported file is the learner's chosen state: never reset it at the next start.
+  await saveSetting('curriculum', CURRICULUM);
 }
 
 export async function resetProgress() {
@@ -314,6 +293,23 @@ export async function resetProgress() {
   // The key and theme stay; the streak and the resume point go with the progress.
   await saveSetting('activityDays', []);
   await saveSetting('lastPath', '');
+  await saveSetting('curriculum', CURRICULUM);
+}
+
+// Run once at startup: progress stored under an earlier curriculum is reset (the API key,
+// model and theme stay). Returns true when there was progress to reset.
+export async function startCurriculum() {
+  if (state.settings.curriculum === CURRICULUM) return false;
+  const had =
+    Object.keys(state.progress).length +
+      Object.keys(state.exercises).length +
+      Object.keys(state.predictions).length +
+      Object.keys(state.feynman).length +
+      Object.keys(state.reviews).length +
+      Object.keys(state.colab).length >
+    0;
+  await resetProgress();
+  return had;
 }
 
 export { STORE_NAMES };

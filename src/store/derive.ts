@@ -7,9 +7,7 @@ import { addDays, localDate, isDue } from '../review/sm2';
 
 export const FEYNMAN_PASS = 14;
 
-// optional: a lesson credited by a retired one the learner completed (docs/math-track.md,
-// Migration), open for review but not required.
-export type NodeState = 'locked' | 'available' | 'in_progress' | 'complete' | 'optional' | 'unpublished';
+export type NodeState = 'locked' | 'available' | 'in_progress' | 'complete' | 'unpublished';
 
 export function lessonComplete(s: State, id: string) {
   return s.progress[id]?.status === 'complete';
@@ -25,10 +23,9 @@ export function nodeState(s: State, idx: ContentIndex, l: LessonSummary): NodeSt
   if (!idx.available.includes(l.id)) return 'unpublished';
   const p = s.progress[l.id];
   if (p?.status === 'complete') return 'complete';
-  const isCredited = credited(s, idx).has(l.id);
-  if (!isCredited && missingPrereqs(s, idx, l).length) return 'locked';
+  if (missingPrereqs(s, idx, l).length) return 'locked';
   if (p && (p.movementsDone.length > 0 || p.status === 'in_progress')) return 'in_progress';
-  return isCredited ? 'optional' : 'available';
+  return 'available';
 }
 
 // ---- slow and steady (docs/math-track.md, Pedagogy) ------------------------
@@ -37,30 +34,6 @@ export const CLOSE_AFTER_DAYS = 7;
 export const CLOSE_SHARE = 0.8;
 export const SESSION_MINUTES = 90;
 const DAY_MS = 86_400_000;
-
-const creditCache = new WeakMap<object, Set<string>>();
-
-// Every ancestor, through prerequisites, of a lesson completed by migration from a retired
-// lesson: the learner showed that material in the old lesson, so it is optional review.
-export function credited(s: State, idx: ContentIndex): Set<string> {
-  const hit = creditCache.get(s.progress);
-  if (hit) return hit;
-  const byId = new Map(idx.lessons.map((l) => [l.id, l]));
-  const out = new Set<string>();
-  const stack = Object.values(s.progress)
-    .filter((p) => p.via && p.status === 'complete')
-    .map((p) => p.lessonId);
-  while (stack.length) {
-    const id = stack.pop()!;
-    for (const pr of byId.get(id)?.prereqs ?? [])
-      if (!out.has(pr)) {
-        out.add(pr);
-        stack.push(pr);
-      }
-  }
-  creditCache.set(s.progress, out);
-  return out;
-}
 
 // Every Feynman block of a lesson has passed (the 14 of 20 bar, graded or self-assessed).
 export function feynmanCleared(s: State, l: LessonSummary) {
@@ -75,13 +48,12 @@ export interface Missing {
 // Rule 1: a lesson unlocks when every published prerequisite is complete and its Feynman
 // blocks have passed. Lessons not yet published never block anything.
 export function missingPrereqs(s: State, idx: ContentIndex, l: LessonSummary): Missing[] {
-  const cred = credited(s, idx);
   const out: Missing[] = [];
   for (const pr of l.prereqs) {
-    if (!idx.available.includes(pr) || cred.has(pr)) continue;
+    if (!idx.available.includes(pr)) continue;
     const pl = idx.lessons.find((x) => x.id === pr);
     if (!lessonComplete(s, pr)) out.push({ id: pr, reason: 'incomplete' });
-    else if (pl && !s.progress[pr]?.via && !feynmanCleared(s, pl)) out.push({ id: pr, reason: 'feynman' });
+    else if (pl && !feynmanCleared(s, pl)) out.push({ id: pr, reason: 'feynman' });
   }
   return out;
 }
@@ -101,15 +73,13 @@ export type LessonGate = { kind: 'locked'; missing: Missing[] } | { kind: 'busy'
 // Whether the learner may work through (and complete movements of) this lesson now.
 export function lessonGate(s: State, idx: ContentIndex, l: LessonSummary): LessonGate {
   if (lessonComplete(s, l.id)) return null;
-  if (!credited(s, idx).has(l.id)) {
-    const missing = missingPrereqs(s, idx, l);
-    if (missing.length) return { kind: 'locked', missing };
-  }
+  const missing = missingPrereqs(s, idx, l);
+  if (missing.length) return { kind: 'locked', missing };
   const other = blockingLesson(s, idx, l.id);
   return other ? { kind: 'busy', other } : null;
 }
 
-// Due reviews that still exist in the content (items of retired lessons drop out).
+// Due reviews that still exist in the content (items of lessons no longer in it drop out).
 export function dueReviewIds(s: State, idx: ContentIndex, today = localDate()) {
   const known = new Set(idx.reviews.map((r) => r.id));
   return dueItems(s, today)
@@ -138,7 +108,6 @@ export function closure(s: State, idx: ContentIndex, id: string, now = Date.now(
   const p = s.progress[id];
   if (p?.status !== 'complete') return null;
   const from = (p.completedAt ?? now) + CLOSE_AFTER_DAYS * DAY_MS;
-  if (p.via) return { closed: true, from, passed: 0, total: 0 };
   const items = lessonReviewIds(idx, id).filter((r) => s.reviews[r]);
   let passed = 0;
   for (const r of items) {
@@ -325,7 +294,7 @@ export function resumeTarget(s: State, idx: ContentIndex): { lessonId: string; p
     return { lessonId: lastLesson.id, path: last };
   const open = idx.lessons.filter((l) => idx.available.includes(l.id) && !lessonComplete(s, l.id));
   const started = open.filter((l) => s.progress[l.id]?.status === 'in_progress');
-  const pick = started[0] ?? open.find((l) => nodeState(s, idx, l) === 'available') ?? open.find((l) => nodeState(s, idx, l) !== 'optional') ?? open[0];
+  const pick = started[0] ?? open.find((l) => nodeState(s, idx, l) === 'available') ?? open[0];
   if (!pick) return null;
   const done = s.progress[pick.id]?.movementsDone ?? [];
   const mv = pick.movements.find((x) => !done.includes(x.id)) ?? pick.movements[0];

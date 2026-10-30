@@ -5,7 +5,7 @@
 //   unpublished instead of failing the build (used while a track is being written).
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadGraph, loadRetired, hasLesson, loadLesson, lessonDir, ROOT, type LoadedLesson, type Graph } from './lib/content';
+import { loadGraph, hasLesson, loadLesson, lessonDir, ROOT, type LoadedLesson, type Graph } from './lib/content';
 import { collectDirectives } from './lib/markdown';
 import { findAnnotations, notebookFor } from './build_content';
 import { reviewItemsFor } from './gen_reviews';
@@ -278,15 +278,6 @@ function main() {
     if (!graph.lessons.some((g) => g.id === d)) errs.push(`content/lessons/${d} is not in graph.yaml`);
   for (const g of graph.lessons) if (hasLesson(g.id)) loaded.set(g.id, loadLesson(g.id, graph));
   for (const id of loaded.keys()) errs.push(...lessonErrors(loaded.get(id)!, graph, loaded));
-  const retired = loadRetired();
-  for (const [from, to] of Object.entries(retired.lessons)) {
-    if (graph.lessons.some((g) => g.id === from)) errs.push(`retired.yaml: ${from} is still in graph.yaml`);
-    if (!graph.lessons.some((g) => g.id === to)) errs.push(`retired.yaml: ${from} maps to unknown lesson ${to}`);
-  }
-  for (const [from, to] of Object.entries(retired.exercises)) {
-    const [lid, ex] = to.split('/');
-    if (!loaded.get(lid)?.lesson.exercises[ex]) errs.push(`retired.yaml: exercise ${from} maps to missing ${to}`);
-  }
   const { missing } = findAnnotations(loaded);
   errs.push(...missing);
   for (const f of walk(path.join(ROOT, 'content')).filter((p) => p.endsWith('graph.yaml'))) {

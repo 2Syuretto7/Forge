@@ -78,13 +78,6 @@ export interface ContentIndex {
   reviews: ReviewItem[];
   available: string[];
   strands: Strand[];
-  // Lessons retired from the curriculum, and where their progress moved.
-  retired: Retired;
-}
-
-export interface Retired {
-  lessons: Record<string, string>;
-  exercises: Record<string, string>;
 }
 
 export interface DerivationStep {

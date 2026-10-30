@@ -142,18 +142,6 @@
 .s_locked .nodeId {
   fill: var(--muted);
 }
-.s_optional .disc,
-.legendDot.s_optional {
-  fill: var(--good-soft);
-  stroke: var(--good);
-  stroke-dasharray: 4 2;
-}
-.s_optional .nodeId {
-  fill: var(--good);
-}
-.listItem.s_optional {
-  border-left-color: var(--good);
-}
 .s_unpublished .disc {
   fill: var(--surface-2);
   stroke: var(--border);

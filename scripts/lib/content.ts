@@ -10,7 +10,6 @@ import type {
   Lesson,
   Mode,
   Movement,
-  Retired,
   Reuse,
   Stage,
   Strand,
@@ -63,14 +62,6 @@ export function loadGraph(): Graph {
   g.edges = g.edges.map((e) => ({ ...e, from: String(e.from), to: String(e.to) }));
   g.strands = g.strands ?? [];
   return g;
-}
-
-// content/retired.yaml: lessons taken out of the curriculum and where their progress maps.
-export function loadRetired(): Retired {
-  const p = path.join(CONTENT, 'retired.yaml');
-  if (!fs.existsSync(p)) return { lessons: {}, exercises: {} };
-  const r = YAML.parse(fs.readFileSync(p, 'utf8')) as Partial<Retired>;
-  return { lessons: r.lessons ?? {}, exercises: r.exercises ?? {} };
 }
 
 export function lessonDir(id: string) {

@@ -21,7 +21,6 @@ export const STATE_LABEL: Record<string, string> = {
   available: 'Available',
   in_progress: 'In progress',
   complete: 'Complete',
-  optional: 'Optional review',
   unpublished: 'Not yet published',
 };
 

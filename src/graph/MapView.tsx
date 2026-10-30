@@ -246,7 +246,7 @@ function GraphSvg({ idx, state }: { idx: ContentIndex; state: State }) {
       </svg>
       {hovered && <Tooltip l={hovered} st={nodeState(state, idx, hovered)} idx={idx} state={state} />}
       <ul className={styles.legend} aria-label="Node states">
-        {(['available', 'in_progress', 'complete', 'optional', 'locked'] as NodeState[]).map((s) => (
+        {(['available', 'in_progress', 'complete', 'locked'] as NodeState[]).map((s) => (
           <li key={s}>
             <svg width="16" height="16" aria-hidden="true">
               <circle cx="8" cy="8" r="7" className={`${styles.legendDot} ${styles['s_' + s]}`} />

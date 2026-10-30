@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useIndex } from '../content/load';
 import type { ContentIndex, LessonSummary } from '../content/types';
@@ -26,7 +26,6 @@ const ACTION: Record<NodeState, string> = {
   available: 'Start',
   in_progress: 'Continue',
   complete: 'Review',
-  optional: 'Review',
   locked: 'Preview',
   unpublished: '',
 };
@@ -35,10 +34,35 @@ const STATUS: Record<NodeState, string> = {
   available: 'Not started',
   in_progress: 'In progress',
   complete: 'Completed',
-  optional: 'Optional review',
   locked: 'Locked',
   unpublished: 'Coming later',
 };
+
+// Set at startup when progress from an earlier curriculum was reset (store.startCurriculum).
+let resetNotice = false;
+export function setResetNotice(v: boolean) {
+  resetNotice = v;
+}
+
+function ResetNotice() {
+  const [shown, setShown] = useState(resetNotice);
+  if (!shown) return null;
+  return (
+    <p className="banner" role="status">
+      The mathematics track has been rebuilt as 38 lessons, M01 to M38, so your progress has been reset and the path starts again at M01. Your API
+      key and settings are unchanged.{' '}
+      <button
+        className="btn small ghost"
+        onClick={() => {
+          resetNotice = false;
+          setShown(false);
+        }}
+      >
+        Dismiss
+      </button>
+    </p>
+  );
+}
 
 const day = (t: number) => new Date(t).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 
@@ -145,7 +169,7 @@ function LessonRow({ l, state, idx }: { l: LessonSummary; state: State; idx: Con
   const pct = lessonPercent(state, l);
   const done = state.progress[l.id]?.movementsDone.length ?? 0;
   const close = st === 'complete' ? closure(state, idx, l.id) : null;
-  const waitFor = st === 'available' || st === 'optional' ? blockingLesson(state, idx, l.id) : null;
+  const waitFor = st === 'available' ? blockingLesson(state, idx, l.id) : null;
   const status = close
     ? close.closed
       ? 'Closed'
@@ -268,6 +292,7 @@ export function Dashboard() {
   return (
     <main className={styles.page} id="main">
       <h1 className={styles.title}>{state.progress && Object.keys(state.progress).length ? 'Welcome back' : 'Welcome to Forge'}</h1>
+      <ResetNotice />
       <Resume state={state} idx={idx} />
       <div className={styles.row}>
         <Stats state={state} idx={idx} />

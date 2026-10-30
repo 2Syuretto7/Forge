@@ -4,18 +4,19 @@ import {
   completeMovement,
   getState,
   gradeReview,
+  CURRICULUM,
   loadStore,
-  migrateRetired,
   openMovement,
+  resetProgress,
   saveFeynman,
   scheduleReviews,
+  startCurriculum,
 } from '../../src/store/store';
 import {
   CLOSE_AFTER_DAYS,
   FEYNMAN_PASS,
   blockingLesson,
   closure,
-  credited,
   dueReviewIds,
   lessonGate,
   missingPrereqs,
@@ -40,7 +41,6 @@ const idx = {
     { id: 'M01/concept2', lesson: 'M01' },
     { id: 'M01/concept3', lesson: 'M01' },
   ],
-  retired: { lessons: { X00: 'M03' }, exercises: { 'X00/e01': 'M03/e04' } },
 } as unknown as ContentIndex;
 
 const finish = async (id: string, score = 18) => {
@@ -114,22 +114,35 @@ describe('rule 3: a lesson closes at 80% on its own cards a week after completio
   });
 });
 
-describe('migration from retired lessons', () => {
-  it('completes the successor, credits its ancestors as optional review and moves exercise records', async () => {
+describe('a new curriculum resets progress once', () => {
+  it('clears progress made under an earlier curriculum, keeps the key, and does not reset again', async () => {
     const db = await getDb();
-    await db.put('progress', { lessonId: 'X00', status: 'complete', movementsDone: ['m0'], startedAt: 1, completedAt: 2, hoursLogged: 3 });
-    await db.put('exercises', { id: 'X00/e01', status: 'passed', attempts: 2, failedChecks: 1, hintsUsed: 0, lastCode: 'x' });
+    await db.put('progress', { lessonId: 'L01', status: 'complete', movementsDone: ['m0'], startedAt: 1, completedAt: 2, hoursLogged: 3 });
+    await db.put('exercises', { id: 'L01/e01', status: 'passed', attempts: 2, failedChecks: 1, hintsUsed: 0, lastCode: 'x' });
+    await db.put('settings', { key: 'apiKey', value: 'sk-test' });
+    await db.put('settings', { key: 'curriculum', value: 'old' });
     await loadStore();
-    await migrateRetired(idx);
-    const s = getState();
-    expect(s.progress.M03).toMatchObject({ status: 'complete', via: 'X00', movementsDone: ['m0', 'm1'], completedAt: 2 });
-    expect(s.exercises['M03/e04']).toMatchObject({ status: 'passed', attempts: 2 });
-    expect([...credited(s, idx)].sort()).toEqual(['M01', 'M02', 'M05']);
-    expect(nodeState(s, idx, idx.lessons[0])).toBe('optional');
-    // Credited prerequisites unlock their other dependents.
-    expect(nodeState(s, idx, idx.lessons[3])).toBe('available');
-    expect(closure(s, idx, 'M03')?.closed).toBe(true);
-    await migrateRetired(idx);
-    expect(getState().progress.M03.via).toBe('X00');
+    expect(await startCurriculum()).toBe(true);
+    let s = getState();
+    expect(s.progress).toEqual({});
+    expect(s.exercises).toEqual({});
+    expect(s.settings.apiKey).toBe('sk-test');
+    expect(s.settings.curriculum).toBe(CURRICULUM);
+    await openMovement('M01', 'm0');
+    await loadStore();
+    expect(await startCurriculum()).toBe(false);
+    s = getState();
+    expect(s.progress.M01.status).toBe('in_progress');
+  });
+
+  it('never resets a file the learner imports', async () => {
+    const { exportProgress, importProgress } = await import('../../src/store/store');
+    await openMovement('M02', 'm0');
+    const file = await exportProgress();
+    await resetProgress();
+    await importProgress({ ...file, stores: { ...file.stores, settings: [] } });
+    await loadStore();
+    expect(await startCurriculum()).toBe(false);
+    expect(getState().progress.M02).toBeDefined();
   });
 });
