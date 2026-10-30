@@ -13,6 +13,7 @@ import { MAPS, jacobian, polygonArea, squareBoundary } from '../../src/widgets/J
 import { counts as bayesCounts, posterior } from '../../src/widgets/BayesGrid';
 import { conditional, eigSym, ellipse } from '../../src/widgets/GaussianEllipse';
 import { averages, histogram, normalPdf, standardize } from '../../src/widgets/CLTMachine';
+import { draw, logLik, mle, sampleMoments, theory } from '../../src/widgets/DistributionPlayground';
 
 describe('VectorPlayground', () => {
   it('computes the dot product, angle, projection and norms', () => {
@@ -210,5 +211,26 @@ describe('CLTMachine', () => {
     const h = histogram(z, -4, 4, 16);
     expect(h.reduce((a, b) => a + b.density * 0.5, 0)).toBeCloseTo(1, 1);
     expect(normalPdf(0)).toBeCloseTo(0.3989422804, 9);
+  });
+});
+
+describe('DistributionPlayground', () => {
+  const q = { mu: 1, sigma: 2, p: 0.3, lam: 2.5 };
+  it('sample moments match the theory for every distribution', () => {
+    for (const d of ['gaussian', 'bernoulli', 'exponential', 'poisson'] as const) {
+      const m = sampleMoments(draw(d, 40000, q, 5));
+      const t = theory(d, q);
+      expect(Math.abs(m.mean - t.mean)).toBeLessThan(4 * Math.sqrt(t.variance / 40000));
+      expect(Math.abs(m.unbiased / t.variance - 1)).toBeLessThan(0.05);
+    }
+  });
+  it('the maximum-likelihood estimate maximizes the log-likelihood', () => {
+    for (const d of ['gaussian', 'bernoulli', 'exponential', 'poisson'] as const) {
+      const xs = draw(d, 200, q, 9);
+      const hat = mle(d, xs);
+      for (const h of [0.97, 1.03]) expect(logLik(d, xs, hat)).toBeGreaterThanOrEqual(logLik(d, xs, hat * h));
+    }
+    expect(mle('exponential', [0.5, 1.5])).toBeCloseTo(1, 12);
+    expect(mle('poisson', [1, 2, 6])).toBeCloseTo(3, 12);
   });
 });

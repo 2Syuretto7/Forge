@@ -1,0 +1,28 @@
+id: M22
+hours: 12
+capstone: "Distribution library of 8 samplers passing CDF-distance tests at 10^6 samples, plus the variance-preserving init scale derived and verified"
+teaser: "Random variables as functions, PMFs, densities and CDFs, expectation and its linearity, variance and covariance, the common families, inverse-CDF sampling, and why the variance of a sum sets the scale of a weight initialization."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: M23, text: "Several random variables at once have a joint distribution, and their covariances fill a matrix whose eigenvectors are the axes of the Gaussian's ellipses."}
+  - {to: M24, text: "The variance of an average shrinks like 1/n: the law of large numbers, and the central limit theorem says what shape the average takes."}
+  - {to: M27, text: "Entropy is an expectation: the average surprise, minus the logarithm of the probability."}
+  - {to: M32, text: "A Markov chain draws each state from a distribution that depends on the last one; MCMC estimates expectations from such chains."}
+reuses:
+  - {from: M21, concept: "conditional probability and independence"}
+  - {from: M17, concept: "integrals as areas and the fundamental theorem of calculus"}
+annotations:
+  - {target: M12, anchor: "Pythagoras, without calculus", text: "M22: centered random variables obey the same geometry with the covariance as inner product, so the variances of uncorrelated variables add like squared lengths of orthogonal vectors."}
+  - {target: M17, anchor: "The Gaussian integral", text: "M22: dividing by that integral turns the bell curve into a probability density, and integrals of x and x squared against it give its mean and variance."}
+concepts:
+  - q: "Why does the standard deviation of a sum of n independent, identically distributed terms grow like the square root of n and not like n?"
+    a: "Independent terms are uncorrelated, so the covariances vanish and the variances add: Var(sum) = n sigma^2. The standard deviation is the square root, sigma sqrt(n). The terms partly cancel each other: as many push up as down, and only the imbalance remains."
+katas: [e01]
