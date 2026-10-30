@@ -5,7 +5,7 @@ import path from 'node:path';
 
 // Reviews, Colab completion codes and retro-annotations, end to end: finish L08
 // through its Colab block, see its review items come due the next day (in the
-// review screen and in L09's recall bridge), and see L08's note appear in L07.
+// review screen and in L09's reviews-first queue), and see L08's note appear in L07.
 
 const lessonDir = (id: string) => path.resolve('content/lessons', id);
 const movements = (id: string) =>
@@ -104,15 +104,17 @@ test('Colab code completes L08, reviews come due the next day, annotations appea
   await page.goto('./#/lesson/L07/m2-derivation');
   await expect(page.getByText(note)).toBeVisible();
 
-  // One day later the items are due: in the review screen and in L09's recall bridge.
+  // One day later the items are due: in the review screen and in L09's reviews-first queue.
   await page.clock.setSystemTime(new Date(day0.getTime() + 24 * 3600 * 1000));
   await page.goto('./#/review');
   await page.reload();
   await expect(page.getByText(`${n} items left in this session`)).toBeVisible();
   await expect(page.getByRole('link', { name: `Reviews (${n} due)` })).toBeVisible();
 
+  // L09 is open (its prerequisites are complete) and its first step not yet opened, so
+  // the due items come first, in the reviews-first queue that replaces the recall bridge.
   await page.goto('./#/lesson/L09/m0-recall');
-  const bridge = page.getByRole('region', { name: 'Recall bridge' });
+  const bridge = page.getByRole('region', { name: 'Reviews first' });
   await expect(bridge.getByText(`${n} items left in this session`)).toBeVisible();
   const card = bridge.locator('.review-card');
   await expect(card).toHaveAttribute('aria-label', /from L08$/);

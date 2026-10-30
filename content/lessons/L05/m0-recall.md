@@ -1,8 +1,8 @@
 # Recall bridge: projections and likelihoods
 
-This lesson joins two threads. From L01 it takes least squares and the normal equations; from L02 the likelihood, maximum likelihood and priors. Reviews due from those lessons appear above.
+This lesson joins two threads. From M12 it takes least squares and the normal equations; from L02 the likelihood, maximum likelihood and priors. Reviews due from those lessons appear above.
 
-## From L01
+## From M12
 
 The least-squares solution $\hat w = \arg\min_w \|Xw - y\|^2$ satisfies $X^\top X \hat w = X^\top y$, and the fit $X\hat w$ is the projection of $y$ onto the column space of $X$. Solving through QR is more accurate than forming $X^\top X$.
 

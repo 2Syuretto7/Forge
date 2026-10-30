@@ -11,14 +11,14 @@ Data: feature rows $x_i \in \mathbb{R}^d$ stacked in $X \in \mathbb{R}^{n \times
 The log-likelihood is $\sum_i \log\mathcal N(y_i; w^\top x_i, \sigma^2) = -\tfrac{n}{2}\log(2\pi\sigma^2) - \dfrac{1}{2\sigma^2}\sum_i (y_i - w^\top x_i)^2$. For fixed $\sigma$, maximizing it over $w$ is the same as minimizing $\sum_i (y_i - w^\top x_i)^2$. For a single point with residual $r = y - w^\top x$, the term being minimized is [[r^2]].
 :::
 :::step
-The gradient of $L(w) = \tfrac{1}{n}\|Xw - y\|^2$ is $\tfrac{2}{n}X^\top(Xw - y)$. Setting it to zero gives the normal equations of L01. For a one-feature model with no intercept, $\hat w = \sum x_i y_i / \sum x_i^2$. With data $(1, 2), (2, 3)$ that is $(2 + 6)/(1 + 4) =$ [[1.6]].
+The gradient of $L(w) = \tfrac{1}{n}\|Xw - y\|^2$ is $\tfrac{2}{n}X^\top(Xw - y)$. Setting it to zero gives the normal equations of M12. For a one-feature model with no intercept, $\hat w = \sum x_i y_i / \sum x_i^2$. With data $(1, 2), (2, 3)$ that is $(2 + 6)/(1 + 4) =$ [[1.6]].
 :::
 :::step
 Maximizing over $\sigma^2$ as in L02 gives $\hat\sigma^2 = \tfrac{1}{n}\sum_i (y_i - \hat w^\top x_i)^2$, the mean squared residual. With residuals $0.2$ and $-0.2$, $\hat\sigma^2 =$ [[0.04]].
 :::
 ::::
 
-:::edge{from=L01 text="least squares and the normal equations"}
+:::edge{from=M12 text="least squares and the normal equations"}
 :::
 
 ## 2. Ridge regression is MAP with a Gaussian prior
@@ -35,7 +35,7 @@ $$
 \hat w_\lambda = (X^\top X + \lambda I)^{-1} X^\top y .
 $$
 
-Adding $\lambda I$ lifts every eigenvalue of $X^\top X$ by $\lambda$, so it also cures the ill-conditioning of L01: the condition number becomes $(\sigma_{\max}^2 + \lambda)/(\sigma_{\min}^2 + \lambda)$.
+Adding $\lambda I$ lifts every eigenvalue of $X^\top X$ by $\lambda$, so it also cures the ill-conditioning of M12 and M14: the condition number becomes $(\sigma_{\max}^2 + \lambda)/(\sigma_{\min}^2 + \lambda)$.
 
 ::::derivation{id=d2 title="Shrinkage in one dimension"}
 :::step
@@ -91,7 +91,7 @@ Logistic regression is the $K = 2$ case with one logit fixed at zero.
 
 ## 5. Optimization in practice: why features must be standardized
 
-Gradient descent on a quadratic converges at a rate set by the condition number of the Hessian (L01, and in full detail L09). For linear regression the Hessian is $\tfrac{2}{n}X^\top X$. If one feature is measured in meters and another in millimeters, their scales differ by $10^3$ and the condition number by about $10^6$: the learning rate must be small enough for the steep direction, and the shallow direction then barely moves.
+Gradient descent on a quadratic converges at a rate set by the condition number of the Hessian (M13, and in full detail L09). For linear regression the Hessian is $\tfrac{2}{n}X^\top X$. If one feature is measured in meters and another in millimeters, their scales differ by $10^3$ and the condition number by about $10^6$: the learning rate must be small enough for the steep direction, and the shallow direction then barely moves.
 
 **Standardization** rescales each feature to mean 0 and standard deviation 1 using statistics computed on the **training set only**. It does not change what linear models can represent, only how fast gradient descent finds it. Computing the statistics on all data, including test data, leaks information about the test set into training; L06 makes that failure concrete.
 

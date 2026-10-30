@@ -196,7 +196,7 @@ For the quadratic $f(x) = \tfrac{1}{2} L x^2$ in one dimension, a step $x' = x -
 :::
 ::::
 
-So gradient descent is a sequence of trusted local linear approximations, and the step size must respect the curvature. L09 turns this into convergence rates and shows that the condition number $L/\mu$ from L01 controls how many steps you need.
+So gradient descent is a sequence of trusted local linear approximations, and the step size must respect the curvature. L09 turns this into convergence rates and shows that the condition number $L/\mu$ from M14 controls how many steps you need.
 
 ## Summary
 

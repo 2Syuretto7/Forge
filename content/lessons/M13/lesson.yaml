@@ -1,0 +1,26 @@
+id: M13
+hours: 12
+capstone: "PageRank engine on a provided graph, matching a reference ranking with convergence rate predicted from the second eigenvalue"
+teaser: "Invariant directions, the characteristic polynomial, diagonalization and when it fails, the spectral theorem, power iteration and its rate, quadratic forms, and stationary distributions."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: M14, text: "The singular value decomposition is the spectral theorem applied to A^T A, and it works for every matrix."}
+  - {to: M18, text: "The eigenvalues of the Hessian decide whether a critical point is a minimum, a maximum or a saddle."}
+  - {to: M29, text: "The eigenvalues of the Hessian set the best step size and the best momentum for gradient descent."}
+  - {to: M32, text: "A stationary distribution is an eigenvector with eigenvalue 1, and the second eigenvalue sets how fast a chain mixes."}
+reuses:
+  - {from: M12, concept: "orthogonality, projections and orthonormal bases"}
+annotations:
+  - {target: M10, anchor: "find entries that turn the square without changing its shape", text: "M13: a pure turn keeps no direction fixed, so it has no real eigenvector; a matrix that stretches along some directions without turning them has those directions as eigenvectors."}
+concepts:
+  - q: "Why does repeatedly multiplying a vector by A make it line up with one particular direction, and how fast?"
+    a: "Write the vector in the eigenvector basis, x = sum c_i v_i. Then A^k x = sum c_i lambda_i^k v_i, and the term with the largest |lambda_i| grows fastest, so the direction approaches v_1. The other components shrink relative to it by |lambda_2 / lambda_1| per step, so the error after k steps is about |lambda_2 / lambda_1|^k."
+katas: [e02]

@@ -1,6 +1,6 @@
 # Recall bridge: derivatives you already know
 
-This lesson has no prerequisite lessons. The bridge checks the single-variable calculus it builds on. If L01 or L02 have reviews due, they appear above; L01's matrix products show up again in Section 6 of the derivation.
+This lesson has no prerequisite lessons. The bridge checks the single-variable calculus it builds on. If earlier lessons have reviews due, they appear above; M10's matrix products show up again in Section 6 of the derivation.
 
 ## The derivative as a rate and as a slope
 

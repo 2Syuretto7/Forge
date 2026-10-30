@@ -16,7 +16,7 @@ hooks:
   - {to: L15, text: "Scaling-law fits assume a tuned learning rate and schedule for every model size; L15 asks how they change with scale."}
   - {to: L19, text: "Warmup, decay and the learning-rate peak return when a large run spikes and has to be rewound."}
 reuses:
-  - {from: L01, concept: "eigendecomposition of symmetric matrices and the condition number"}
+  - {from: M28, concept: "eigendecomposition of symmetric matrices and the condition number"}
   - {from: L07, concept: "the MLP, its backward pass and the minibatch SGD loop"}
   - {from: L08, concept: "parameters and gradients exposed by an autograd engine"}
 annotations:

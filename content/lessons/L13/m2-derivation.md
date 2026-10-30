@@ -8,7 +8,7 @@ S = \frac{QK^\top}{\sqrt{d_k}}, \qquad P = \operatorname{softmax}_{\text{rows}}(
 $$
 Row $i$ of $O$ is a weighted average of the values, with weights from how well query $i$ matches every key.
 
-:::edge{from=L01 text="dot products as similarity and projections onto subspaces"}
+:::edge{from=M10 text="dot products as similarity and matrix products"}
 :::
 
 :::edge{from=L05 text="the softmax and its Jacobian"}

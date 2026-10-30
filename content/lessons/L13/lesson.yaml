@@ -18,7 +18,7 @@ hooks:
   - {to: L22, text: "At inference the keys and values of past tokens are cached instead of recomputed."}
   - {to: L23, text: "Individual attention heads implement recognizable algorithms, such as copying the token after a match."}
 reuses:
-  - {from: L01, concept: "dot products as similarity and projections onto subspaces"}
+  - {from: M10, concept: "dot products as similarity and matrix products"}
   - {from: L05, concept: "the softmax and its Jacobian"}
   - {from: L07, concept: "backpropagation through matrix products"}
   - {from: L10, concept: "pre-norm residual blocks"}

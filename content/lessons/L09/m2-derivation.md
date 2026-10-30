@@ -8,7 +8,7 @@ $$
 e_{t+1} = (I - \eta A)\, e_t.
 $$
 
-Write $A = Q \Lambda Q^\top$ (L01). In the eigenbasis the coordinates decouple: the component along eigenvector $q_i$ is multiplied by $1 - \eta \lambda_i$ at every step.
+Write $A = Q \Lambda Q^\top$ (M13). In the eigenbasis the coordinates decouple: the component along eigenvector $q_i$ is multiplied by $1 - \eta \lambda_i$ at every step.
 
 - The iteration converges if and only if $|1 - \eta\lambda_i| < 1$ for every $i$, that is $0 < \eta < 2/\lambda_{\max}$.
 - The slowest component decides the rate $\rho(\eta) = \max_i |1 - \eta \lambda_i|$, which is smallest when the two extreme eigenvalues are balanced: $1 - \eta\mu = -(1 - \eta L)$, giving $\eta^\star = 2/(\mu + L)$ and
@@ -29,7 +29,7 @@ To shrink the error by $10^{-6}$ you need $t$ with $(\rho^\star)^t = 10^{-6}$, a
 :::
 ::::
 
-:::edge{from=L01 text="eigendecomposition of symmetric matrices and the condition number"}
+:::edge{from=M28 text="eigendecomposition of symmetric matrices and the condition number"}
 :::
 
 ## 2. Momentum is a low-pass filter

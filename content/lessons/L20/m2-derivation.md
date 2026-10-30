@@ -26,7 +26,7 @@ W = W_0 + \frac{\alpha}{r} B A, \qquad A \in \mathbb{R}^{r \times d_\text{in}},\
 $$
 $B$ starts at zero, so training starts exactly at the pretrained model; $A$ starts random. The trainable parameters drop from $d_\text{in} d_\text{out}$ to $r (d_\text{in} + d_\text{out})$, the optimizer states with them, and after training $BA$ can be merged into $W_0$, so inference costs nothing extra. The scale $\alpha / r$ keeps the update's size comparable as $r$ changes.
 
-Why should a low-rank update suffice? By Eckart-Young (L01), the best rank-$r$ approximation of any update is its truncated SVD, with error set by the discarded singular values. Measured fine-tuning updates of large models have rapidly decaying spectra (Aghajanyan et al., 2020, found that fine-tuning works in a small "intrinsic dimension"), so a small $r$ captures most of them. LoRA can represent any update of rank $r$ and nothing beyond: if the task needs more directions, the loss plateaus (exercise 12).
+Why should a low-rank update suffice? By Eckart-Young (M14), the best rank-$r$ approximation of any update is its truncated SVD, with error set by the discarded singular values. Measured fine-tuning updates of large models have rapidly decaying spectra (Aghajanyan et al., 2020, found that fine-tuning works in a small "intrinsic dimension"), so a small $r$ captures most of them. LoRA can represent any update of rank $r$ and nothing beyond: if the task needs more directions, the loss plateaus (exercise 12).
 
 ::::derivation{id=d2 title="Counting an adapter"}
 :::step
@@ -37,7 +37,7 @@ That is a fraction $65536 / 4096^2 \approx$ [[0.0039|tol=0.0001]] of the matrix.
 :::
 ::::
 
-:::edge{from=L01 text="the SVD and the best low-rank approximation"}
+:::edge{from=M14 text="the SVD and the best low-rank approximation"}
 :::
 
 :::edge{from=L13 text="the weight matrices of a transformer block"}

@@ -1,6 +1,6 @@
 # Recall bridge: the SVD, the transformer and a pretrained model
 
-From L01: the SVD writes any matrix as a sum of rank-one pieces ordered by size, and keeping the largest $r$ gives the best rank-$r$ approximation. From L13: a transformer block is a handful of weight matrices around attention. From L19: pretraining leaves you with a model that continues text well and follows no instructions at all. This lesson adapts that model to a task cheaply and without wrecking what it already knows. Reviews due from L01, L13 and L19 appear above.
+From M14: the SVD writes any matrix as a sum of rank-one pieces ordered by size, and keeping the largest $r$ gives the best rank-$r$ approximation. From L13: a transformer block is a handful of weight matrices around attention. From L19: pretraining leaves you with a model that continues text well and follows no instructions at all. This lesson adapts that model to a task cheaply and without wrecking what it already knows. Reviews due from M14, L13 and L19 appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step

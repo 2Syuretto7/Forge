@@ -1,6 +1,6 @@
 # The best low-rank update
 
-LoRA restricts the update to rank $r$. By the Eckart-Young theorem (L01's SVD), the best rank-$r$ approximation of a matrix in Frobenius norm is its truncated SVD, and the error is set by the discarded singular values.
+LoRA restricts the update to rank $r$. By the Eckart-Young theorem (M14's SVD), the best rank-$r$ approximation of a matrix in Frobenius norm is its truncated SVD, and the error is set by the discarded singular values.
 
 1. `best_rank_r(M, r)`: the truncated SVD.
 2. `relative_error(M, r)`: $\sqrt{\sum_{i > r} \sigma_i^2 / \sum_i \sigma_i^2}$.

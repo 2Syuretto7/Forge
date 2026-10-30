@@ -1,0 +1,26 @@
+id: M14
+hours: 12
+capstone: "PCA pipeline explaining 95 percent of the variance of a synthetic embedding set, with written interpretation of the top 3 components"
+teaser: "The SVD from the eigenvectors of A^T A, rotate-stretch-rotate, Eckart-Young and low-rank approximation, PCA, the pseudo-inverse, and the condition number."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: M23, text: "PCA is the eigen-decomposition of the covariance matrix, computed stably as the SVD of the centred data."}
+  - {to: M33, text: "Randomized SVD finds the top singular vectors of a huge matrix from a few matrix products."}
+  - {to: L20, text: "LoRA fine-tunes a model by adding a low-rank matrix, the object Eckart-Young describes."}
+reuses:
+  - {from: M13, concept: "the spectral theorem and power iteration"}
+annotations:
+  - {target: M13, anchor: "Numerical libraries never compute the characteristic polynomial", text: "M14: for the same reason, good SVD routines never form A^T A. They work on A directly, which keeps small singular values accurate; squaring the matrix would square the condition number."}
+  - {target: M12, anchor: "Householder reflections, which is better still", text: "M14: when the columns are dependent, QR and the normal equations both fail; the pseudo-inverse from the SVD still gives the least-squares solution of smallest length."}
+concepts:
+  - q: "What does the SVD say every matrix does to the unit sphere, and what are the singular values?"
+    a: "A = U Sigma V^T: rotate (V^T), stretch each axis by a singular value (Sigma), rotate again (U). The unit sphere becomes an ellipsoid whose semi-axes have lengths sigma_1 >= sigma_2 >= ... >= 0 along the left singular vectors. The singular values are the square roots of the eigenvalues of A^T A."
+katas: [e05]

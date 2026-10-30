@@ -1,6 +1,6 @@
 # Recall bridge: dot products, softmax, backprop and residual blocks
 
-Five earlier lessons meet here. From L01, a dot product measures how much two vectors point the same way. From L05, the softmax turns scores into probabilities, with Jacobian $\operatorname{diag}(p) - pp^\top$. From L07, a matrix product $Y = XW$ sends gradients $G W^\top$ and $X^\top G$. From L10, a pre-norm residual block computes $x + F(\operatorname{LN}(x))$. From L11, an operation's speed is set by its arithmetic intensity. Reviews due from those lessons appear above.
+Five earlier lessons meet here. From M09 and M10, a dot product measures how much two vectors point the same way. From L05, the softmax turns scores into probabilities, with Jacobian $\operatorname{diag}(p) - pp^\top$. From L07, a matrix product $Y = XW$ sends gradients $G W^\top$ and $X^\top G$. From L10, a pre-norm residual block computes $x + F(\operatorname{LN}(x))$. From L11, an operation's speed is set by its arithmetic intensity. Reviews due from those lessons appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step

@@ -16,11 +16,11 @@ hooks:
   - {to: L22, text: "A distilled student makes a fast draft model for speculative decoding."}
   - {to: L24, text: "The final capstone fine-tunes the model it pretrained."}
 reuses:
-  - {from: L01, concept: "the SVD and the best low-rank approximation"}
+  - {from: M14, concept: "the SVD and the best low-rank approximation"}
   - {from: L13, concept: "the weight matrices of a transformer block"}
   - {from: L19, concept: "a pretrained model and its base evaluation"}
 annotations:
-  - {target: L01, movement: m2-derivation, anchor: "8. Low-rank approximation explains puzzle 2", text: "L20 uses this theorem to explain why LoRA's low-rank updates are enough to fine-tune large models."}
+  - {target: M14, movement: m2-derivation, anchor: "Low-rank approximation: Eckart-Young", text: "L20 uses this theorem to explain why LoRA's low-rank updates are enough to fine-tune large models."}
   - {target: L19, movement: m2-derivation, anchor: "6. Evaluation you can trust", text: "L20 reruns this evaluation after fine-tuning to measure how much the model forgot."}
 concepts:
   - q: "Why is the prompt masked out of the fine-tuning loss?"

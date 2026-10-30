@@ -1,6 +1,6 @@
 # Recall bridge: averages, logs and counting
 
-This lesson has no prerequisite lessons, so the bridge checks three tools from school mathematics that probability leans on: averages, logarithms and counting. If L01 is complete and any of its items are due, they appear above.
+This lesson has no prerequisite lessons, so the bridge checks three tools from school mathematics that probability leans on: averages, logarithms and counting. If an earlier lesson is complete and any of its items are due, they appear above.
 
 ## Averages
 

@@ -16,10 +16,10 @@ hooks:
   - {to: L07, text: "A neural network is logistic regression on features it learns itself."}
   - {to: L13, text: "The softmax you train here returns as the attention weights of a transformer."}
 reuses:
-  - {from: L01, concept: "least squares and the normal equations"}
+  - {from: M12, concept: "least squares and the normal equations"}
   - {from: L02, concept: "maximum likelihood and Gaussian priors"}
 annotations:
-  - {target: L01, movement: m2-derivation, anchor: "Projection onto a subspace, and least squares", text: "Least squares is maximum likelihood when the noise is Gaussian; ridge regression adds a Gaussian prior (L05)."}
+  - {target: M12, movement: m2-derivation, anchor: "Projection onto a subspace", text: "Least squares is maximum likelihood when the noise is Gaussian; ridge regression adds a Gaussian prior (L05)."}
   - {target: L02, anchor: "Gaussian prior", text: "L05 turns this into ridge regression and weight decay: the MAP estimate of a linear model."}
 concepts:
   - q: "Why is squared error the right loss for linear regression?"

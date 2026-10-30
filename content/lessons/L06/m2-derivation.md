@@ -37,7 +37,7 @@ $$
 \mathrm{df}(\lambda) = \operatorname{tr}\big(X(X^\top X + \lambda I)^{-1}X^\top\big) = \sum_j \frac{s_j^2}{s_j^2 + \lambda},
 $$
 
-where $s_j$ are the singular values of $X$. At $\lambda = 0$ it counts the parameters; as $\lambda$ grows it slides continuously to zero. Each direction is kept in proportion to how strongly the data support it, the same singular-value story as L01.
+where $s_j$ are the singular values of $X$. At $\lambda = 0$ it counts the parameters; as $\lambda$ grows it slides continuously to zero. Each direction is kept in proportion to how strongly the data support it, the same singular-value story as M14.
 
 ## 4. More parameters than data: interpolation and the minimum norm
 
@@ -76,7 +76,7 @@ With $n = 20$ points and noise $\sigma^2 = 1$, a model with $p = 10$ features ha
 At $p = 18$ it has $18/1 = 18$. Beyond the threshold, at $p = 60$, it is $20/(60 - 20 - 1) \approx$ [[0.5128]].
 :::
 :::step
-Both expressions blow up as $p \to n$. The reason is conditioning (L01): the variance is $\sigma^2\operatorname{tr}\big((X^\top X)^{-1}\big)$ or $\sigma^2\operatorname{tr}\big((XX^\top)^{-1}\big)$, a sum of $1/s_j^2$, and the smallest singular value of an $n \times p$ Gaussian matrix is about $|\sqrt{p} - \sqrt{n}|$. At $p = n = 400$ that approximation gives [[0]], and the noise is divided by it.
+Both expressions blow up as $p \to n$. The reason is conditioning (M14): the variance is $\sigma^2\operatorname{tr}\big((X^\top X)^{-1}\big)$ or $\sigma^2\operatorname{tr}\big((XX^\top)^{-1}\big)$, a sum of $1/s_j^2$, and the smallest singular value of an $n \times p$ Gaussian matrix is about $|\sqrt{p} - \sqrt{n}|$. At $p = n = 400$ that approximation gives [[0]], and the noise is divided by it.
 :::
 ::::
 

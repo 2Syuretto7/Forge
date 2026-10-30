@@ -1,6 +1,6 @@
 # Recall bridge: eigenvalues and the training loop
 
-Two earlier lessons carry this one. From L01: a symmetric matrix $A = Q \Lambda Q^\top$ has orthogonal eigenvectors, and the ratio of its largest to smallest eigenvalue is its **condition number** $\kappa$. From L07: training repeats forward, backward and the update $\theta \leftarrow \theta - \eta \nabla L$ on minibatches. Near a minimum every smooth loss looks like a quadratic whose Hessian has some condition number, and this lesson shows that $\kappa$ decides how fast that update can go. Reviews due from L01, L07 and L08 appear above.
+Two earlier lessons carry this one. From M13 and M28: a symmetric matrix $A = Q \Lambda Q^\top$ has orthogonal eigenvectors, and the ratio of its largest to smallest eigenvalue is its **condition number** $\kappa$. From L07: training repeats forward, backward and the update $\theta \leftarrow \theta - \eta \nabla L$ on minibatches. Near a minimum every smooth loss looks like a quadratic whose Hessian has some condition number, and this lesson shows that $\kappa$ decides how fast that update can go. Reviews due from M13, L07 and L08 appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step

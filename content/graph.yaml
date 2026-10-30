@@ -42,7 +42,6 @@ lessons:
   - {id: M36, title: "Score functions, gradient estimators and MDPs", track: math, strand: OPT, stage: frontier, gpu: false, compute: browser}
   - {id: M37, title: "Stochastic differential equations and diffusion", track: math, strand: CAL, stage: frontier, gpu: false, compute: browser}
   - {id: M38, title: "Capstone: the mathematics of a real paper", track: math, strand: ALL, stage: frontier, gpu: false, compute: browser}
-  - {id: L01, title: "Linear algebra as the geometry of data", track: math, strand: LIN, stage: foundations, gpu: false, compute: browser}
   - {id: L02, title: "Probability, likelihood and estimation", track: math, strand: PRB, stage: foundations, gpu: false, compute: browser}
   - {id: L03, title: "Calculus, Jacobians and automatic differentiation", track: math, strand: CAL, stage: foundations, gpu: false, compute: browser}
   - {id: L04, title: "Information theory: entropy, cross-entropy, KL", track: math, strand: NUM, stage: foundations, gpu: false, compute: browser}
@@ -142,9 +141,6 @@ edges:
   - {from: M35, to: M38, type: vertical}
   - {from: M36, to: M38, type: vertical}
   - {from: M37, to: M38, type: vertical}
-  - {from: L01, to: L05, type: vertical}
-  - {from: L01, to: L09, type: vertical}
-  - {from: L01, to: L13, type: vertical}
   - {from: L02, to: L04, type: vertical}
   - {from: L02, to: L05, type: vertical}
   - {from: L02, to: L06, type: vertical}
@@ -242,7 +238,6 @@ edges:
   - {from: M26, to: L17, type: long_range, note: "Machine epsilon returns as the limits of bf16 and fp8"}
   - {from: M27, to: L21, type: long_range, note: "KL divergence returns as the RLHF penalty"}
   - {from: M30, to: L21, type: long_range, note: "The KL-regularized optimum returns as the basis of DPO"}
-  - {from: L01, to: L20, type: long_range, note: "SVD returns as the low-rank update in LoRA"}
   - {from: L04, to: L21, type: long_range, note: "KL divergence returns as the RLHF penalty"}
   - {from: L02, to: L23, type: long_range, note: "The bootstrap returns as confidence intervals on evals"}
   - {from: L09, to: L19, type: long_range, note: "Learning-rate schedules return in spike recovery"}
