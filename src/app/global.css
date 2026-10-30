@@ -1083,6 +1083,22 @@ details.aside > summary {
 .widget-stats .warn {
   color: var(--bad);
 }
+.widget-steps {
+  margin: 6px 0;
+  padding-left: 22px;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+}
+.widget-table.truth td,
+.widget-table.truth th {
+  text-align: center;
+  font-family: var(--mono);
+}
+.widget-table.truth tr.differs td {
+  background: var(--bad-soft, var(--surface-2));
+  color: var(--bad);
+  font-weight: 700;
+}
 .widget-table {
   border-collapse: collapse;
   font-size: 0.85rem;

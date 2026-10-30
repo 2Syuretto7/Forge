@@ -1,0 +1,22 @@
+id: M01
+hours: 10
+capstone: "A Fermi pack of 12 ML-flavoured estimates (dataset size, FLOPs, memory, cost), each with error bars, scored against computed truths: at least 10 within a factor of 3"
+teaser: "Numbers, units and orders of magnitude: estimate anything to within a factor of three before you calculate it."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 60}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 35}
+  - {file: m7-capstone.md,   mode: practice, minutes: 60}
+hooks:
+  - {to: M02, text: "Algebra gives the unknown in an estimate a name, and rules for solving for it."}
+  - {to: M06, text: "Scientific notation is a logarithm in disguise: the exponent of 10 is the base-10 logarithm of the number."}
+  - {to: M08, text: "Orders of magnitude meet the size of sample spaces: counting outcomes produces numbers that only a ladder of powers of ten can hold."}
+  - {to: M35, text: "Orders of magnitude return as compute budgets on log-log axes, where a scaling law is a straight line."}
+concepts:
+  - q: "How many FLOPs does a dense model with N parameters spend per token, forward only and in training?"
+    a: "Each parameter takes part in one multiply-add per token, which is 2 FLOPs, so a forward pass costs about 2N FLOPs per token. Training adds a backward pass that computes two products per weight (the gradient for the input and for the weight), about 4N more, so about 6N FLOPs per token."
+katas: [e07]

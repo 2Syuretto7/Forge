@@ -1,0 +1,25 @@
+id: M03
+hours: 10
+capstone: "A proof portfolio of 10 statements: each proved in writing (Feynman-graded rubric) and stress-tested by the counterexample hunter"
+teaser: "Statements, quantifiers, sets and functions, and the four ways to prove something: testing finds counterexamples, only proof covers every case."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 60}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 35}
+  - {file: m7-capstone.md,   mode: practice, minutes: 60}
+hooks:
+  - {to: M05, text: "Proof by induction proves a statement for every whole number at once, the way dominoes fall."}
+  - {to: M08, text: "Sets and functions become the objects you count: outcomes, arrangements and selections."}
+  - {to: M31, text: "Quantifiers and proof by contradiction return in generalization bounds, which must hold for every model at once."}
+reuses:
+  - {from: M02, concept: "checking a step at random points"}
+annotations:
+  - {target: M02, anchor: "But it is evidence, not proof", text: "M03: a proof covers every value at once; fifty random points cover fifty. The gap between them is where n^2 + n + 41 hides its first composite, at n = 40."}
+concepts:
+  - q: "What is the difference between 'for every x there is a y' and 'there is a y for every x'?"
+    a: "In the first, y may depend on x: each x gets its own y (every person has a mother). In the second, one single y works for all x at once (one person is everyone's mother). The second implies the first but not the other way round, so swapping the quantifiers can turn a true statement false."
+katas: [e05]

@@ -1,0 +1,27 @@
+id: M04
+hours: 10
+capstone: "ReLU curve builder: approximate 5 target functions with sums of shifted ReLUs, meeting stated error budgets, with a written count of pieces used"
+teaser: "Functions as machines: domains, graphs, composition, inverses and transformations, and drawing any curve with ReLU pieces."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 60}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 35}
+  - {file: m7-capstone.md,   mode: practice, minutes: 60}
+hooks:
+  - {to: M05, text: "A sequence is a function of the whole numbers, and a sum of a sequence is a new function of how many terms you keep."}
+  - {to: M06, text: "The exponential and the logarithm are a function and its inverse."}
+  - {to: M07, text: "Sine and cosine are functions of an angle, and rotation is a function of the plane."}
+  - {to: M09, text: "A vector-valued function is a list of functions, one per coordinate."}
+  - {to: L07, text: "A sum of shifted ReLUs is a one-hidden-layer neural network; training chooses the knots and weights."}
+reuses:
+  - {from: M02, concept: "expressions and solving equations"}
+annotations:
+  - {target: M02, anchor: "a number that can vary", text: "M04: a variable that varies is the input of a function, and the expression is the machine that turns it into an output."}
+concepts:
+  - q: "Why is f(g(x)) usually different from g(f(x))?"
+    a: "Composition applies the machines in order: f(g(x)) feeds x to g first and g's output to f. Each machine changes its input in its own way, so changing which acts first changes what the second one sees. Squaring then adding 1 gives x^2 + 1; adding 1 then squaring gives (x + 1)^2, which differs by 2x."
+katas: [e07]

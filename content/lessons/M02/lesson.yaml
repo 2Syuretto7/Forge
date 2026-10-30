@@ -1,0 +1,26 @@
+id: M02
+hours: 10
+capstone: "A step-checked algebra notebook: 15 multi-step manipulations, each step validated by the random-point checker, with the two planted errors found"
+teaser: "Variables, the rules of arithmetic, and solving for what you do not know: linear equations, systems, inequalities and quadratics."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 60}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 35}
+  - {file: m7-capstone.md,   mode: practice, minutes: 60}
+hooks:
+  - {to: M03, text: "Testing a step at random points is evidence, not proof; M03 says exactly what a proof adds."}
+  - {to: M04, text: "An expression in x is a machine that turns inputs into outputs: a function."}
+  - {to: M11, text: "Elimination on two equations becomes Gaussian elimination on a thousand."}
+  - {to: M12, text: "Two equations in two unknowns return as the normal equations of least squares."}
+reuses:
+  - {from: M01, concept: "orders of magnitude and units"}
+annotations:
+  - {target: M01, anchor: "breaks an unknown quantity into a product of factors", text: "M02: each factor is an unknown; when the product is measured and all factors but one are known, algebra solves for the last one."}
+concepts:
+  - q: "Why may you divide both sides of an equation by the same number, and when does that rule fail?"
+    a: "Multiplying both sides by 1/c keeps them equal because equal inputs give equal outputs; dividing by c is multiplying by 1/c. The rule fails when c is zero, which has no inverse, and that includes dividing by an expression such as x that can be zero: x^2 = 3x divided by x loses the solution x = 0."
+katas: [e06]

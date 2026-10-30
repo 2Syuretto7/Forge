@@ -1,19 +1,22 @@
 import { useMemo } from 'react';
 import type { ContentIndex, Lesson } from '../content/types';
 import { useStore } from '../store/store';
-import { dueItems } from '../store/derive';
+import { dueItems, lessonComplete } from '../store/derive';
 import { ReviewQueue } from './ReviewPage';
 
 // Movement 0: due reviews filtered to the lessons this one builds on.
 export function RecallBridge({ lesson, index }: { lesson: Lesson; index: ContentIndex }) {
   const reviews = useStore((s) => s.reviews);
-  // Every lesson with an edge into this one; a horizontal edge links both ways.
+  const progress = useStore((s) => s.progress);
+  // Completed lessons with an edge into this one; a horizontal edge links both ways.
   const sources = useMemo(
     () =>
       new Set(
-        index.edges.flatMap((e) => (e.to === lesson.id ? [e.from] : e.type === 'horizontal' && e.from === lesson.id ? [e.to] : [])),
+        index.edges
+          .flatMap((e) => (e.to === lesson.id ? [e.from] : e.type === 'horizontal' && e.from === lesson.id ? [e.to] : []))
+          .filter((id) => lessonComplete({ progress } as never, id)),
       ),
-    [index, lesson.id],
+    [index, lesson.id, progress],
   );
   const ids = useMemo(
     () =>
