@@ -1,0 +1,27 @@
+id: M07
+hours: 10
+capstone: "Rotary toy: show that the dot product of two rotated vectors depends only on their position difference, proved and verified numerically for 1,000 pairs"
+teaser: "Pythagoras, the unit circle, sine and cosine, radians, rotation, and complex numbers, where multiplying turns and e to the i theta joins growth and rotation."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 60}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 35}
+  - {file: m7-capstone.md,   mode: practice, minutes: 60}
+hooks:
+  - {to: M09, text: "Points of the plane become vectors: lists of numbers with lengths, angles and dot products, in any number of dimensions."}
+  - {to: M06, text: "e to the i theta joins growth and rotation: the exponential of a real number grows, of an imaginary number turns."}
+  - {to: L13, text: "Planar rotations return as rotary position embeddings: each pair of coordinates of a query and a key is turned by an angle proportional to its position."}
+reuses:
+  - {from: M04, concept: "functions, composition and inverses"}
+  - {from: M06, concept: "the exponential and its rules"}
+annotations:
+  - {target: M04, anchor: "Moving and stretching a graph is composition", text: "M07: rotating the plane is another machine of this kind, and two rotations compose by adding their angles."}
+  - {target: M06, anchor: "Irrational exponents such as", text: "M07: and imaginary exponents: e^(i theta) is defined so the same exponent rules keep working, and it turns instead of growing."}
+concepts:
+  - q: "Why is multiplying by i a quarter turn?"
+    a: "Multiplying x + iy by i gives ix + i^2 y = -y + ix, so the point (x, y) moves to (-y, x), which is (x, y) rotated by 90 degrees about the origin. Doing it twice gives -x - iy, a half turn, matching i^2 = -1."
+katas: [e05]

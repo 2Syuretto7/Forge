@@ -1,0 +1,28 @@
+id: M05
+hours: 10
+capstone: "Cost model of 8 algorithms (including naive and blocked matrix multiply) derived as sums, proved by induction, and verified by counting to within 20 percent of the predicted ratio"
+teaser: "Sequences, sums and infinite series, sigma notation, induction, and how the cost of an algorithm is a sum."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 60}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 35}
+  - {file: m7-capstone.md,   mode: practice, minutes: 60}
+hooks:
+  - {to: M06, text: "The exponential is a limit of compounding, a sequence; and log n is how fast the harmonic sums grow."}
+  - {to: M08, text: "Counting arrangements is summing over choices; binomial coefficients come from Pascal's sums."}
+  - {to: M15, text: "The limit of a sequence becomes the limit of a function, and the derivative is a limit."}
+  - {to: M29, text: "Geometric series return as linear convergence rates: an optimizer whose error shrinks by a factor r each step."}
+reuses:
+  - {from: M03, concept: "proof, and its broken first cousin"}
+  - {from: M04, concept: "functions and their growth"}
+annotations:
+  - {target: M03, anchor: "by a domino argument", text: "M05: induction done properly. A base case and a step for every n; then the dominoes fall for every whole number."}
+  - {target: M04, anchor: "how every library evaluates polynomials", text: "M05: counting its operations is a sum: n multiplications and n additions for a polynomial of degree n, against about n^2/2 for computing each power separately."}
+concepts:
+  - q: "How can an infinite sum be finite?"
+    a: "When the terms shrink fast enough that what remains after many terms is as small as you like. For 1 + 1/2 + 1/4 + ..., each partial sum is 2 minus the last term, so the leftover gap halves at every step and the sums settle at 2. The harmonic series' terms also shrink, but too slowly: grouping them shows every doubling of the number of terms adds at least 1/2."
+katas: [e04]

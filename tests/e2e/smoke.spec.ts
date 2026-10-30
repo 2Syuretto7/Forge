@@ -23,36 +23,36 @@ test('dashboard, map, lesson, pass an exercise in the workspace, progress surviv
   await expect(page.getByRole('link', { name: /Start learning/ })).toBeVisible();
 
   await page.goto('./#/map');
-  await expect(page.locator('[aria-label^="L01 "]')).toBeVisible();
+  await expect(page.locator('[aria-label^="M01 "]')).toBeVisible();
   const lessons = (fs.readFileSync(path.resolve('content/graph.yaml'), 'utf8').match(/^\s+- \{id: /gm) ?? []).length;
   await expect(page.locator('g[role="link"]')).toHaveCount(lessons);
-  await page.locator('[aria-label^="L01 "]').click();
-  await expect(page).toHaveURL(/#\/lesson\/L01/);
+  await page.locator('[aria-label^="M01 "]').click();
+  await expect(page).toHaveURL(/#\/lesson\/M01/);
 
   await page.getByRole('button', { name: 'Syllabus' }).click();
-  await page.getByRole('dialog').getByRole('link', { name: /Build: the toolkit from scratch/ }).click();
+  await page.getByRole('dialog').getByRole('link', { name: /Build: Python as a calculator/ }).click();
   const card = page.locator('#ex-e01');
   await card.getByRole('link', { name: /^Start exercise 1/ }).click();
-  await expect(page).toHaveURL(/#\/lesson\/L01\/ex\/e01$/);
-  await replaceEditorText(page, solution('L01', 'e01'));
+  await expect(page).toHaveURL(/#\/lesson\/M01\/ex\/e01$/);
+  await replaceEditorText(page, solution('M01', 'e01'));
   await page.getByRole('button', { name: 'Submit answer' }).click();
-  await expect(page.getByText(/5\/5 tests passed/)).toBeVisible({ timeout: 120_000 });
+  await expect(page.getByText(/4\/4 tests passed/)).toBeVisible({ timeout: 120_000 });
   await expect(page.getByText('Passed', { exact: true })).toBeVisible();
   await expect(page.locator('.pill-xp')).toHaveText('100 XP');
 
   await page.reload();
   await expect(page.getByText('Passed', { exact: true })).toBeVisible();
-  await page.goto('./#/lesson/L01/m3-build');
+  await page.goto('./#/lesson/M01/m3-build');
   await expect(page.locator('#ex-e01').getByText('Passed')).toBeVisible();
   await page.goto('./#/map');
-  await expect(page.locator('[aria-label^="L01 "]')).toHaveAttribute('aria-label', /In progress/);
+  await expect(page.locator('[aria-label^="M01 "]')).toHaveAttribute('aria-label', /In progress/);
   await page.goto('./');
-  await expect(page.getByRole('link', { name: /Resume/ })).toHaveAttribute('href', '#/lesson/L01/m3-build');
+  await expect(page.getByRole('link', { name: /Resume/ })).toHaveAttribute('href', '#/lesson/M01/m3-build');
   expect(errors).toEqual([]);
 });
 
 test('export and import round-trip through the Settings screen', async ({ page }) => {
-  await page.goto('./#/lesson/L01/m1-puzzle');
+  await page.goto('./#/lesson/M01/m5-break');
   await page.getByRole('textbox').first().fill('0');
   await page.getByRole('button', { name: 'Commit prediction' }).first().click();
   await page.goto('./#/settings');

@@ -1,0 +1,27 @@
+id: M08
+hours: 10
+capstone: "Exact-versus-simulated report for 10 probability puzzles, each agreeing within 3 standard errors, plus a hash-collision estimate for a dedup pipeline"
+teaser: "Counting without listing: the product rule, arrangements, binomial coefficients and Pascal's triangle, and probability as counting equally likely outcomes."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 60}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 35}
+  - {file: m7-capstone.md,   mode: practice, minutes: 60}
+hooks:
+  - {to: M21, text: "Probability as counting equally likely outcomes becomes probability on any sample space, with conditioning and Bayes' rule."}
+  - {to: M31, text: "Counting returns as the union bound and growth functions, which say how many different ways a model class can label the data."}
+  - {to: M01, text: "Orders of magnitude meet the size of sample spaces: counts of arrangements outgrow every ladder."}
+reuses:
+  - {from: M03, concept: "sets, products and functions"}
+  - {from: M05, concept: "sums and induction"}
+annotations:
+  - {target: M03, anchor: "independently picks one of 2 outputs", text: "M08: this is the product rule of counting; the same rule counts every arrangement and selection."}
+  - {target: M05, anchor: "two nested loops over", text: "M08: those pairs are the binomial coefficient n choose 2, and Pascal's rule counts them for any size of group."}
+concepts:
+  - q: "Why does a shared birthday become likely with only 23 people?"
+    a: "What matters is the number of pairs, not of people: 23 people form 253 pairs, and each pair matches with probability 1/365. The chance that no pair matches is the product of (365 - i)/365 for i up to 22, about 0.493, so a match has probability about 0.507. Pairs grow like the square of the number of people."
+katas: [e03]

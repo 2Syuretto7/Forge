@@ -619,7 +619,7 @@ Implementation notes (decided during Phase 1):
 
 ### Phase 7: The math track (owner request; docs/math-track.md)
 - [x] 7.1 Schema and validator: `prelude` stage, strands, the 38 lessons and 120 edges merged into `graph.yaml` with L01 to L04 still present; validator rule 9 and 10; slow-and-steady gating and one-week closure in the store; a one-time progress reset when the new curriculum first loads (owner request, replacing the migration of docs/math-track.md); map with strand columns; unit and end-to-end tests.
-- [ ] 7.2 Prelude, M01 to M08, with their eight widgets.
+- [x] 7.2 Prelude, M01 to M08, with their eight widgets.
 - [ ] 7.3 Foundations linear algebra and calculus, M09 to M20, with their widgets; move the material of L01 and L03 into M12, M14, M15, M18 and M19; retire L01 and L03.
 - [ ] 7.4 Foundations probability and numerics, M21 to M28, with their widgets; move the material of L02 and L04 into M22, M24, M25 and M27; retire L02 and L04.
 - [ ] 7.5 Learning stage, M29 to M32, with chips into L05, L06 and L09.
