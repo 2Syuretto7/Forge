@@ -1,5 +1,5 @@
 // Minimal SVG plotting shared by widgets: axes, ticks, line series, bars.
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 
 export interface Series {
   points: [number, number][];
@@ -99,11 +99,19 @@ export function Axes({
   );
 }
 
+// A point that is not finite breaks the line, so asymptotes and gaps are not bridged.
 export function path(points: [number, number][], x: Scale, y: Scale) {
-  return points
-    .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b))
-    .map(([a, b], i) => `${i ? 'L' : 'M'}${x(a).toFixed(1)},${y(b).toFixed(1)}`)
-    .join(' ');
+  let pen = false;
+  const out: string[] = [];
+  for (const [a, b] of points) {
+    if (!Number.isFinite(a) || !Number.isFinite(b)) {
+      pen = false;
+      continue;
+    }
+    out.push(`${pen ? 'L' : 'M'}${x(a).toFixed(1)},${y(b).toFixed(1)}`);
+    pen = true;
+  }
+  return out.join(' ');
 }
 
 export function LinePlot({
@@ -132,18 +140,19 @@ export function LinePlot({
   label: string;
 }) {
   const pad = { l: 48, r: 12, t: 10, b: 34 };
+  const clip = `clip-${useId().replace(/[^a-zA-Z0-9_-]/g, '')}`;
   const x = scale(xDomain, [pad.l, width - pad.r], xlog);
   const y = scale(yDomain, [height - pad.b, pad.t], ylog);
   return (
     <div>
       <svg viewBox={`0 0 ${width} ${height}`} className="widget-svg" role="img" aria-label={label}>
         <defs>
-          <clipPath id={`clip-${label.length}-${width}`}>
+          <clipPath id={clip}>
             <rect x={pad.l} y={pad.t} width={width - pad.l - pad.r} height={height - pad.t - pad.b} />
           </clipPath>
         </defs>
         <Axes x={x} y={y} width={width} height={height} pad={pad} xlabel={xlabel} ylabel={ylabel} />
-        <g clipPath={`url(#clip-${label.length}-${width})`}>
+        <g clipPath={`url(#${clip})`}>
           {series.map((s) => (
             <path key={s.label} d={path(s.points, x, y)} className={s.cls} strokeDasharray={s.dashed ? '5 4' : undefined} />
           ))}

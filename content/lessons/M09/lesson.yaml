@@ -1,0 +1,25 @@
+id: M09
+hours: 10
+capstone: "Semantic search toy over a provided embedding set: top-5 neighbours for 20 queries, with recall at least 0.9 against a reference"
+teaser: "Vectors as arrows and as lists, lengths, the dot product two ways, Cauchy-Schwarz, projections and norms, and searching embeddings by angle."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 60}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 35}
+  - {file: m7-capstone.md,   mode: practice, minutes: 60}
+hooks:
+  - {to: M10, text: "A matrix is a machine that acts on vectors; each output coordinate is a dot product."}
+  - {to: M34, text: "The dot product returns as near-orthogonality: in high dimension almost all random directions are perpendicular."}
+reuses:
+  - {from: M04, concept: "functions with several outputs"}
+  - {from: M07, concept: "Pythagoras, angles and rotations of the plane"}
+annotations:
+  - {target: M07, anchor: "about the origin is a machine", text: "M09: a rotation keeps every length and every angle, so it keeps every dot product; rotations are exactly the linear maps that do."}
+concepts:
+  - q: "What does a dot product measure, and why does it need normalizing to compare directions?"
+    a: "x . y = |x| |y| cos(angle): it measures how far the two arrows point the same way, scaled by both lengths. A long vector has a large dot product with almost anything, so to compare directions alone divide by the lengths, giving the cosine similarity between -1 and 1."
+katas: [e05]

@@ -1,0 +1,26 @@
+id: M11
+hours: 12
+capstone: "A robust linear solver passing 40 tests (singular, near-singular, rectangular, permuted), reporting rank and a residual for each"
+teaser: "Gaussian elimination and LU, pivoting, column space and null space, rank and the rank-nullity theorem, and when Ax = b has none, one or infinitely many solutions."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: M12, text: "When Ax = b has no solution, least squares finds the x whose Ax is nearest to b."}
+  - {to: M26, text: "Pivoting returns as a choice about stability: the same algebra, computed in floating point, can lose every digit."}
+reuses:
+  - {from: M02, concept: "elimination on two equations and the determinant that decides it"}
+  - {from: M10, concept: "matrices as linear maps, inverses and the determinant"}
+annotations:
+  - {target: M02, anchor: "Elimination is the method that scales", text: "M11: on n equations, elimination is a sequence of row operations that turns A into an upper triangular U; recording the multipliers gives A = LU, and about 2n^3/3 operations solve the system."}
+  - {target: M10, anchor: "so nothing can undo the map", text: "M11: a flattened map has rank below n. Its null space, the inputs sent to zero, has dimension n minus the rank."}
+concepts:
+  - q: "What does the rank of a matrix count, and how does it decide how many solutions Ax = b has?"
+    a: "The rank is the number of independent rows, which equals the number of independent columns: the dimension of the column space. Ax = b has a solution exactly when b lies in the column space; then it is unique if the rank equals the number of unknowns, and otherwise there is a whole family, one free parameter per dimension of the null space (n minus the rank)."
+katas: [e03]

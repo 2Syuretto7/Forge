@@ -1,0 +1,41 @@
+import numpy as np
+
+
+# provided
+def lu(A):
+    n = A.shape[0]
+    U = A.astype(float)
+    L = np.eye(n)
+    perm = list(range(n))
+    for k in range(n - 1):
+        p = k + int(np.argmax(np.abs(U[k:, k])))
+        if U[p, k] == 0:
+            continue
+        if p != k:
+            U[[k, p]] = U[[p, k]]
+            L[[k, p], :k] = L[[p, k], :k]
+            perm[k], perm[p] = perm[p], perm[k]
+        for i in range(k + 1, n):
+            L[i, k] = U[i, k] / U[k, k]
+            U[i, k:] -= L[i, k] * U[k, k:]
+            U[i, k] = 0.0
+    return np.eye(n)[perm], L, U
+
+
+def _perm_sign(P):
+    raise NotImplementedError
+
+
+def lu_solve(P, L, U, b):
+    """Solve A x = b from P A = L U."""
+    raise NotImplementedError
+
+
+def det_from_lu(P, U):
+    """det A from the factors."""
+    raise NotImplementedError
+
+
+def solve_many(A, B):
+    """Factor once, solve for each column of B."""
+    raise NotImplementedError

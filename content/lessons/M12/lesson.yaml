@@ -1,0 +1,26 @@
+id: M12
+hours: 12
+capstone: "Curve-fitting service: QR least squares with residual diagnostics on 6 datasets, beating the normal-equation baseline on the ill-conditioned ones"
+teaser: "Orthogonal complements, projection onto a subspace, the normal equations from geometry and from algebra, Gram-Schmidt, QR, and why least squares through QR keeps digits that the normal equations lose."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: L05, text: "Linear regression is this least-squares problem; L05 derives the squared loss from Gaussian noise."}
+  - {to: M13, text: "Projections and orthonormal bases return as the eigenvectors of symmetric matrices."}
+  - {to: M25, text: "Least squares is maximum likelihood when the noise is Gaussian."}
+reuses:
+  - {from: M11, concept: "column space, null space and rank"}
+  - {from: M02, concept: "two equations in two unknowns"}
+annotations:
+  - {target: M02, anchor: "Fifty noisy points do not lie on any line", text: "M12: use all fifty. The best line makes the residuals perpendicular to the columns of the design matrix, and that condition is two equations in two unknowns, the normal equations."}
+concepts:
+  - q: "Why is the least-squares residual perpendicular to every column of A, and what equations does that give?"
+    a: "The fitted values Ax range over the column space, and the point of a subspace nearest to b is where b - Ax is perpendicular to the subspace (any other point is farther by Pythagoras). Perpendicular to the subspace means zero dot product with each column: A^T (b - Ax) = 0, the normal equations A^T A x = A^T b."
+katas: [e03]

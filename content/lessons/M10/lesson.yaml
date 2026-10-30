@@ -1,0 +1,25 @@
+id: M10
+hours: 10
+capstone: "Transform studio: compose rotations, shears and scalings to hit 8 target shapes, with each matrix derived by hand and checked numerically"
+teaser: "Linear maps, matrices as what they do to basis vectors, the product as composition, inverses, transposes, the determinant as area, and batched matrix products."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 60}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 35}
+  - {file: m7-capstone.md,   mode: practice, minutes: 60}
+hooks:
+  - {to: M11, text: "Solving Ax = b asks which input a matrix sends to b; elimination answers it and rank says when it cannot."}
+  - {to: M18, text: "The derivative of a function of many variables is a matrix, the best linear map near a point."}
+  - {to: L13, text: "Attention is a handful of batched matrix products; their shapes and FLOP counts are the ones you compute here."}
+reuses:
+  - {from: M09, concept: "vectors, the dot product and linear combinations"}
+annotations:
+  - {target: M09, anchor: "every one of its outputs is a dot product", text: "M10: that machine is a matrix. Row i of A dotted with x gives output i, and the same product is a combination of the columns of A with weights x."}
+concepts:
+  - q: "Why is the product AB the matrix of doing B first and then A, and why does the order matter?"
+    a: "Column j of AB is A applied to column j of B, which is where the composite map sends the j-th basis vector. Composition of maps depends on order: rotating then stretching sideways is not stretching sideways then rotating, so AB and BA usually differ."
+katas: [e05]
