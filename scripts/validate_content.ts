@@ -34,9 +34,9 @@ function walk(dir: string, acc: string[] = []): string[] {
   return acc;
 }
 
-// The lessons that may start a path with no inbound edge. L02 and L03 stay roots until
-// their material has moved into the math track (docs/math-track.md, Migration).
-const ROOTS = ['M01', 'L02', 'L03'];
+// The lessons that may start a path with no inbound edge. L02 stays a root until its
+// material has moved into the math track (docs/math-track.md, Migration).
+const ROOTS = ['M01', 'L02'];
 
 // An edge chip, hook or reuse may follow an edge in its direction, or a horizontal
 // edge either way: a horizontal link is mutual.
@@ -238,6 +238,9 @@ export function lessonErrors(l: LoadedLesson, graph: Graph, loaded: Map<string, 
       text.split('\n').forEach((line, i) => {
         if (line.includes('$$') && line.trim() !== '$$')
           errs.push(`${path.relative(ROOT, f)}:${i + 1}: put display math delimiters $$ on lines of their own`);
+        // In a table row a bare | inside $...$ still ends the cell; write \lvert, \rvert or \|.
+        if (line.trimStart().startsWith('|') && [...line.matchAll(/\$([^$]+)\$/g)].some((m) => /(?<!\\)\|/.test(m[1])))
+          errs.push(`${path.relative(ROOT, f)}:${i + 1}: a | inside math in a table row splits the cell; use \\lvert ... \\rvert`);
       });
   }
 

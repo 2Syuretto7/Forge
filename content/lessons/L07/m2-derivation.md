@@ -46,7 +46,7 @@ Halving $h$ divides that error bound by [[4]], so accuracy improves steadily wit
 
 ## 3. The backward pass of each layer
 
-Reverse mode (L03) needs, for each layer, the map from the gradient at its output to the gradients at its input and its parameters. Write $G = \partial L/\partial(\text{output})$.
+Reverse mode (M19) needs, for each layer, the map from the gradient at its output to the gradients at its input and its parameters. Write $G = \partial L/\partial(\text{output})$.
 
 **Linear layer** $Y = XW + \mathbf 1 b^\top$:
 
@@ -84,9 +84,9 @@ Chain the layer VJPs from the loss back to the input:
 3. $G_2 = (G_3 W_3^\top) \odot \phi'(Z_2)$; then $\nabla W_2 = H_1^\top G_2$, $\nabla b_2 = G_2^\top\mathbf 1$.
 4. $G_1 = (G_2 W_2^\top) \odot \phi'(Z_1)$; then $\nabla W_1 = X^\top G_1$, $\nabla b_1 = G_1^\top \mathbf 1$.
 
-That is all of backpropagation for an MLP: one rule per layer type, applied in reverse order, using activations saved from the forward pass. Every gradient can and must be checked with central differences (L03), one layer at a time.
+That is all of backpropagation for an MLP: one rule per layer type, applied in reverse order, using activations saved from the forward pass. Every gradient can and must be checked with central differences (M15, M18), one layer at a time.
 
-:::edge{from=L03 text="vector-Jacobian products and the matmul VJP"}
+:::edge{from=M19 text="vector-Jacobian products and the matmul VJP"}
 :::
 
 :::edge{from=L05 text="softmax regression and its gradient"}

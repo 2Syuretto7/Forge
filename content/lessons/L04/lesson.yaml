@@ -17,10 +17,8 @@ hooks:
   - {to: L21, text: "KL divergence to a reference model is the penalty that keeps RLHF from drifting."}
 reuses:
   - {from: L02, concept: "maximum likelihood estimation"}
-  - {from: L03, concept: "the softmax Jacobian"}
 annotations:
   - {target: L02, anchor: "maximum likelihood estimate", text: "Maximizing average log-likelihood is minimizing the cross-entropy between the empirical distribution and the model (L04)."}
-  - {target: L03, anchor: "softmax", text: "Compose this Jacobian with the gradient of -log p_y and everything collapses to p - onehot(y), the cross-entropy gradient (L04)."}
 concepts:
   - q: "What does a cross-entropy loss of 1.5 nats per token mean?"
     a: "On average the model assigns probability e^-1.5, about 0.22, to the token that actually comes next; its perplexity is e^1.5, about 4.5, as uncertain as a fair choice among 4.5 tokens."

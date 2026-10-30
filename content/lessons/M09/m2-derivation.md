@@ -143,6 +143,6 @@ In the next lesson a machine takes vectors to vectors, and every one of its outp
 | Length | $\|x\| = \sqrt{x \cdot x}$ | distances between embeddings |
 | Dot product | $x \cdot y = \sum x_i y_i = \|x\|\,\|y\|\cos t$ | similarity, projections |
 | Cosine similarity | $x \cdot y / (\|x\|\,\|y\|)$ | compare directions |
-| Cauchy-Schwarz | $|x \cdot y| \leq \|x\|\,\|y\|$ | cosines lie in $[-1, 1]$ |
+| Cauchy-Schwarz | $\lvert x \cdot y \rvert \leq \|x\|\,\|y\|$ | cosines lie in $[-1, 1]$ |
 | Projection | $\frac{a \cdot b}{a \cdot a}\, a$ | the part of $b$ along $a$ |
 | Norms | L1, L2, L-infinity | sizes of weights and errors |

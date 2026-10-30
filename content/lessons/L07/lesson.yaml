@@ -17,10 +17,10 @@ hooks:
   - {to: L13, text: "A transformer is this MLP's backward pass applied to attention layers and residual blocks."}
   - {to: L21, text: "The gradient p - onehot(y) returns as the score function of policy gradients."}
 reuses:
-  - {from: L03, concept: "vector-Jacobian products and the matmul VJP"}
+  - {from: M19, concept: "vector-Jacobian products and the matmul VJP"}
   - {from: L05, concept: "softmax regression and its gradient"}
 annotations:
-  - {target: L03, anchor: "Matrix multiplication", text: "These two VJPs are the entire backward pass of a linear layer; L07 stacks them into an MLP."}
+  - {target: M19, anchor: "Derivatives of matrix expressions", text: "These two VJPs are the entire backward pass of a linear layer; L07 stacks them into an MLP."}
   - {target: L05, anchor: "Softmax regression for many classes", text: "An MLP is softmax regression on learned features; its output layer uses exactly this gradient (L07)."}
 concepts:
   - q: "What is the backward pass of a linear layer Y = XW + b?"

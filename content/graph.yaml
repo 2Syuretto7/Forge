@@ -43,7 +43,6 @@ lessons:
   - {id: M37, title: "Stochastic differential equations and diffusion", track: math, strand: CAL, stage: frontier, gpu: false, compute: browser}
   - {id: M38, title: "Capstone: the mathematics of a real paper", track: math, strand: ALL, stage: frontier, gpu: false, compute: browser}
   - {id: L02, title: "Probability, likelihood and estimation", track: math, strand: PRB, stage: foundations, gpu: false, compute: browser}
-  - {id: L03, title: "Calculus, Jacobians and automatic differentiation", track: math, strand: CAL, stage: foundations, gpu: false, compute: browser}
   - {id: L04, title: "Information theory: entropy, cross-entropy, KL", track: math, strand: NUM, stage: foundations, gpu: false, compute: browser}
   - {id: L05, title: "Linear and logistic regression, end to end", track: core, stage: learning, gpu: false, compute: browser}
   - {id: L06, title: "Generalization, bias-variance and double descent", track: core, stage: learning, gpu: false, compute: browser}
@@ -144,8 +143,6 @@ edges:
   - {from: L02, to: L04, type: vertical}
   - {from: L02, to: L05, type: vertical}
   - {from: L02, to: L06, type: vertical}
-  - {from: L03, to: L07, type: vertical}
-  - {from: L03, to: L08, type: vertical}
   - {from: L04, to: L06, type: vertical}
   - {from: L04, to: L14, type: vertical}
   - {from: L05, to: L06, type: vertical}
@@ -211,7 +208,6 @@ edges:
   - {from: M25, to: M28, type: horizontal, note: "Negative log-likelihoods of exponential families are convex"}
   - {from: M29, to: M32, type: horizontal, note: "Constant-step SGD is a Markov chain with a stationary distribution"}
   - {from: M33, to: M34, type: horizontal, note: "Randomized SVD works because random projections preserve geometry"}
-  - {from: L03, to: L04, type: horizontal, note: "Gradients of log-probabilities meet information measures"}
   - {from: L08, to: L09, type: horizontal, note: "Your autograd engine drives the optimizers"}
   - {from: L11, to: L13, type: horizontal, note: "Attention cost read on the roofline"}
   - {from: L16, to: L15, type: horizontal, note: "Data quality shifts the scaling curve"}

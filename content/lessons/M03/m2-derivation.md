@@ -161,6 +161,6 @@ A fifth method, **induction**, proves statements about every whole number by a d
 | Implication | false only when $p$ true, $q$ false | equivalent to its contrapositive, not its converse |
 | Negating quantifiers | not $\forall$ = $\exists$ not | one counterexample refutes "for every" |
 | Quantifier order | $\exists y\, \forall x$ implies $\forall x\, \exists y$ | not the other way |
-| Sets | union, intersection, product, power set | $|A \cup B| = |A| + |B| - |A \cap B|$ |
-| Functions | a set of pairs, each input once | $|B|^{|A|}$ functions from $A$ to $B$ |
+| Sets | union, intersection, product, power set | $\lvert A \cup B \rvert = \lvert A \rvert + \lvert B \rvert - \lvert A \cap B \rvert$ |
+| Functions | a set of pairs, each input once | $\lvert B \rvert^{\lvert A \rvert}$ functions from $A$ to $B$ |
 | Proof | direct, contrapositive, contradiction, counterexample | testing is evidence, not proof |

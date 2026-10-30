@@ -1,12 +1,12 @@
 # Recall bridge: likelihoods and softmax
 
-This lesson stands on two earlier ones. From L02 it takes the likelihood and maximum likelihood; from L03 the softmax and its Jacobian. Due reviews from those lessons appear above. Then work through the short refresher below.
+This lesson stands on two earlier ones. From L02 it takes the likelihood and maximum likelihood; from M19 the softmax and its Jacobian. Due reviews from those lessons appear above. Then work through the short refresher below.
 
 ## From L02: the average log-likelihood
 
 For data $x_1, \dots, x_n$ and a model $q$, the MLE maximizes $\frac{1}{n}\sum_i \log q(x_i)$. For categorical data with counts $c_j$ the maximizer is $q_j = c_j/n$.
 
-## From L03: softmax and its Jacobian
+## From M19: softmax and its Jacobian
 
 $p = \operatorname{softmax}(z)$ with $p_i = e^{z_i}/\sum_k e^{z_k}$, Jacobian $\operatorname{diag}(p) - pp^\top$, and shift invariance $\operatorname{softmax}(z + c) = \operatorname{softmax}(z)$.
 

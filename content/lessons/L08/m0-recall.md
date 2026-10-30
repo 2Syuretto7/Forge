@@ -1,6 +1,6 @@
 # Recall bridge: reverse mode and hand-written backward passes
 
-From L03: reverse mode runs a chain of vector-Jacobian products backward from a scalar, and needs the values computed in the forward pass. From L07: for an MLP you wrote every VJP by hand, layer by layer, and checked each one with finite differences. This lesson automates that work for any composition of tensor operations. Reviews due from L03 and L07 appear above.
+From M19: reverse mode runs a chain of vector-Jacobian products backward from a scalar, and needs the values computed in the forward pass. From L07: for an MLP you wrote every VJP by hand, layer by layer, and checked each one with finite differences. This lesson automates that work for any composition of tensor operations. Reviews due from M19 and L07 appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step

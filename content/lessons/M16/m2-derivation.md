@@ -145,4 +145,4 @@ With $\eta = 0.4$, each step multiplies $x$ by $1 - 0.4 \times 4 = -0.6$: the it
 | Convexity | $f'' \geq 0$; chords above the graph | every critical point is global |
 | Newton | $x - f/f'$; error squared | fast roots, Newton minimization |
 | Secant, bisection | order 1.618; linear with factor 1/2 | no derivative; guaranteed bracket |
-| Gradient descent | rate $|1 - \eta L|$; needs $\eta < 2/L$ | the workhorse of training |
+| Gradient descent | rate $\lvert 1 - \eta L \rvert$; needs $\eta < 2/L$ | the workhorse of training |

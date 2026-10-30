@@ -127,7 +127,7 @@ A pivot of $10^{-10}$ is far above that, so it counts toward the rank. If the da
 | --- | --- | --- |
 | Elimination | row operations to upper triangular $U$ | solve any system |
 | LU | $PA = LU$, $L$ holds the multipliers | factor once, solve many times |
-| Partial pivoting | largest entry as pivot, $|\ell| \leq 1$ | stability in floating point |
+| Partial pivoting | largest entry as pivot, $\lvert \ell \rvert \leq 1$ | stability in floating point |
 | Rank | number of pivots; dim of column space and of row space | independent information |
 | Rank-nullity | $\operatorname{rank} + \dim \operatorname{null} = n$ | count free parameters |
 | Solutions | none, one, or $x_p$ + null space | diagnose a system |

@@ -1,6 +1,6 @@
 # Recall bridge: VJPs and softmax regression
 
-Two earlier lessons carry this one. From L03: reverse mode composes vector-Jacobian products, and a matrix product $Y = XW$ has VJPs $GW^\top$ and $X^\top G$. From L05: softmax regression has gradient $\tfrac1n X^\top(P - Y)$ with respect to its weights. A neural network is softmax regression on top of features that are themselves computed by layers like it, and its gradient is those two facts applied layer by layer. Reviews due from L03 and L05 appear above.
+Two earlier lessons carry this one. From M19: reverse mode composes vector-Jacobian products, and a matrix product $Y = XW$ has VJPs $GW^\top$ and $X^\top G$. From L05: softmax regression has gradient $\tfrac1n X^\top(P - Y)$ with respect to its weights. A neural network is softmax regression on top of features that are themselves computed by layers like it, and its gradient is those two facts applied layer by layer. Reviews due from M19 and L05 appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step

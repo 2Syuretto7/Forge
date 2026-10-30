@@ -14,7 +14,7 @@ The result is a directed acyclic graph from the parameters and inputs to the los
 
 ## 2. The backward rules
 
-You know most of them from L03 and L07. For an output with gradient $G$:
+You know most of them from M19 and L07. For an output with gradient $G$:
 
 | Operation | Gradient to inputs |
 | --- | --- |
@@ -99,7 +99,7 @@ The Colab notebook for this lesson trains the same network with your engine and 
 :::edge{to=L11 text="Each recorded operation launches at least one GPU kernel; L11 measures the cost of that granularity."}
 :::
 
-:::edge{from=L03 text="reverse-mode differentiation and vector-Jacobian products"}
+:::edge{from=M19 text="reverse-mode differentiation and vector-Jacobian products"}
 :::
 
 :::edge{from=L07 text="hand-written backward passes for an MLP"}

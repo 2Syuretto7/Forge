@@ -161,6 +161,6 @@ The trace is $1.4$ and one eigenvalue is 1, so the other is [[0.4]]: the distanc
 | Characteristic polynomial | $\det(A - \lambda I) = 0$; sum = trace, product = det | small cases by hand |
 | Diagonalization | $A = V\Lambda V^{-1}$, $A^k = V\Lambda^k V^{-1}$ | powers, dynamics |
 | Spectral theorem | $S = Q\Lambda Q^\top$, real $\lambda$, orthonormal $Q$ | covariances, Hessians |
-| Power iteration | error $\sim |\lambda_2/\lambda_1|^k$ | top eigenvector, PageRank |
+| Power iteration | error $\sim \lvert \lambda_2/\lambda_1 \rvert^k$ | top eigenvector, PageRank |
 | Positive definite | all $\lambda_i > 0$; Cholesky exists | convexity, covariance |
-| Markov chain | $P\pi = \pi$, rate $|\lambda_2|$ | stationary distributions |
+| Markov chain | $P\pi = \pi$, rate $\lvert \lambda_2 \rvert$ | stationary distributions |

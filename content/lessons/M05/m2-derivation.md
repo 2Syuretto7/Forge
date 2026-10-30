@@ -141,7 +141,7 @@ A reliable way to read the exponent from measurements: if the cost is about $C n
 
 | Idea | Statement | Use |
 | --- | --- | --- |
-| Limit | for every $\varepsilon$ there is $N$ with $|a_n - L| < \varepsilon$ for $n > N$ | convergence of anything |
+| Limit | for every $\varepsilon$ there is $N$ with $\lvert a_n - L \rvert < \varepsilon$ for $n > N$ | convergence of anything |
 | Arithmetic series | $\sum_{k=1}^n k = n(n+1)/2$ | counting pairs |
 | Geometric series | $\sum_{k=0}^{n-1} r^k = (r^n - 1)/(r - 1)$, limit $1/(1 - r)$ | convergence rates (M29) |
 | Induction | base case and a step for every $n$ | proving formulas |

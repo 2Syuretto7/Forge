@@ -10,4 +10,4 @@ Minimize $L(w) = \tfrac1n\|Xw - y\|^2$ iteratively.
 
 1. The Hessian's top eigenvalue: `np.linalg.eigvalsh(2 / n * X.T @ X).max()`.
 2. Learning rates just below `max_stable_lr` converge; just above diverge.
-3. Use the same gradient-check pattern as in L03.
+3. Use the same gradient-check pattern as in M15 and M18.

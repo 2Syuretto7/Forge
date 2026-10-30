@@ -1,0 +1,27 @@
+id: M18
+hours: 12
+capstone: "Gradient-check harness used on 25 vector functions, central differences in float64 at relative error below 1e-6"
+teaser: "Partial derivatives, the gradient as the direction of steepest ascent, directional derivatives, the Jacobian as the best linear map, the chain rule as a product of Jacobians, and the Hessian."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: M19, text: "The chain rule as a product of Jacobians, evaluated cleverly, is automatic differentiation."}
+  - {to: M20, text: "The determinant of the Jacobian measures how a map stretches area, which changes densities."}
+  - {to: M28, text: "A function is convex when its Hessian is positive semidefinite everywhere."}
+reuses:
+  - {from: M10, concept: "matrices as linear maps and matrix products"}
+  - {from: M16, concept: "Taylor's theorem and the second-derivative test"}
+annotations:
+  - {target: M16, anchor: "Critical points and the second-derivative test", text: "M18: in many variables the second derivative is the Hessian matrix, and the test reads its eigenvalues: all positive, a minimum; all negative, a maximum; mixed signs, a saddle."}
+  - {target: M10, anchor: "Composition is the product", text: "M18: the chain rule for maps between spaces of any dimension is this product: the Jacobian of a composition is the product of the Jacobians."}
+concepts:
+  - q: "Why does the gradient point in the direction of steepest ascent, and why is it perpendicular to contour lines?"
+    a: "The rate of change in a unit direction u is the directional derivative grad f . u, which by Cauchy-Schwarz is at most |grad f|, with equality only when u points along grad f. Along a contour line f does not change, so grad f . u = 0 for the contour's direction: the gradient is perpendicular to it."
+katas: [e03]

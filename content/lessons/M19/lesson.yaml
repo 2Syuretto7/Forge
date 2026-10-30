@@ -1,0 +1,26 @@
+id: M19
+hours: 12
+capstone: "Dual-number and reverse-mode library that differentiates a 20-line function, verified against finite differences"
+teaser: "Derivatives of matrix expressions, Jacobian-vector and vector-Jacobian products, computational graphs, forward mode with dual numbers, reverse mode, the matmul and softmax VJPs, and why reverse mode wins for a scalar loss."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: L07, text: "Backpropagation is reverse-mode differentiation applied to a network's layers."}
+  - {to: L08, text: "You will turn these vector-Jacobian products into a working autograd engine for tensors."}
+  - {to: M26, text: "Finite differences fail at tiny steps; automatic differentiation has no step and no truncation error."}
+  - {to: M27, text: "The gradient of cross-entropy through a softmax is simply p minus y."}
+reuses:
+  - {from: M18, concept: "Jacobians and the chain rule as their product"}
+annotations:
+  - {target: M18, anchor: "the order in which they are multiplied decides the cost", text: "M19: multiplying from the loss end backwards keeps every intermediate result a row vector, a vector-Jacobian product; that is reverse mode, and it costs a few evaluations of f whatever the number of inputs."}
+concepts:
+  - q: "Why does reverse mode compute a full gradient of a scalar function for about the cost of one evaluation, while forward mode needs one pass per input?"
+    a: "The gradient is a product of Jacobians, u^T J_K ... J_1 with u = 1 for a scalar output. Starting from the output, every partial product is a single row vector, so each step is a cheap vector-Jacobian product and one backward sweep gives all n partial derivatives. Forward mode multiplies from the input side with one direction at a time, giving one column (one partial derivative) per pass."
+katas: [e05]

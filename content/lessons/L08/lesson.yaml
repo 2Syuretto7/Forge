@@ -16,7 +16,7 @@ hooks:
   - {to: L11, text: "Every operation on the tape becomes a GPU kernel launch; L11 measures what they cost."}
   - {to: L18, text: "The tensors saved for backward are the activation memory that distributed training must budget."}
 reuses:
-  - {from: L03, concept: "reverse-mode differentiation and vector-Jacobian products"}
+  - {from: M19, concept: "reverse-mode differentiation and vector-Jacobian products"}
   - {from: L07, concept: "hand-written backward passes for an MLP"}
 annotations:
   - {target: L07, movement: m2-derivation, anchor: "4. Backpropagation", text: "L08 automates exactly this: each operation records its inputs and a VJP on a tape, and backward() replays the tape in reverse."}

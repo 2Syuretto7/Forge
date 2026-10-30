@@ -127,7 +127,7 @@ For a classifier with logits $z$ and target class $y$, the loss is $\ell = -\log
 
 ::::derivation{id=d6 title="The famous p minus onehot"}
 :::step
-The derivative of $-\log p_y$ with respect to $p_y$ is $-1/p_y$, so the upstream gradient is $u = -e_y / p_y$. By L03, the softmax VJP is $p \odot (u - u^\top p)$. Here $u^\top p = -p_y/p_y =$ [[-1]].
+The derivative of $-\log p_y$ with respect to $p_y$ is $-1/p_y$, so the upstream gradient is $u = -e_y / p_y$. By M19, the softmax VJP is $p \odot (u - u^\top p)$. Here $u^\top p = -p_y/p_y =$ [[-1]].
 :::
 :::step
 So the gradient with respect to $z_j$ is $p_j\,(u_j + 1)$. For $j \neq y$, $u_j = 0$ and the gradient is $p_j$. For $j = y$, it is $p_y(-1/p_y + 1) =$ [[p - 1]], writing p for $p_y$.
@@ -139,8 +139,6 @@ Together, $\nabla_z \ell = p - e_y$: predicted probabilities minus the one-hot t
 
 Directly differentiating $\operatorname{LSE}(z) - z_y$ gives the same answer faster: $\partial\operatorname{LSE}/\partial z_j = p_j$. This gradient never involves a division by a small probability, which is why the fused "cross-entropy from logits" is both fast and stable.
 
-:::edge{from=L03 text="the softmax Jacobian"}
-:::
 
 ## 6. Mutual information and conditional entropy
 
