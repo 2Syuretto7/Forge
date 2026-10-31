@@ -1,0 +1,27 @@
+id: M31
+hours: 12
+capstone: "Evaluation report with Hoeffding and bootstrap intervals and a demonstration of test-set reuse inflating accuracy by a measured amount"
+teaser: "Hoeffding's inequality and Chernoff's bound, the union bound and finite-class generalization, growth functions and the VC dimension, Rademacher complexity, the bias-variance decomposition, and what test-set reuse does to all of them."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: L02, text: "The generalization gap that L02 measures is what these bounds limit, and the bias-variance decomposition derived here is the one L02 applies to model capacity."}
+  - {to: M34, text: "Concentration of measure in high dimensions, the thin shell of this lesson, becomes the near-orthogonality of random vectors and the spectra of random matrices."}
+reuses:
+  - {from: M24, concept: "Markov's and Chebyshev's inequalities and the law of large numbers"}
+  - {from: M25, concept: "estimators, intervals and the bootstrap"}
+annotations:
+  - {target: M24, anchor: "Markov and Chebyshev", text: "M31: for bounded variables Hoeffding's inequality replaces Chebyshev's 1/n by exp(-2 n eps^2), and Chernoff's bound sharpens the exponent to a KL divergence."}
+  - {target: M08, anchor: "Selections and binomial coefficients", text: "M31: counting returns as the growth function, the number of labellings a class of classifiers can produce, which Sauer's lemma bounds by a sum of these binomial coefficients."}
+  - {target: M03, anchor: "Quantifiers", text: "M31: a generalization bound has two quantifiers in a fixed order: with probability at least 1 - delta over the sample, for every hypothesis in the class at once, the test error is within epsilon of the training error."}
+concepts:
+  - q: "Why does picking the best of many models on one test set make the winner look better than it is?"
+    a: "Each model's test accuracy is its true accuracy plus noise of size about 1/sqrt(n). Picking the maximum picks the model whose noise happened to be largest, so the winner's score is biased upward by about sqrt(2 ln k) standard errors for k models. A single-model interval no longer applies; the union bound widens it to sqrt(ln(2k/delta)/(2n)), or a fresh test set gives an unbiased number."
+katas: [e01]
