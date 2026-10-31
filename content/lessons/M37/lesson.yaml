@@ -1,0 +1,27 @@
+id: M37
+hours: 12
+capstone: "2D diffusion model from scratch that turns Gaussian noise into a target mixture, scored by a distribution distance below a stated threshold"
+teaser: "Brownian motion and stochastic differential equations, Euler-Maruyama, the Ornstein-Uhlenbeck process, Ito's lemma, score functions and denoising score matching, the reverse-time SDE and the probability-flow ODE: a diffusion model built from its mathematics."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: M38, text: "Diffusion models are one of the papers M38 offers: every equation in them is derived here, from the forward noising to the score-matching loss and the reverse-time sampler."}
+reuses:
+  - {from: M32, concept: "random walks, Brownian motion, Langevin dynamics and stationary distributions"}
+  - {from: M23, concept: "multivariate Gaussians and their conditioning"}
+  - {from: M20, concept: "change of variables for densities"}
+annotations:
+  - {target: M32, anchor: "Random walks, Brownian motion and Langevin dynamics", text: "M37: the Langevin diffusion is the reverse-time SDE of a diffusion model with a fixed target; a diffusion model makes the target change with time, from noise to data, and learns the score at every time."}
+  - {target: M23, anchor: "Conditioning a Gaussian", text: "M37: the forward process of a diffusion model is a Gaussian conditional, x_t given x_0, and the denoising score-matching target is its score, -(x_t - a x_0) / sigma^2."}
+  - {target: M20, anchor: "Densities under maps", text: "M37: the probability-flow ODE is a smooth invertible map from noise to data at every time, and densities change along it by exactly this rule, which lets diffusion models compute likelihoods."}
+concepts:
+  - q: "What does a diffusion model learn, and why is that enough to turn noise into data?"
+    a: "It learns the score, the gradient of the log density of the noised data, at every noise level. Adding noise is a known stochastic process that ends at a standard Gaussian; Anderson's reverse-time SDE runs it backwards using only that score. Starting from Gaussian noise and following the reverse SDE, each step moves samples toward where the noised density is higher and adds a little fresh noise, so at the end they are distributed as the data."
+katas: [e01]
