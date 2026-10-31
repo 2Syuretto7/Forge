@@ -1,0 +1,29 @@
+id: M34
+hours: 12
+capstone: "JL compression of an embedding set preserving pairwise distances within 10 percent, plus a measured check of the 1/sqrt(d) and init-scale derivations"
+teaser: "Concentration of norms, near-orthogonality of random directions, the Johnson-Lindenstrauss lemma with proof, the 1/sqrt(d) in attention, variance-preserving initialization, and the Marchenko-Pastur spectrum of random matrices with the signals that escape it."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: L09, text: "The 1/sqrt(d) in attention is the variance calculation of Section 3: without it, scores grow like sqrt(d) and the softmax saturates."}
+  - {to: L06, text: "Normalization layers and residual connections exist to keep the per-layer variance factor of Section 5 near 1 when initialization alone cannot."}
+  - {to: M38, text: "Random features, low-rank adapters and the spectra of trained weights all rest on the geometry of high-dimensional random vectors."}
+reuses:
+  - {from: M31, concept: "Hoeffding's and Chernoff's bounds and the union bound"}
+  - {from: M14, concept: "eigenvalues of X^T X and the SVD"}
+  - {from: M09, concept: "the dot product and the angle between vectors"}
+annotations:
+  - {target: M09, anchor: "The dot product, two ways", text: "M34: for random vectors in d dimensions the dot product is a sum of d independent terms, about sqrt(d) in size against lengths of about sqrt(d) each, so the cosine is about 1/sqrt(d): random directions are nearly perpendicular."}
+  - {target: M31, anchor: "Hoeffding's and Chernoff's inequalities", text: "M34: the same Chernoff argument applied to a chi-square variable proves the Johnson-Lindenstrauss lemma: a random projection to O(log n / eps^2) dimensions preserves every pairwise distance among n points."}
+  - {target: M33, anchor: "Randomized range finders and the randomized SVD", text: "M34: the range finder works because a Gaussian test matrix acts on the top singular directions like a random projection, which preserves the geometry of a low-dimensional subspace."}
+concepts:
+  - q: "Why does attention divide the scores q . k by sqrt(d)?"
+    a: "If the entries of q and k are independent with mean 0 and variance 1, then q . k is a sum of d independent terms of variance 1, so its variance is d and its typical size sqrt(d). Without the division the scores grow with the width, the softmax puts almost all its weight on one key, and its Jacobian diag(p) - p p^T nearly vanishes, so little gradient flows. Dividing by sqrt(d) keeps the scores at unit variance at every width."
+katas: [e01]
