@@ -1,6 +1,6 @@
 # Recall bridge: KL, the score function and a fine-tuned model
 
-From L04: the KL divergence measures how far one distribution is from another, and it is never negative. From L07: the gradient of softmax cross-entropy with respect to the logits is $p - y$. From L20: supervised fine-tuning teaches a model to imitate good responses. This lesson asks for more than imitation: improve the model on what we actually want, measured by a reward, without letting it drift into nonsense. Reviews due from L04, L07 and L20 appear above.
+From M27: the KL divergence measures how far one distribution is from another, and it is never negative. From L07: the gradient of softmax cross-entropy with respect to the logits is $p - y$. From L20: supervised fine-tuning teaches a model to imitate good responses. This lesson asks for more than imitation: improve the model on what we actually want, measured by a reward, without letting it drift into nonsense. Reviews due from M27, L07 and L20 appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step

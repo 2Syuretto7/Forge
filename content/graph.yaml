@@ -42,7 +42,6 @@ lessons:
   - {id: M36, title: "Score functions, gradient estimators and MDPs", track: math, strand: OPT, stage: frontier, gpu: false, compute: browser}
   - {id: M37, title: "Stochastic differential equations and diffusion", track: math, strand: CAL, stage: frontier, gpu: false, compute: browser}
   - {id: M38, title: "Capstone: the mathematics of a real paper", track: math, strand: ALL, stage: frontier, gpu: false, compute: browser}
-  - {id: L04, title: "Information theory: entropy, cross-entropy, KL", track: math, strand: NUM, stage: foundations, gpu: false, compute: browser}
   - {id: L05, title: "Linear and logistic regression, end to end", track: core, stage: learning, gpu: false, compute: browser}
   - {id: L06, title: "Generalization, bias-variance and double descent", track: core, stage: learning, gpu: false, compute: browser}
   - {id: L07, title: "Neural networks and backprop from scratch", track: core, stage: learning, gpu: false, compute: browser}
@@ -119,7 +118,6 @@ edges:
   - {from: M24, to: M31, type: vertical}
   - {from: M25, to: L05, type: vertical}
   - {from: M25, to: L06, type: vertical}
-  - {from: M25, to: L04, type: vertical}
   - {from: M25, to: M31, type: vertical}
   - {from: M25, to: M35, type: vertical}
   - {from: M26, to: M33, type: vertical}
@@ -140,8 +138,6 @@ edges:
   - {from: M35, to: M38, type: vertical}
   - {from: M36, to: M38, type: vertical}
   - {from: M37, to: M38, type: vertical}
-  - {from: L04, to: L06, type: vertical}
-  - {from: L04, to: L14, type: vertical}
   - {from: L05, to: L06, type: vertical}
   - {from: L05, to: L07, type: vertical}
   - {from: L06, to: L15, type: vertical}
@@ -231,7 +227,6 @@ edges:
   - {from: M26, to: L17, type: long_range, note: "Machine epsilon returns as the limits of bf16 and fp8"}
   - {from: M27, to: L21, type: long_range, note: "KL divergence returns as the RLHF penalty"}
   - {from: M30, to: L21, type: long_range, note: "The KL-regularized optimum returns as the basis of DPO"}
-  - {from: L04, to: L21, type: long_range, note: "KL divergence returns as the RLHF penalty"}
   - {from: L09, to: L19, type: long_range, note: "Learning-rate schedules return in spike recovery"}
   - {from: L05, to: L13, type: long_range, note: "Softmax returns as attention weights"}
   - {from: L06, to: L16, type: long_range, note: "Test-set leakage returns as train/eval contamination"}

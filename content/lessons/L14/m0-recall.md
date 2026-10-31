@@ -1,6 +1,6 @@
 # Recall bridge: cross-entropy and the transformer
 
-From L04: the cross-entropy of a model on data is the average number of nats (or bits) it needs per symbol, it is never below the data's entropy, and $e^{\text{loss}}$ is the perplexity. From L13: a decoder-only transformer maps a sequence of token ids to next-token logits at every position. This lesson supplies the two missing pieces: where the tokens come from, and how to turn the logits back into text. Reviews due from L04 and L13 appear above.
+From M27: the cross-entropy of a model on data is the average number of nats (or bits) it needs per symbol, it is never below the data's entropy, and $e^{\text{loss}}$ is the perplexity. From L13: a decoder-only transformer maps a sequence of token ids to next-token logits at every position. This lesson supplies the two missing pieces: where the tokens come from, and how to turn the logits back into text. Reviews due from M27 and L13 appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step

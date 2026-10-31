@@ -16,7 +16,7 @@ hooks:
   - {to: L16, text: "Test-set leakage returns at scale as benchmark contamination of pretraining data."}
 reuses:
   - {from: M25, concept: "bias and variance of estimators"}
-  - {from: L04, concept: "held-out cross-entropy"}
+  - {from: M27, concept: "held-out cross-entropy"}
   - {from: L05, concept: "ridge regression and least squares"}
 annotations:
   - {target: M25, anchor: "mean squared error", text: "The same bias-variance split, applied to a model's predictions instead of a parameter, explains overfitting (L06)."}

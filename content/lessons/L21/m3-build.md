@@ -24,7 +24,7 @@
 
 ## Learning from preferences
 
-The widget compares distributions, as in L04: set one to the reference policy and the other to a tilted one, and read off their KL.
+The widget compares distributions, as in M27: set one to the reference policy and the other to a tilted one, and read off their KL.
 
 :::widget{name=EntropyBars k=4 p="4,3,2,1" q="1,1,1,1"}
 :::

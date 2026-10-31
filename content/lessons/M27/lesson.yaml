@@ -1,0 +1,30 @@
+id: M27
+hours: 10
+capstone: "Compression experiment: Huffman-code a corpus and compare bits per character with entropy estimates"
+teaser: "Surprisal, entropy and the source coding theorem, cross-entropy and KL divergence, Gibbs' inequality, maximum likelihood as minimum cross-entropy, mutual information, and why a training loss is measured in nats."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 60}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 35}
+  - {file: m7-capstone.md,   mode: practice, minutes: 60}
+hooks:
+  - {to: L06, text: "Cross-entropy on held-out data is how you will measure generalization of probabilistic models."}
+  - {to: L14, text: "A language model's training loss is exactly the cross-entropy derived here, and its perplexity the exponential of it."}
+  - {to: L21, text: "KL divergence to a reference model is the penalty that keeps RLHF from drifting."}
+  - {to: M30, text: "The maximum-entropy distribution under moment constraints comes out of Lagrange duality as an exponential family."}
+  - {to: M36, text: "Entropy bonuses and KL penalties shape policy-gradient updates, and the score function is the gradient of a log-probability."}
+reuses:
+  - {from: M22, concept: "expectation"}
+  - {from: M06, concept: "logarithms and their rules"}
+  - {from: M25, concept: "maximum likelihood estimation"}
+annotations:
+  - {target: M25, anchor: "maximum likelihood estimate", text: "M27: maximizing the average log-likelihood is minimizing the cross-entropy between the empirical distribution and the model, which is minimizing KL(data || model)."}
+  - {target: M22, anchor: "Expectation", text: "M27: entropy is the expectation of the surprisal -log p(X), and cross-entropy the expectation of -log q(X) under p."}
+concepts:
+  - q: "What does a cross-entropy loss of 1.5 nats per token mean?"
+    a: "On average the model assigns probability e^-1.5, about 0.22, to the token that actually comes next; its perplexity is e^1.5, about 4.5, as uncertain as a fair choice among 4.5 tokens."
+katas: [e07]

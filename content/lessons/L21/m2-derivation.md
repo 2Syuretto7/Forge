@@ -61,7 +61,7 @@ With $\beta = 0.5$ it puts $e^2/(1 + e^2) \approx$ [[0.881|tol=0.002]] there.
 :::
 ::::
 
-:::edge{from=L04 text="the KL divergence as a leash"}
+:::edge{from=M27 text="the KL divergence as a leash"}
 :::
 
 ## 6. Reward models from preferences

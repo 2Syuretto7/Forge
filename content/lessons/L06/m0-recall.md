@@ -1,6 +1,6 @@
 # Recall bridge: estimators, held-out loss and ridge
 
-This lesson stands on three earlier ones. From M25: estimators have bias and variance, and mean squared error is their sum. From L04: cross-entropy on held-out data measures a probabilistic model. From L05: least squares, ridge regression and standardization with training statistics only. Reviews due from those lessons appear above.
+This lesson stands on three earlier ones. From M25: estimators have bias and variance, and mean squared error is their sum. From M27: cross-entropy on held-out data measures a probabilistic model. From L05: least squares, ridge regression and standardization with training statistics only. Reviews due from those lessons appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step

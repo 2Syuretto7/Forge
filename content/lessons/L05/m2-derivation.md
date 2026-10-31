@@ -56,7 +56,7 @@ If the noise variance is $\sigma^2 = 0.25$ and the prior variance is $\tau^2 = 0
 
 For labels $y_i \in \{0, 1\}$, model each label as a Bernoulli variable whose probability is a squashed linear score: $P(y_i = 1 \mid x_i) = \sigma(w^\top x_i + b)$ with the **sigmoid** $\sigma(a) = 1/(1 + e^{-a})$. The decision boundary $\{x : w^\top x + b = 0\}$ is a hyperplane, and the score $a = w^\top x + b$ is the **log-odds**: $\log\dfrac{P(y=1)}{P(y=0)} = a$.
 
-The negative log-likelihood per example is the binary cross-entropy of L04,
+The negative log-likelihood per example is the binary cross-entropy of M27,
 
 $$
 \ell_i = -y_i \log\sigma(a_i) - (1 - y_i)\log\big(1 - \sigma(a_i)\big).
@@ -78,7 +78,7 @@ There is no closed form for the minimizer. Gradient descent works; Newton's meth
 
 ## 4. Softmax regression for many classes
 
-For $K$ classes, give each class a weight vector $w_k$ and form logits $z_k = w_k^\top x + b_k$, then probabilities $p = \operatorname{softmax}(z)$. The loss is the categorical cross-entropy $-\log p_y$, and by L04 its gradient with respect to the logits is $p - e_y$. With $W \in \mathbb{R}^{d \times K}$, logits $Z = XW + \mathbf 1 b^\top$, probabilities $P$ and one-hot targets $Y$:
+For $K$ classes, give each class a weight vector $w_k$ and form logits $z_k = w_k^\top x + b_k$, then probabilities $p = \operatorname{softmax}(z)$. The loss is the categorical cross-entropy $-\log p_y$, and by M27 its gradient with respect to the logits is $p - e_y$. With $W \in \mathbb{R}^{d \times K}$, logits $Z = XW + \mathbf 1 b^\top$, probabilities $P$ and one-hot targets $Y$:
 
 $$
 \nabla_W L = \tfrac{1}{n} X^\top (P - Y), \qquad \nabla_b L = \tfrac1n \mathbf{1}^\top (P - Y).

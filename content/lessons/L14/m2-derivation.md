@@ -6,7 +6,7 @@ A language model assigns a probability to a sequence by the chain rule:
 $$
 p(x_1, \dots, x_n) = \prod_{t=1}^{n} p(x_t \mid x_{<t}).
 $$
-Training minimizes the average negative log-likelihood of the training tokens, $-\tfrac1n \sum_t \ln p(x_t \mid x_{<t})$: the cross-entropy between the data and the model (L04). The causal transformer (L13) computes all $n$ conditionals in one pass. The loss is reported in **nats per token**; $e^{\text{loss}}$ is the **perplexity**; and to compare tokenizers, convert to **bits per character**:
+Training minimizes the average negative log-likelihood of the training tokens, $-\tfrac1n \sum_t \ln p(x_t \mid x_{<t})$: the cross-entropy between the data and the model (M27). The causal transformer (L13) computes all $n$ conditionals in one pass. The loss is reported in **nats per token**; $e^{\text{loss}}$ is the **perplexity**; and to compare tokenizers, convert to **bits per character**:
 $$
 \text{bits per character} = \frac{\text{nats per token}}{\text{characters per token} \cdot \ln 2}.
 $$
@@ -20,7 +20,7 @@ Its perplexity per token is $e^{1.5} \approx$ [[4.48|tol=0.01]].
 :::
 ::::
 
-:::edge{from=L04 text="cross-entropy, bits and perplexity"}
+:::edge{from=M27 text="cross-entropy, bits and perplexity"}
 :::
 
 ## 2. Byte-pair encoding

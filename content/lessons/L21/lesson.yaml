@@ -15,11 +15,11 @@ hooks:
   - {to: L23, text: "Evaluate and look inside the model that RL produced."}
   - {to: L24, text: "The final capstone aligns its own model."}
 reuses:
-  - {from: L04, concept: "the KL divergence"}
+  - {from: M27, concept: "the KL divergence"}
   - {from: L07, concept: "the softmax gradient p - y"}
   - {from: L20, concept: "a fine-tuned starting policy"}
 annotations:
-  - {target: L04, movement: m2-derivation, anchor: "3. Cross-entropy and KL divergence", text: "L21 uses this divergence as the leash that keeps a policy near its reference during RLHF, and derives the optimal policy under it."}
+  - {target: M27, movement: m2-derivation, anchor: "3. Cross-entropy and KL divergence", text: "L21 uses this divergence as the leash that keeps a policy near its reference during RLHF, and derives the optimal policy under it."}
   - {target: L07, movement: m2-derivation, anchor: "3. The backward pass of each layer", text: "L21 reuses the softmax gradient as the score function of the policy gradient."}
 concepts:
   - q: "What is the policy gradient?"

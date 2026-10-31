@@ -58,7 +58,7 @@ The bias gradient sums $G$ over the batch because $b$ is added to every row.
 
 **Elementwise activation** $Y = \phi(Z)$: the Jacobian is diagonal, so $\partial L/\partial Z = G \odot \phi'(Z)$. For ReLU, $\phi'(z) = [z > 0]$: the gradient passes where the unit was active and is blocked where it was not. For $\tanh$, $\phi'(z) = 1 - \tanh^2(z) = 1 - Y^2$, conveniently computed from the saved output.
 
-**Softmax cross-entropy**, averaged over a batch of $B$ examples: $\partial L/\partial Z_3 = (P - Y_{\text{onehot}})/B$ (L04).
+**Softmax cross-entropy**, averaged over a batch of $B$ examples: $\partial L/\partial Z_3 = (P - Y_{\text{onehot}})/B$ (M27).
 
 ::::derivation{id=d3 title="Shapes and values in a backward pass"}
 :::step

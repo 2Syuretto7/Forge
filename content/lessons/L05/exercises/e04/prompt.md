@@ -3,7 +3,7 @@
 Implement Section 3 for labels $y \in \{0, 1\}$, weights `w` `(d,)` and bias `b`.
 
 - `sigmoid(a)`: stable for large $|a|$ (no overflow warnings).
-- `logistic_loss(w, b, X, y)`: mean binary cross-entropy computed from logits with the stable formula of L04.
+- `logistic_loss(w, b, X, y)`: mean binary cross-entropy computed from logits with the stable formula of M27.
 - `logistic_grad(w, b, X, y)`: returns `(dw, db)` $= \big(\tfrac1n X^\top(\sigma(a) - y),\ \text{mean}(\sigma(a) - y)\big)$.
 
 ## Hints

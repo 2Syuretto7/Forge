@@ -15,11 +15,11 @@ hooks:
   - {to: L15, text: "Scaling laws are fits of exactly this validation loss against model size, data and compute."}
   - {to: L16, text: "The tokenizer and the windows you build here become a data pipeline over billions of tokens."}
 reuses:
-  - {from: L04, concept: "cross-entropy, bits and perplexity"}
+  - {from: M27, concept: "cross-entropy, bits and perplexity"}
   - {from: L13, concept: "the decoder-only transformer"}
   - {from: L17, concept: "training in reduced precision"}
 annotations:
-  - {target: L04, movement: m2-derivation, anchor: "Units: nats, bits and perplexity", text: "A language model's training loss is this cross-entropy per token; L14 converts it to bits per character to compare tokenizers."}
+  - {target: M27, movement: m2-derivation, anchor: "Units: nats, bits and perplexity", text: "A language model's training loss is this cross-entropy per token; L14 converts it to bits per character to compare tokenizers."}
   - {target: L13, movement: m2-derivation, anchor: "The decoder block", text: "L14 trains this block on BPE tokens, with the output layer tied to the token embedding."}
 concepts:
   - q: "How does byte-pair encoding build its vocabulary?"

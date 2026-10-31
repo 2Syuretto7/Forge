@@ -6,7 +6,7 @@ Across many orders of magnitude, the validation loss of language models falls sm
 $$
 L(N) \approx E + A N^{-\alpha}, \qquad L(D) \approx E + B D^{-\beta}.
 $$
-$E$ is the loss that no model can remove, the entropy of the text itself (L04); $A N^{-\alpha}$ is the excess loss due to a finite model. A power law has no characteristic scale: multiplying $N$ by 10 multiplies the excess by $10^{-\alpha}$ whatever $N$ is, which is why a fit on small models says something about large ones.
+$E$ is the loss that no model can remove, the entropy of the text itself (M27); $A N^{-\alpha}$ is the excess loss due to a finite model. A power law has no characteristic scale: multiplying $N$ by 10 multiplies the excess by $10^{-\alpha}$ whatever $N$ is, which is why a fit on small models says something about large ones.
 
 Why power laws? One account: the loss is a sum of many contributions, like rare words, idioms or facts, each learned at its own rate. If a component with rate $t$ decays as $e^{-xt}$ in the resources $x$ and the rates are spread with density proportional to $t^{s-1}$, the total is
 $$
