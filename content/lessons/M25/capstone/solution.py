@@ -42,6 +42,7 @@ def analyze(ka, na, kb, nb):
     }
 
 
+# your answer
 REPORT = """
 With a large test (200 of 2000 against 260 of 2000) both methods agree that B is better: the
 bootstrap interval for the difference sits well above zero and the posterior probability that
