@@ -9,7 +9,7 @@ The track is 38 lessons and 428 hours, taking a learner from arithmetic and esti
 - **Fits Forge as it is built.** Every lesson uses the existing eight-movement player (recall, puzzle, derivation, build, scale, break it, Feynman, capstone), the existing directives, the review queue and the AI Feynman grader. Every lesson is 10 or 12 hours and exactly 50 percent theory, 50 percent practice by the validator's own counting.
 - **A true graph, not a list.** Six strands (number and information, algebra and proof, linear algebra, calculus, probability, optimization) run through six stages. 120 new edges: 74 vertical prerequisites, 27 horizontal links between strands at the same stage, and 19 long-range edges that carry an idea years forward. The longest prerequisite chain is 13 lessons.
 - **Runs the full height of the site.** The track no longer stops at Foundations. Math lessons sit beside the core, architecture, systems and LLM lessons at every stage and link to them horizontally (M29 beside L09, M34 beside L13, M35 beside L15, M36 beside L21).
-- **Replaces L01 to L04.** Their material, exercises and capstones move into M12, M14, M15, M19, M24, M25 and M27, and their outgoing edges are re-pointed, so nothing already built is lost.
+- **Self-contained.** Every math lesson builds only on earlier math lessons, starting from M01, and the L lessons build on the track: M12 and M25 lead to L05, M19 to L07 and L08, M25 and M27 to L06, M27 to L14, and M28 to L09.
 
 The graph was checked with the same rules as Forge's validator: vertical edges form a DAG and never point backwards in stage; horizontal edges stay within one stage and cross strands; every lesson has an inbound edge, an outbound edge and at least one horizontal or long-range edge.
 
@@ -321,7 +321,7 @@ Planted for the future: L20 (SVD returns as the low-rank update in LoRA).
 - **Scale:** Truncated SVD of a 5,000 x 768 matrix; plot explained variance and reconstruction error against rank.
 - **Break it:** Forget to centre the data before PCA; compute condition numbers through A^T A and square them.
 - **Feynman:** Explain why any linear map is a rotation, a stretch and another rotation.
-- **Capstone:** PCA pipeline explaining 95 percent of the variance of a synthetic embedding set, with written interpretation of the top 3 components (migrated from L01).
+- **Capstone:** PCA pipeline explaining 95 percent of the variance of a synthetic embedding set, with written interpretation of the top 3 components.
 - **Widgets:** MatrixTransform, SpectrumBars
 
 ### M15 Limits, continuity and the derivative
@@ -396,7 +396,7 @@ Across: M27 (The cross-entropy gradient through softmax is p minus y); M26 (Fini
 - **Scale:** Differentiate a 20-layer composed function; compare cost of forward versus reverse mode as input dimension grows.
 - **Break it:** Reuse a node twice and forget to accumulate gradients; get the topological order wrong.
 - **Feynman:** Explain how reverse mode can get every partial derivative in one backward sweep.
-- **Capstone:** Dual-number and reverse-mode library that differentiates a 20-line function, verified against finite differences (migrated from L03).
+- **Capstone:** Dual-number and reverse-mode library that differentiates a 20-line function, verified against finite differences.
 - **Widgets:** ComputationGraph
 
 ### M20 Multiple integrals and change of variables
@@ -490,7 +490,7 @@ Planted for the future: L23 (The bootstrap returns as confidence intervals on ev
 - **Scale:** Bootstrap a metric over 100,000 examples with 2,000 resamples; vectorize.
 - **Break it:** MLE that overfits with 3 data points; a bootstrap on dependent data.
 - **Feynman:** Explain what the likelihood measures and why it is not a probability over the parameter.
-- **Capstone:** A/B test analyzer with bootstrap and Bayesian posteriors, and a report on when they disagree (migrated from L02).
+- **Capstone:** A/B test analyzer with bootstrap and Bayesian posteriors, and a report on when they disagree.
 - **Widgets:** DistributionPlayground
 
 ### M26 Floating point and numerical stability
@@ -524,7 +524,7 @@ Planted for the future: L21 (KL divergence returns as the RLHF penalty).
 - **Scale:** Bits per character of a text corpus under unigram, bigram and trigram models.
 - **Break it:** KL with a zero in the wrong distribution; entropy estimated from too few samples.
 - **Feynman:** Explain why entropy is the average number of yes-or-no questions.
-- **Capstone:** Compression experiment: Huffman-code a corpus and compare bits per character with entropy estimates (migrated from L04).
+- **Capstone:** Compression experiment: Huffman-code a corpus and compare bits per character with entropy estimates.
 - **Widgets:** EntropyBars
 
 ### M28 Convexity and the geometry of optimization
@@ -714,16 +714,27 @@ Across: L24 (The paper audit method is applied to your capstone model).
 
 The track drops into the existing repo with two small schema changes, one validator change and 28 new widgets; everything else (player, directives, grader, reviews, Colab) is used as is.
 
-### Migration of L01 to L04
+### Where the L lessons attach
 
-| Old lesson | Material moves to | Capstone moves to | Old outgoing edges become |
-| --- | --- | --- | --- |
-| L01 Linear algebra as the geometry of data | M12 (projections, least squares, QR), M14 (SVD, PCA, conditioning) | M14 | M12 to L05; M28 to L09; M10 and M34 to L13; M14 to L20 |
-| L02 Probability, likelihood and estimation | M22, M24 (CLT, Monte Carlo), M25 (MLE, MAP, bootstrap) | M25 | M25 to L05, L06 and L23; M22 to M27 |
-| L03 Calculus, Jacobians and automatic differentiation | M15 (finite differences), M18 (Jacobians), M19 (VJPs, dual numbers) | M19 | M19 to L07 and L08; M19 to M27 replaces L03 to L04 |
-| L04 Information theory: entropy, cross-entropy, KL | M27 whole | M27 | M27 to L06, L14 and L21 |
+| L lesson | Prerequisites from the track | Linked across or from earlier |
+| --- | --- | --- |
+| L05 | M12, M25 | M30 |
+| L06 | M25, M27 | M31 |
+| L07 | M19 | M04 |
+| L08 | M19 | none |
+| L09 | M28 | M29 |
+| L10 | none | M34 |
+| L11 | none | M33 |
+| L13 | none | M34, M07, M10 |
+| L14 | M27 | none |
+| L15 | none | M35 |
+| L17 | none | M26 |
+| L20 | none | M14 |
+| L21 | none | M36, M27, M30 |
+| L23 | none | M25 |
+| L24 | none | M38 |
 
-Existing exercises keep their folders and are renamed into the receiving lesson. Learner progress maps one to one: completing L01 marks M14 complete, L02 marks M25, L03 marks M19, L04 marks M27, with their prerequisites shown as optional review rather than locked.
+Progress made under an earlier curriculum is reset once, when the new curriculum first loads.
 
 ### Schema and validator changes
 
@@ -731,7 +742,7 @@ Existing exercises keep their folders and are renamed into the receiving lesson.
 2. Add an optional `strand` field to `LessonSummary` (`NUM`, `ALG`, `LIN`, `CAL`, `PRB`, `OPT`, `ALL`). The map lays math lessons out in strand sub-columns, which keeps 38 nodes readable.
 3. Validator rule 6 (horizontal edges are same stage, across tracks) also accepts two math lessons when their strands differ.
 4. Validator rule 4 (three `test_grad*` exercises) applies from M15 onward; M01 to M14 instead need three `test_invariant*` exercises.
-5. The roots exempt from the inbound-edge rule change from L01 to L03 to M01 alone.
+5. M01 is the only root exempt from the inbound-edge rule.
 6. Gating in `src/store/derive.ts`: unlock on completed prerequisites plus a passed Feynman block, and hold new movements while due reviews remain (the slow-and-steady rules above).
 
 The attached `math-track-graph.yaml` is the lesson and edge list ready to merge, and `forge-math-track-plan.yaml` is the full plan as data.
@@ -750,9 +761,9 @@ Each lesson names one signature widget; its second widget is reused from an earl
 
 Authoring follows the graph so that every lesson's recall and edge chips can point at lessons that already exist.
 
-1. Schema and validator changes; `graph.yaml` merged with L01 to L04 still present, so the build stays green.
+1. Schema and validator changes; the math lessons and edges merged into `graph.yaml`.
 2. Prelude, M01 to M08, with their eight widgets. The learner can start here while the rest is written.
-3. Foundations linear algebra and calculus, M09 to M20; migrate L01 and L03 into M12, M14 and M19, then delete L01 and L03.
-4. Foundations probability and numerics, M21 to M28; migrate L02 and L04 into M25 and M27, then delete them.
+3. Foundations linear algebra and calculus, M09 to M20.
+4. Foundations probability and numerics, M21 to M28.
 5. Learning stage, M29 to M32, with horizontal chips into L05, L06 and L09.
 6. M33 to M37 beside their L-lesson partners; then M38 and the retro-annotations that every M lesson places into its predecessors.

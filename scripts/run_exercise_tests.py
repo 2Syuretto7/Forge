@@ -2,7 +2,7 @@
 
 A solution must pass every test; a starter must fail at least one.
 Notebook capstones (GPU lessons) are covered by run_notebooks.py instead.
-Usage: python3 scripts/run_exercise_tests.py [L01 L02 ...]
+Usage: python3 scripts/run_exercise_tests.py [M01 M02 ...]
 """
 import concurrent.futures as cf
 import os

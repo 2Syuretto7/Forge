@@ -49,7 +49,7 @@ describe('grader client', () => {
         apiKey: 'sk-test',
         model: 'claude-sonnet-5-5',
         rubric: 'concept',
-        lessonTitle: 'L01',
+        lessonTitle: 'M01',
         prompt: 'Explain SVD',
         keyPoints: ['a', 'b'],
         text: 'my words',

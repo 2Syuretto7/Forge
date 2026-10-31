@@ -33,8 +33,8 @@ export interface Settings {
 export const DEFAULT_MODEL = 'claude-sonnet-5-5';
 export const DEFAULT_SETTINGS: Settings = { apiKey: '', modelId: DEFAULT_MODEL, theme: 'system', activityDays: [], lastPath: '', curriculum: '' };
 
-// The math track (M01 to M38) replaced L01 to L04. At the owner's request, progress made
-// under an earlier curriculum is reset once rather than carried over.
+// At the owner's request, progress made under an earlier curriculum is reset once rather
+// than carried over.
 export const CURRICULUM = 'math-track-2026-10';
 
 export interface State {

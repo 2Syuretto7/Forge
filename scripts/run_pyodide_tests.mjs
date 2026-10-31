@@ -1,6 +1,6 @@
 // Runs every exercise solution against its tests inside Pyodide (the runtime
 // learners use in the browser), and reports any failure or slow check.
-// Usage: node scripts/run_pyodide_tests.mjs [L01 L02 ...]
+// Usage: node scripts/run_pyodide_tests.mjs [M01 M02 ...]
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

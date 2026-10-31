@@ -87,7 +87,7 @@ describe('rule 2: reviews before a new movement', () => {
     expect(reviewsFirst(getState(), idx, 'M02', 'm0', later)).toBe(0);
     expect(reviewsFirst(getState(), idx, 'M02', 'm1', later)).toBe(5);
     // Items of lessons no longer in the content never count.
-    await scheduleReviews(['L01/d1/s1'], addDays(localDate(), -5));
+    await scheduleReviews(['M99/d1/s1'], addDays(localDate(), -5));
     expect(dueReviewIds(getState(), idx, later)).toHaveLength(5);
   });
 });
@@ -117,8 +117,8 @@ describe('rule 3: a lesson closes at 80% on its own cards a week after completio
 describe('a new curriculum resets progress once', () => {
   it('clears progress made under an earlier curriculum, keeps the key, and does not reset again', async () => {
     const db = await getDb();
-    await db.put('progress', { lessonId: 'L01', status: 'complete', movementsDone: ['m0'], startedAt: 1, completedAt: 2, hoursLogged: 3 });
-    await db.put('exercises', { id: 'L01/e01', status: 'passed', attempts: 2, failedChecks: 1, hintsUsed: 0, lastCode: 'x' });
+    await db.put('progress', { lessonId: 'M01', status: 'complete', movementsDone: ['m0'], startedAt: 1, completedAt: 2, hoursLogged: 3 });
+    await db.put('exercises', { id: 'M01/e01', status: 'passed', attempts: 2, failedChecks: 1, hintsUsed: 0, lastCode: 'x' });
     await db.put('settings', { key: 'apiKey', value: 'sk-test' });
     await db.put('settings', { key: 'curriculum', value: 'old' });
     await loadStore();
