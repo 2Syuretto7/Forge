@@ -1,0 +1,28 @@
+id: M35
+hours: 12
+capstone: "Scaling-law fit with bootstrap intervals and a held-out larger run predicted within its interval"
+teaser: "Power laws and scale invariance, log-log regression and its biases, Gauss-Newton and Levenberg-Marquardt, uncertainty by the Jacobian and by the bootstrap, prediction bands, the compute-optimal frontier, and why a straight line on log-log axes can lie."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: L11, text: "L11 fits scaling laws to real training runs; the Levenberg-Marquardt fit, the bootstrap intervals and the compute-optimal frontier of this lesson are its machinery."}
+  - {to: M38, text: "Extrapolating from small experiments to a large one, with honest error bars, is the decision every frontier training run starts from."}
+reuses:
+  - {from: M25, concept: "least squares as maximum likelihood, standard errors and the bootstrap"}
+  - {from: M29, concept: "Newton-type steps and convergence on badly conditioned problems"}
+  - {from: M01, concept: "orders of magnitude and logarithms"}
+annotations:
+  - {target: M25, anchor: "The bootstrap", text: "M35: the residual bootstrap extends this to nonlinear fits: resample the residuals of the fitted curve, refit, and read intervals for parameters and extrapolated predictions from the refits."}
+  - {target: M29, anchor: "Measuring a rate", text: "M35: fitting a power law with a floor is a badly conditioned least-squares problem; Levenberg-Marquardt interpolates between a Gauss-Newton step and a scaled gradient step to stay stable from poor starts."}
+  - {target: M01, anchor: "Scientific notation", text: "M35: on axes where every tick is a factor of ten, a power law is a straight line whose slope is its exponent, and a factor of 100 in compute is two ticks."}
+concepts:
+  - q: "Why can a straight line on a log-log plot mislead you when you extrapolate a loss curve?"
+    a: "Loss curves usually have a floor, L = E + A x^(-alpha). Over the range of the data the curve bends only slightly on log-log axes, so a straight line fits with a high R^2, but its slope is too shallow and, extrapolated, it heads to zero instead of to E. The error bars of the fit measure noise in the parameters, not doubt about the form, so they do not warn you."
+katas: [e01]
