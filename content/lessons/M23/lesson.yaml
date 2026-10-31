@@ -1,0 +1,27 @@
+id: M23
+hours: 12
+capstone: "Gaussian toolkit with conditioning and a tracker that follows a noisy target, beating raw measurements by a stated error margin"
+teaser: "Joint, marginal and conditional distributions, the covariance matrix, the multivariate Gaussian and its ellipses, Cholesky sampling and whitening, conditioning by the Schur complement, and a Kalman tracker."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: M37, text: "Diffusion models add Gaussian noise step by step and learn the score, the gradient of the log-density, to undo it."}
+  - {to: M14, text: "PCA diagonalizes the covariance matrix: its principal components are the axes of the Gaussian's ellipses."}
+reuses:
+  - {from: M22, concept: "variance, covariance and the sum rule"}
+  - {from: M13, concept: "the spectral theorem and positive definite quadratic forms"}
+  - {from: M20, concept: "the Gaussian density in n dimensions"}
+annotations:
+  - {target: M13, anchor: "Quadratic forms and positive definiteness", text: "M23: every covariance matrix is positive semidefinite, and the Gaussian density is the exponential of minus half the quadratic form of its inverse, so its contours are these ellipses."}
+  - {target: M22, anchor: "Variance and covariance", text: "M23: for a vector of variables the covariances fill a matrix, and Var(a^T x) = a^T Sigma a is the sum rule for every linear combination at once."}
+concepts:
+  - q: "Why does observing one coordinate of a Gaussian shrink the uncertainty about another by a factor that depends only on their correlation, and not on the value observed?"
+    a: "Conditioning a Gaussian gives a Gaussian whose covariance is the Schur complement Sigma_aa - Sigma_ab Sigma_bb^{-1} Sigma_ba, which contains no observed value. In two dimensions the conditional standard deviation is sigma_y sqrt(1 - rho^2). The observed value moves only the conditional mean, along the regression line."
+katas: [e07]
