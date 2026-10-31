@@ -1,0 +1,28 @@
+id: M36
+hours: 12
+capstone: "Policy-gradient agent solving a gridworld, with variance of the gradient reduced by a measured factor using a learned baseline"
+teaser: "The log-derivative trick and REINFORCE, baselines and variance reduction, the reparameterization trick and Gumbel-softmax, Markov decision processes and Bellman equations, the policy gradient theorem, and what goes wrong when the reward is only a proxy."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: L17, text: "REINFORCE with a baseline is the policy-gradient estimator behind RLHF, and the KL-regularized optimum of Section 7 is the objective L17 trains language models on."}
+  - {to: M38, text: "Gradient estimators for things you cannot differentiate through, sampled tokens and environment steps, are the tools of training models on rewards."}
+reuses:
+  - {from: M24, concept: "Monte Carlo estimates and their variance"}
+  - {from: M27, concept: "the softmax, its log-likelihood gradient and the KL divergence"}
+  - {from: M29, concept: "stochastic gradients and step sizes"}
+annotations:
+  - {target: M24, anchor: "Monte Carlo integration", text: "M36: a gradient of an expectation is also an expectation, of r times the score, so Monte Carlo estimates it from samples; baselines are control variates that cut its variance without bias."}
+  - {target: M27, anchor: "The gradient of softmax cross-entropy", text: "M36: the same vector, one-hot minus probabilities, is the score of a softmax policy; REINFORCE weights it by the reward instead of by the label."}
+  - {target: M29, anchor: "Adam and its bias correction", text: "M36: policy gradients are stochastic gradients with far larger variance than supervised ones, which is why baselines, reward normalization and adaptive step sizes matter even more there."}
+concepts:
+  - q: "Why does subtracting a baseline from the reward leave the REINFORCE estimator unbiased, and why must the baseline not depend on the sampled action?"
+    a: "The estimator is (r_a - b) times the score, the gradient of log pi(a). Under the policy the score has mean zero, because the probabilities sum to 1 and so their gradients sum to zero. A baseline that does not depend on the action can be pulled out of the expectation, where it multiplies that zero mean. A baseline that depends on the action cannot be pulled out, and the expectation changes: b(a) = r_a, for instance, makes every estimate zero."
+katas: [e01]
