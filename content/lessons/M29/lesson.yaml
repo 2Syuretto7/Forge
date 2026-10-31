@@ -1,0 +1,28 @@
+id: M29
+hours: 12
+capstone: "Optimizer zoo with measured convergence rates matching proved rates within 15 percent, plus Adam's bias correction derived and verified"
+teaser: "Convergence proofs for gradient descent, heavy-ball and Nesterov momentum by eigen-analysis, stochastic gradients and their noise floor, step-size schedules, and Adam with its bias correction."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: L05, text: "The optimizers you train networks with in L05 are these, with the proved rates as their speed limits and the noise floor as the reason for schedules."}
+  - {to: M32, text: "Constant-step SGD is a Markov chain: its iterates settle into a stationary distribution around the minimum instead of converging to it."}
+  - {to: M35, text: "Fitting a power law by nonlinear least squares runs these optimizers on a badly conditioned problem."}
+  - {to: M36, text: "Policy gradients are stochastic gradients with high variance; the noise floor and the step-size schedule matter even more there."}
+reuses:
+  - {from: M28, concept: "the condition number and the convergence of gradient descent"}
+  - {from: M24, concept: "the variance of an average of independent samples"}
+annotations:
+  - {target: M16, anchor: "Gradient descent and the step-size limit", text: "M29: on an L-smooth function the step 1/L decreases the loss by at least the squared gradient norm over 2L at every step, which turns this local picture into convergence proofs."}
+  - {target: M05, anchor: "Multiply the sum by the ratio and subtract", text: "M29: an error that shrinks by a factor rho each step is a geometric sequence; summing the steps of momentum or SGD noise uses this same trick."}
+concepts:
+  - q: "Why does SGD with a constant step stop improving at a noise floor, and what removes the floor?"
+    a: "Each step adds noise of variance proportional to the step squared, while the pull toward the minimum is proportional to the step, so the error settles where the two balance, at a level proportional to the step size times the gradient-noise variance (divided by the batch size). Only a step that shrinks over time, with the sum of steps infinite and the sum of squared steps finite, drives the error to zero; larger batches lower the floor but do not remove it."
+katas: [e02]
