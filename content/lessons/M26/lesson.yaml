@@ -1,0 +1,29 @@
+id: M26
+hours: 10
+capstone: "Numerically hardened stats and loss library that survives an adversarial test suite of 40 extreme inputs"
+teaser: "Binary floating point, rounding and machine epsilon, catastrophic cancellation, conditioning against stability, stable log-sum-exp, softmax and log-sigmoid, and compensated summation."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 60}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 35}
+  - {file: m7-capstone.md,   mode: practice, minutes: 60}
+hooks:
+  - {to: M33, text: "Mixed-precision factorizations and iterative refinement trade the precision of each step against the condition number of the problem."}
+  - {to: L17, text: "Machine epsilon sets the limits of bf16 and fp8 training: what a step can change, and why master weights stay in float32."}
+  - {to: M11, text: "Partial pivoting keeps the growth of entries during elimination small, which is what makes Gaussian elimination backward stable."}
+  - {to: M19, text: "Finite differences lose digits to cancellation at small steps; automatic differentiation and the complex step do not subtract."}
+  - {to: M24, text: "Summing millions of Monte Carlo samples needs pairwise or compensated summation to keep the error below the statistical error."}
+reuses:
+  - {from: M06, concept: "exponentials and logarithms"}
+  - {from: M15, concept: "finite differences and their rounding error"}
+annotations:
+  - {target: M15, anchor: "Finite differences and floating point", text: "M26: the complex step, Im f(x + ih)/h, involves no subtraction and so no cancellation; with h = 1e-20 it gives the derivative to machine precision."}
+  - {target: M06, anchor: "The logarithm", text: "M26: log1p and expm1 compute log(1 + x) and e^x - 1 accurately for tiny x, where the formulas as written lose every digit to rounding."}
+concepts:
+  - q: "Why does computing log(sum(exp(z))) as written fail for large logits, and how does subtracting the maximum fix it without changing the answer?"
+    a: "e^z overflows to infinity for z above about 710 in float64 (89 in float32), and underflows to 0 for very negative z, so the log becomes infinite. Since log sum e^{z_i} = m + log sum e^{z_i - m} exactly, subtracting the maximum m makes every exponent at most 0, so nothing overflows, and the largest term is 1, so the sum is at least 1 and its logarithm is finite."
+katas: [e06]
