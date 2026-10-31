@@ -15,4 +15,4 @@ Part 2. The leaky ReLU $f(y) = \max(y, a y)$ with slope $a \in [0, 1]$ generaliz
 6. `init_std(fan_in, a)`: the weight standard deviation that keeps the second moment of activations constant through layers of width `fan_in` followed by $f$.
 7. `depth_check(depth, width, a, multiplier=1.0, seed=0)`: e12's experiment with the leaky ReLU and weights of standard deviation `multiplier * init_std(width, a)`; return the list of second moments.
 
-The tests require the average growth per layer, the 40th root of the last second moment, within 10 percent of 1 at the derived scale (as in e12, the final value itself wanders by a factor of a few at width 256), and the second moment to fall below $10^{-5}$ or rise above $10^5$ at 0.8 and 1.25 times it.
+The tests require the average growth per layer, the 40th root of the last second moment, within 10 percent of 1 at the derived scale (as in e12, the final value itself wanders by a factor of a few at width 128), and the second moment to fall below $10^{-5}$ or rise above $10^5$ at 0.8 and 1.25 times it.

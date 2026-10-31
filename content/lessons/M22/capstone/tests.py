@@ -64,7 +64,7 @@ def test_init_scale():
     assert abs(sub.init_std(512, 0.0) - 0.0625) < 1e-12
     assert abs(sub.init_std(512, 1.0) - 1 / math.sqrt(512)) < 1e-12
     for a in (0.0, 0.2):
-        m = sub.depth_check(40, 256, a)
+        m = sub.depth_check(40, 128, a)
         assert len(m) == 40 and 0.9 < m[-1] ** (1 / 40) < 1.1, (a, m[-1])
-    assert sub.depth_check(40, 256, 0.2, 0.8)[-1] < 1e-5
-    assert sub.depth_check(40, 256, 0.2, 1.25)[-1] > 1e5
+    assert sub.depth_check(40, 128, 0.2, 0.8)[-1] < 1e-5
+    assert sub.depth_check(40, 128, 0.2, 1.25)[-1] > 1e5

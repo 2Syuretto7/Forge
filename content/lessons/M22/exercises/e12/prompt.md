@@ -2,7 +2,7 @@
 
 Section 6 predicts that a linear layer with $n$ inputs and weights of variance $s^2/n$ multiplies the second moment of its inputs by $s^2$, and a ReLU after it halves it. Check the prediction through many layers.
 
-- `layer_second_moments(depth, width, scale, activation="linear", batch=500, seed=0)`: start from a `(batch, width)` array of standard normal inputs, then `depth` times multiply by a fresh `(width, width)` weight matrix of standard normals times `scale / sqrt(width)`, applying `np.maximum(h, 0)` after each layer when `activation == "relu"`. Return the list of the mean squared activation after each layer. Draw everything from `np.random.default_rng(seed)`, inputs first.
+- `layer_second_moments(depth, width, scale, activation="linear", batch=256, seed=0)`: start from a `(batch, width)` array of standard normal inputs, then `depth` times multiply by a fresh `(width, width)` weight matrix of standard normals times `scale / sqrt(width)`, applying `np.maximum(h, 0)` after each layer when `activation == "relu"`. Return the list of the mean squared activation after each layer. Draw everything from `np.random.default_rng(seed)`, inputs first.
 - `preserving_scale(activation)`: the `scale` that keeps the second moment constant: 1 for linear layers and $\sqrt2$ for ReLU.
 - `predicted_factor(scale, activation, depth)`: the predicted ratio of the last second moment to the input's, $(s^2)^L$, or $(s^2/2)^L$ with ReLU.
 

@@ -4,7 +4,7 @@ ALPHAS = [0.0, 0.01, 0.03, 0.1, 0.3, 0.5]
 
 
 def test_best_alpha_falls_with_data():
-    a = sub.alpha_curve([300, 1000, 10000], ALPHAS)
+    a = sub.alpha_curve([300, 1000, 5000], ALPHAS)
     assert a[0] >= 0.3 and a[2] <= 0.1, a
     assert a[0] >= a[1] >= a[2], a
 

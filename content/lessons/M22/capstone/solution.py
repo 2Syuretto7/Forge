@@ -72,7 +72,7 @@ def init_std(fan_in, a):
 def depth_check(depth, width, a, multiplier=1.0, seed=0):
     """Second moments after each of depth leaky-ReLU layers."""
     rng = np.random.default_rng(seed)
-    h = rng.standard_normal((500, width))
+    h = rng.standard_normal((256, width))
     s = multiplier * init_std(width, a)
     out = []
     for _ in range(depth):
