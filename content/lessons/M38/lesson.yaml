@@ -1,0 +1,32 @@
+id: M38
+hours: 12
+capstone: "A written derivation plus working reproduction, with a map of every lesson used and every edge it travelled"
+teaser: "Three real papers, DPO, LoRA and Adam, re-derived equation by equation from the lessons of this track, reproduced in NumPy, and broken by removing one assumption each."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: L20, text: "L20's paper-audit method is the one this lesson practises: list the assumptions, re-derive each equation, reproduce the central claim, and break one assumption on purpose."}
+reuses:
+  - {from: M30, concept: "the Gibbs optimum of a KL-regularized objective"}
+  - {from: M36, concept: "policy gradients, baselines and the KL-regularized proxy objective"}
+  - {from: M33, concept: "low-rank structure and the cost of matrix products"}
+  - {from: M35, concept: "fitting, uncertainty and the discipline of checking a claim against data"}
+annotations:
+  - {target: M30, anchor: "Softmax from a constrained problem", text: "M38: this Gibbs form is the first equation of the DPO paper; inverting it expresses the reward through the policy, which removes the reward model from preference training."}
+  - {target: M36, anchor: "Optimizing a proxy", text: "M38: DPO optimizes this KL-regularized objective directly from preference pairs, without sampling and without a separate reward model."}
+  - {target: M14, anchor: "Low-rank approximation: Eckart-Young", text: "M38: LoRA bets that fine-tuning updates are close to low-rank; Eckart-Young says how much a rank-r update can capture, and the singular values of the ideal update say whether the bet pays."}
+  - {target: M29, anchor: "Adam and its bias correction", text: "M38: the Adam paper's update, its bias correction and the counterexample that led to AMSGrad are re-derived and reproduced in M38."}
+  - {target: M34, anchor: "Norms concentrate", text: "M38: LoRA starts A as a small random matrix and B at zero; the concentration of norms is why a random A of any width has a predictable scale, so one initialization rule serves every layer."}
+  - {target: M35, anchor: "How sure is the fit?", text: "M38: a reproduction is an experiment like a scaling fit: report the measured gap from the paper's claim together with its uncertainty, as the DPO reproduction does for the sampling noise in its comparisons."}
+  - {target: M37, anchor: "Scores", text: "M38: DPO's implied reward, beta times a log-ratio of probabilities, works with log densities whose normalizer cancels, the same property that makes scores learnable without normalizing p."}
+concepts:
+  - q: "How do you check a paper's mathematics rather than just read it?"
+    a: "List its assumptions; re-derive every equation from the ones before, naming where each step comes from; reproduce its central claim on a small problem where the answer is known; and remove one assumption on purpose to see that the claim fails the way the derivation predicts. A claim that survives all four is understood, not merely believed."
+katas: [e01]

@@ -20,6 +20,7 @@ reuses:
   - {from: M02, concept: "two equations in two unknowns"}
 annotations:
   - {target: M02, anchor: "Fifty noisy points do not lie on any line", text: "M12: use all fifty. The best line makes the residuals perpendicular to the columns of the design matrix, and that condition is two equations in two unknowns, the normal equations."}
+  - {target: M11, anchor: "Column space, null space and rank", text: "M12: when b is not in the column space, Ax = b has no solution; least squares finds the point of the column space closest to b, and the leftover residual lies in the null space of A transpose."}
 concepts:
   - q: "Why is the least-squares residual perpendicular to every column of A, and what equations does that give?"
     a: "The fitted values Ax range over the column space, and the point of a subspace nearest to b is where b - Ax is perpendicular to the subspace (any other point is farther by Pythagoras). Perpendicular to the subspace means zero dot product with each column: A^T (b - Ax) = 0, the normal equations A^T A x = A^T b."

@@ -73,7 +73,7 @@ export default function RandomSpectrum({ props }: WidgetProps) {
       title="Eigenvalues of a random sample covariance"
       caption={
         <>
-          {n} samples of {p} independent features with variance 1, so every true eigenvalue is 1 (or {fmt(1 + spike, 2)} along a planted direction). The sample eigenvalues
+          {n} samples of {p} independent features with variance 1, so every true eigenvalue is 1{spike > 0 ? ` (and ${fmt(1 + spike, 2)} along the planted direction)` : ''}. The sample eigenvalues
           spread from {fmt(eig[eig.length - 1], 3)} to {fmt(eig[0], 3)}; Marchenko-Pastur predicts the edges {fmt(lo, 3)} and {fmt(hi, 3)}.{' '}
           {spike > Math.sqrt(gamma)
             ? `The planted direction is strong enough to escape the bulk: predicted top eigenvalue ${fmt(predicted, 3)}.`

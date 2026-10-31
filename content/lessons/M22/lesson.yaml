@@ -22,6 +22,7 @@ reuses:
 annotations:
   - {target: M12, anchor: "Pythagoras, without calculus", text: "M22: centered random variables obey the same geometry with the covariance as inner product, so the variances of uncorrelated variables add like squared lengths of orthogonal vectors."}
   - {target: M17, anchor: "The Gaussian integral", text: "M22: dividing by that integral turns the bell curve into a probability density, and integrals of x and x squared against it give its mean and variance."}
+  - {target: M21, anchor: "Total probability and Bayes' rule", text: "M22: an expectation obeys the same rule with values attached: E X is the sum over cases of P(case) times E[X | case], the law of total expectation."}
 concepts:
   - q: "Why does the standard deviation of a sum of n independent, identically distributed terms grow like the square root of n and not like n?"
     a: "Independent terms are uncorrelated, so the covariances vanish and the variances add: Var(sum) = n sigma^2. The standard deviation is the square root, sigma sqrt(n). The terms partly cancel each other: as many push up as down, and only the imbalance remains."
