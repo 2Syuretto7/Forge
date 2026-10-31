@@ -1,0 +1,182 @@
+[
+ {
+  "id": "M32/p1",
+  "lesson": "M32",
+  "kind": "prediction",
+  "prompt": "<p>How many riffle shuffles until a 52-card deck is closer to random than not, meaning that the total variation distance from the uniform distribution over all <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>52</mn><mo stretchy=\"false\">!</mo></mrow><annotation encoding=\"application/x-tex\">52!</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6944em;\"></span><span class=\"mord\">52</span><span class=\"mclose\">!</span></span></span></span> orders falls below one half?</p>",
+  "answer": "7",
+  "answerKind": "numeric",
+  "tol": 1,
+  "options": [],
+  "explain": "<p>Seven. Bayer and Diaconis computed the distance exactly: after 5 shuffles it is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.924</mn></mrow><annotation encoding=\"application/x-tex\">0.924</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.924</span></span></span></span>, after 6 <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.614</mn></mrow><annotation encoding=\"application/x-tex\">0.614</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.614</span></span></span></span>, after 7 <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.334</mn></mrow><annotation encoding=\"application/x-tex\">0.334</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.334</span></span></span></span>, after 8 <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.167</mn></mrow><annotation encoding=\"application/x-tex\">0.167</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.167</span></span></span></span>. For the first four shuffles it is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>1.000</mn></mrow><annotation encoding=\"application/x-tex\">1.000</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1.000</span></span></span></span> to three places, and then it collapses in a few steps. You will reproduce the table in e05.</p>"
+ },
+ {
+  "id": "M32/p2",
+  "lesson": "M32",
+  "kind": "prediction",
+  "prompt": "<p>After 7 shuffles the distance is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.334</mn></mrow><annotation encoding=\"application/x-tex\">0.334</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.334</span></span></span></span>. What is it after 14?</p>",
+  "answer": "c",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>About <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.167</mn></mrow><annotation encoding=\"application/x-tex\">0.167</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.167</span></span></span></span>, half as much.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>About <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.08</mn></mrow><annotation encoding=\"application/x-tex\">0.08</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.08</span></span></span></span>.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>About <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.003</mn></mrow><annotation encoding=\"application/x-tex\">0.003</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.003</span></span></span></span>.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>Exactly 0.</p>"
+   }
+  ],
+  "explain": "<p>About <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.003</mn></mrow><annotation encoding=\"application/x-tex\">0.003</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.003</span></span></span></span> (precisely <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.0027</mn></mrow><annotation encoding=\"application/x-tex\">0.0027</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.0027</span></span></span></span>). Past the drop, each further shuffle halves the distance, so seven more shuffles divide it by about <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>2</mn><mn>7</mn></msup></mrow><annotation encoding=\"application/x-tex\">2^7</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">7</span></span></span></span></span></span></span></span></span></span></span>. It never reaches exactly 0: some orders remain slightly more likely than others for ever. The rate of halving is the second eigenvalue of the shuffle's transition matrix at work, the subject of Section 4.</p>"
+ },
+ {
+  "id": "M32/d1/s1",
+  "lesson": "M32",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Two days ahead</p><p>Sunny today, the chance of sun the day after tomorrow is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo stretchy=\"false\">(</mo><msup><mi>P</mi><mn>2</mn></msup><msub><mo stretchy=\"false\">)</mo><mn>00</mn></msub><mo>=</mo><mn>0.9</mn><mo>×</mo><mn>0.9</mn><mo>+</mo><mn>0.1</mn><mo>×</mo><mn>0.5</mn><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">(P^2)_{00} = 0.9 \\times 0.9 + 0.1 \\times 0.5 =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\"><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">P</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mclose\"><span class=\"mclose\">)</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3011em;\"><span style=\"top:-2.55em;margin-left:0em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">00</span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.15em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">0.9</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">0.9</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">0.1</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.5</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "0.86",
+  "answerKind": "expr"
+ },
+ {
+  "id": "M32/d2/s2",
+  "lesson": "M32",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">The two-state chain</p><p>The other eigenvalue of <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>P</mi></mrow><annotation encoding=\"application/x-tex\">P</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">P</span></span></span></span> is its trace minus 1, <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>1</mn><mo>−</mo><mi>a</mi><mo>−</mo><mi>b</mi><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">1 - a - b =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">1</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">−</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6667em;vertical-align:-0.0833em;\"></span><span class=\"mord mathnormal\">a</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">−</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6944em;\"></span><span class=\"mord mathnormal\">b</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>, so the distance to <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>π</mi></mrow><annotation encoding=\"application/x-tex\">\\pi</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">π</span></span></span></span> shrinks by that factor each day.</p>",
+  "answer": "0.4",
+  "answerKind": "expr"
+ },
+ {
+  "id": "M32/d3/s2",
+  "lesson": "M32",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">The lazy ring</p><p>Its inverse, the <strong>relaxation time</strong> over which the distance shrinks by a factor <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>e</mi></mrow><annotation encoding=\"application/x-tex\">e</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">e</span></span></span></span>, is about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> steps.</p>",
+  "answer": "40.9|tol=0.5",
+  "answerKind": "expr"
+ },
+ {
+  "id": "M32/d4/s2",
+  "lesson": "M32",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Accepting a move</p><p>The move back, from <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">x = 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">x</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span> to <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>y</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding=\"application/x-tex\">y = 0</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0359em;\">y</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0</span></span></span></span>, is accepted with probability <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "1",
+  "answerKind": "expr"
+ },
+ {
+  "id": "M32/p3",
+  "lesson": "M32",
+  "kind": "prediction",
+  "prompt": "<p>Gibbs sampling a bivariate normal with correlation <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.99</mn></mrow><annotation encoding=\"application/x-tex\">0.99</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.99</span></span></span></span>: what is the lag-one autocorrelation of the <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">x</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">x</span></span></span></span> chain?</p>",
+  "answer": "b",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.99</mn></mrow><annotation encoding=\"application/x-tex\">0.99</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.99</span></span></span></span></p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>About <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.98</mn></mrow><annotation encoding=\"application/x-tex\">0.98</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.98</span></span></span></span></p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>About <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.5</mn></mrow><annotation encoding=\"application/x-tex\">0.5</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.5</span></span></span></span></p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>About <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.01</mn></mrow><annotation encoding=\"application/x-tex\">0.01</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.01</span></span></span></span></p>"
+   }
+  ],
+  "explain": "<p><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>ρ</mi><mn>2</mn></msup><mo>=</mo><mn>0.9801</mn></mrow><annotation encoding=\"application/x-tex\">\\rho^2 = 0.9801</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0085em;vertical-align:-0.1944em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">ρ</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.9801</span></span></span></span>. Each sweep keeps 98 percent of the previous value, so successive samples are nearly copies, and a run of 10,000 sweeps is worth only about 100 independent draws, as Section 7 computes. Rotating the coordinates to undo the correlation, or updating both together, fixes it.</p>"
+ },
+ {
+  "id": "M32/d5/s2",
+  "lesson": "M32",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">An AR(1) chain</p><p>So 10,000 steps are worth about <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>10,000</mn><mi mathvariant=\"normal\">/</mi><mn>19</mn><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">10{,}000/19 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">10</span><span class=\"mord\"><span class=\"mpunct\">,</span></span><span class=\"mord\">000/19</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> independent samples.</p>",
+  "answer": "526|tol=1",
+  "answerKind": "expr"
+ },
+ {
+  "id": "M32/p4",
+  "lesson": "M32",
+  "kind": "prediction",
+  "prompt": "<p>A 50-dimensional Gaussian target with scales between <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>0.5</mn></mrow><annotation encoding=\"application/x-tex\">0.5</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.5</span></span></span></span> and <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span>. Random-walk Metropolis and MALA each run 8,000 steps, each with a sensible step size. How much larger is MALA's effective sample size, for the worst coordinate?</p>",
+  "answer": "c",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>About the same.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>About twice.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>Tens of times larger.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>Thousands of times larger.</p>"
+   }
+  ],
+  "explain": "<p>Tens of times: in the exercise below it comes out near 30. The random walk's step must shrink like <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>d</mi><mrow><mo>−</mo><mn>1</mn><mi mathvariant=\"normal\">/</mi><mn>2</mn></mrow></msup></mrow><annotation encoding=\"application/x-tex\">d^{-1/2}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.888em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">d</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.888em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">1/2</span></span></span></span></span></span></span></span></span></span></span></span> to keep any proposals accepted, MALA's only like <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>d</mi><mrow><mo>−</mo><mn>1</mn><mi mathvariant=\"normal\">/</mi><mn>3</mn></mrow></msup></mrow><annotation encoding=\"application/x-tex\">d^{-1/3}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.888em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">d</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.888em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">1/3</span></span></span></span></span></span></span></span></span></span></span></span>, because its drift points the proposal where the density is. Gradients buy speed, and the advantage grows with the dimension.</p>"
+ },
+ {
+  "id": "M32/p5",
+  "lesson": "M32",
+  "kind": "prediction",
+  "prompt": "<p>A target with two equal peaks 12 standard deviations apart. Random-walk Metropolis with step 1 starts in the left peak and runs 20,000 steps. What fraction of the samples land in the right peak?</p>",
+  "answer": "d",
+  "answerKind": "choice",
+  "tol": 0,
+  "options": [
+   {
+    "key": "a",
+    "html": "<p>About 50 percent.</p>"
+   },
+   {
+    "key": "b",
+    "html": "<p>About 25 percent.</p>"
+   },
+   {
+    "key": "c",
+    "html": "<p>About 5 percent.</p>"
+   },
+   {
+    "key": "d",
+    "html": "<p>Essentially none.</p>"
+   }
+  ],
+  "explain": "<p>Essentially none. Midway between the peaks the density is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>2</mn><msup><mi>e</mi><mrow><mo>−</mo><mn>18</mn></mrow></msup><mo>≈</mo><mn>3</mn><mo>×</mo><msup><mn>10</mn><mrow><mo>−</mo><mn>8</mn></mrow></msup></mrow><annotation encoding=\"application/x-tex\">2e^{-18} \\approx 3 \\times 10^{-8}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">2</span><span class=\"mord\"><span class=\"mord mathnormal\">e</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">18</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">3</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">8</span></span></span></span></span></span></span></span></span></span></span></span> times its value at a peak, and a walker with step 1 must climb down that far one accepted step at a time. The chain looks perfectly healthy, with a smooth trace and a good acceptance rate, while reporting a mean of <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo>−</mo><mn>6</mn></mrow><annotation encoding=\"application/x-tex\">-6</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">−</span><span class=\"mord\">6</span></span></span></span> for a target whose mean is 0.</p>"
+ },
+ {
+  "id": "M32/concept1",
+  "lesson": "M32",
+  "kind": "concept",
+  "prompt": "Why does the Metropolis-Hastings acceptance rule make the target the stationary distribution, and why does it not need the target's normalizing constant?",
+  "answer": "Accepting a move from x to y with probability min(1, pi(y) q(y, x) / (pi(x) q(x, y))) makes the flow pi(x) q(x, y) alpha(x, y) equal to min(pi(x) q(x, y), pi(y) q(y, x)), which is symmetric in x and y. That is detailed balance, and summing it over x shows that pi is stationary. Only the ratio pi(y) / pi(x) appears, so any constant factor of pi cancels: an unnormalized posterior is enough.",
+  "answerKind": "text"
+ },
+ {
+  "id": "M32/kata/e01",
+  "lesson": "M32",
+  "kind": "kata",
+  "prompt": "Transition matrices and simulated paths",
+  "answer": "",
+  "answerKind": "code",
+  "exercise": "e01"
+ }
+]

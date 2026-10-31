@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { measuredRate, predictedRate, runMethod } from '../../src/widgets/ConvergenceRates';
 import { binomTail, chebyshev, hoeffding, hoeffdingEps, normalApprox } from '../../src/widgets/ConcentrationMeter';
+import { autocorr, ess, logTarget, metropolis } from '../../src/widgets/MarkovChainSim';
 import { A as KKT_A, gradF, kktResidual, solveDisc, solveHalfPlane } from '../../src/widgets/KKTGeometry';
 
 describe('ConvergenceRates', () => {
@@ -53,5 +54,37 @@ describe('ConcentrationMeter', () => {
     expect(Math.abs(binomTail(2000, 0.5, 0.02) / normalApprox(2000, 0.5, 0.02) - 1)).toBeLessThan(0.15);
     expect(binomTail(10, 0.5, 0)).toBeCloseTo(1, 12);
     expect(hoeffdingEps(1000, 0.05)).toBeCloseTo(Math.sqrt(Math.log(40) / 2000), 12);
+  });
+});
+
+describe('MarkovChainSim', () => {
+  it('Metropolis samples the target; acceptance falls as the step grows', () => {
+    const run = metropolis((x) => logTarget(x, 0), 0, 2.4, 40000);
+    const m = run.xs.reduce((a, b) => a + b, 0) / run.xs.length;
+    const v = run.xs.reduce((a, b) => a + (b - m) ** 2, 0) / run.xs.length;
+    expect(Math.abs(m)).toBeLessThan(0.08);
+    expect(Math.abs(v - 1)).toBeLessThan(0.08);
+    const rates = [0.1, 1, 10].map((s) => metropolis((x) => logTarget(x, 0), 0, s, 20000).acceptance);
+    expect(rates[0]).toBeGreaterThan(rates[1]);
+    expect(rates[1]).toBeGreaterThan(rates[2]);
+    expect(rates[0]).toBeGreaterThan(0.9);
+    expect(rates[2]).toBeLessThan(0.15);
+    // The two-peaked target is a half-half mixture of N(-sep/2, 1) and N(sep/2, 1).
+    expect(logTarget(2, 4)).toBeCloseTo(Math.log(0.5 + 0.5 * Math.exp(-8)), 12);
+  });
+  it('autocorrelation and effective sample size of an AR(1) chain match theory', () => {
+    let s = 7;
+    const r = () => {
+      s = (s * 16807) % 2147483647;
+      return s / 2147483647;
+    };
+    const g = () => Math.sqrt(-2 * Math.log(r())) * Math.cos(2 * Math.PI * r());
+    const phi = 0.8;
+    const xs: number[] = [0];
+    for (let i = 1; i < 100000; i++) xs.push(phi * xs[i - 1] + Math.sqrt(1 - phi * phi) * g());
+    expect(Math.abs(autocorr(xs, 1) - phi)).toBeLessThan(0.02);
+    expect(Math.abs(autocorr(xs, 3) - phi ** 3)).toBeLessThan(0.03);
+    const theory = (xs.length * (1 - phi)) / (1 + phi);
+    expect(Math.abs(ess(xs) / theory - 1)).toBeLessThan(0.15);
   });
 });

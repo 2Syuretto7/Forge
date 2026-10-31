@@ -585,7 +585,7 @@ Implementation notes (decided during Phase 1):
 - [x] 7.3 Foundations linear algebra and calculus, M09 to M20, with their widgets; move the material of the original linear-algebra and calculus lessons into M12, M14, M15, M18 and M19, and retire them. (The linear-algebra lesson's exercises went to M09 and M12 to M14, with its Rayleigh-gradient exercise in M18 and its low-rank training exercise in M19, after calculus; the calculus lesson's to M15, M18 and M19.)
 - [x] 7.4 Foundations probability and numerics, M21 to M28, with their widgets; move the material of the original probability and information-theory lessons into M22, M24, M25 and M27, and retire them. (The probability lesson's exercises went to M22 (three), M24 (the CLT simulator) and M25 (eight, with the A/B capstone); the information-theory lesson went whole into M27, with two new exercises. New widgets BayesGrid, GaussianEllipse and CLTMachine; DistributionPlayground gained the exponential and Poisson families.)
 - [x] Owner request, after 7.4: number the core lessons from L01. The lessons that were L05 to L24 became L01 to L20 everywhere (folders, graph, cross-references, notebooks, Colab codes, tests, this plan and the math-track spec), and progress saved under the earlier numbers is carried over once, at startup or on import.
-- [ ] 7.5 Learning stage, M29 to M32, with chips into L01, L02 and L05.
+- [x] 7.5 Learning stage, M29 to M32, with chips into L01, L02 and L05. (New widgets ConvergenceRates, KKTGeometry, ConcentrationMeter, BiasVarianceCurve and MarkovChainSim.)
 - [ ] 7.6 M33 to M37 beside their L-lesson partners; M38; retro-annotations from every M lesson into its predecessors; remove `--allow-unpublished`; full check, learner path and deploy.
 
 ---

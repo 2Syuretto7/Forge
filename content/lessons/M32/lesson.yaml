@@ -1,0 +1,27 @@
+id: M32
+hours: 12
+capstone: "MCMC sampler for a provided posterior with diagnostics (trace, autocorrelation, effective sample size) matching a reference within tolerance"
+teaser: "The Markov property and transition matrices, stationary distributions as eigenvectors, detailed balance, mixing and the spectral gap, Metropolis-Hastings, Gibbs and Langevin samplers, effective sample size, and random walks becoming Brownian motion."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: M37, text: "Diffusion models add noise with a Markov chain like the Langevin walk of this lesson, and generate by learning to run it backwards, which means learning the gradient of a log density."}
+reuses:
+  - {from: M13, concept: "eigenvalues, eigenvectors and the power method"}
+  - {from: M22, concept: "expectation, variance and covariance"}
+  - {from: M29, concept: "constant-step SGD and its noise floor"}
+annotations:
+  - {target: M13, anchor: "Markov chains: the eigenvalue 1", text: "M32: this eigenvector is the stationary distribution of the chain; the second largest eigenvalue modulus sets how fast every starting distribution approaches it, and Metropolis-Hastings builds a chain whose stationary distribution is any target you choose."}
+  - {target: M22, anchor: "Sampling by the inverse CDF", text: "M32: when the inverse CDF is out of reach, as for a posterior known only up to a constant, a Markov chain whose stationary distribution is the target takes its place."}
+  - {target: M29, anchor: "Stochastic gradients and the noise floor", text: "M32: the iterates of constant-step SGD form a Markov chain, and the noise floor is the spread of its stationary distribution, which on a quadratic has variance eta s^2 / (a (2 - eta a))."}
+concepts:
+  - q: "Why does the Metropolis-Hastings acceptance rule make the target the stationary distribution, and why does it not need the target's normalizing constant?"
+    a: "Accepting a move from x to y with probability min(1, pi(y) q(y, x) / (pi(x) q(x, y))) makes the flow pi(x) q(x, y) alpha(x, y) equal to min(pi(x) q(x, y), pi(y) q(y, x)), which is symmetric in x and y. That is detailed balance, and summing it over x shows that pi is stationary. Only the ratio pi(y) / pi(x) appears, so any constant factor of pi cancels: an unnormalized posterior is enough."
+katas: [e01]
