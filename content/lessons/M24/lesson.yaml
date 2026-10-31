@@ -1,0 +1,29 @@
+id: M24
+hours: 12
+capstone: "Monte Carlo engine reporting estimates with 95 percent intervals that cover the truth in at least 93 of 100 repeated runs"
+teaser: "Markov and Chebyshev inequalities, the law of large numbers, the central limit theorem through moment generating functions, Monte Carlo integration with standard errors, importance sampling, and what breaks when variances are infinite or samples correlated."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: M25, text: "An estimator is an average of the data, so the central limit theorem gives its sampling distribution and its confidence interval; the bootstrap estimates both by resampling."}
+  - {to: M29, text: "Stochastic gradient descent replaces the full gradient by an average over a minibatch, with the variance sigma^2/B of this lesson."}
+  - {to: M31, text: "Chebyshev's bound decays like 1/n; Hoeffding's and Chernoff's decay exponentially, and they bound the gap between training and test error."}
+  - {to: M36, text: "The pathwise and score-function estimators of this lesson become the reparameterization trick and REINFORCE."}
+  - {to: M26, text: "Summing millions of samples in floating point loses digits; compensated summation recovers them."}
+reuses:
+  - {from: M22, concept: "the variance of a sum of independent variables"}
+  - {from: M17, concept: "integrals and numerical quadrature"}
+annotations:
+  - {target: M17, anchor: "Quadrature: computing integrals numerically", text: "M24: Monte Carlo integration has error proportional to 1/sqrt(n) in every dimension, while a grid with n points has error about n^(-2/d) for the midpoint rule; beyond a handful of dimensions, random points win."}
+  - {target: M15, anchor: "The limit of a function", text: "M24: the law of large numbers is a limit of this kind for probabilities: for every epsilon, the chance that the average misses the mean by more than epsilon tends to 0."}
+concepts:
+  - q: "Why does the error of a Monte Carlo estimate shrink like one over the square root of the number of samples, whatever the dimension of the problem?"
+    a: "The estimate is an average of n independent terms with some variance sigma^2. Variances of independent terms add, so the average has variance sigma^2/n and standard deviation sigma/sqrt(n). Nothing in that argument refers to the dimension; the dimension can only change sigma."
+katas: [e03]
