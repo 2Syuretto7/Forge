@@ -26,11 +26,15 @@ function progressFile() {
     hoursLogged: 0,
   });
   const l08 = movements('L08');
-  // L08 unlocks once each published prerequisite is complete with its Feynman blocks passed.
+  // A lesson unlocks once each published prerequisite is complete with its Feynman blocks
+  // passed. Complete those of L08, and those of L09 other than L08, so that finishing L08
+  // opens L09.
   const graph = fs.readFileSync(path.resolve('content/graph.yaml'), 'utf8');
-  const prereqs = [...graph.matchAll(/^\s+- \{from: ([LM]\d\d), to: L08, type: vertical/gm)]
-    .map((m) => m[1])
-    .filter((id) => fs.existsSync(path.join(lessonDir(id), 'lesson.yaml')));
+  const prereqsOf = (to: string) =>
+    [...graph.matchAll(new RegExp(`^\\s+- \\{from: ([LM]\\d\\d), to: ${to}, type: vertical`, 'gm'))]
+      .map((m) => m[1])
+      .filter((id) => fs.existsSync(path.join(lessonDir(id), 'lesson.yaml')));
+  const prereqs = [...new Set([...prereqsOf('L08'), ...prereqsOf('L09')])].filter((id) => id !== 'L08');
   const feynmanIds = (id: string) =>
     fs
       .readdirSync(lessonDir(id))

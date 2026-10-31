@@ -1,0 +1,28 @@
+id: M28
+hours: 12
+capstone: "Optimization lab reproducing the predicted iteration count of gradient descent on 10 quadratics within 15 percent"
+teaser: "Convex sets and functions, first- and second-order conditions, Jensen's inequality, smoothness and strong convexity, the condition number as the eigenvalue ratio of the Hessian, convex negative log-likelihoods, and Lagrange multipliers."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: M29, text: "Momentum, Nesterov and Adam change how the iteration count depends on the condition number, and stochastic gradients add a noise floor."}
+  - {to: M30, text: "Lagrange multipliers grow into duality and the KKT conditions for inequality constraints."}
+  - {to: L09, text: "The step-size limit 2/L and the condition number explain warm-up, momentum and adaptive steps in network training."}
+  - {to: M25, text: "The negative log-likelihood of an exponential family is convex, so maximum likelihood there has a single global optimum."}
+reuses:
+  - {from: M18, concept: "gradients and Hessians"}
+  - {from: M13, concept: "eigenvalues of symmetric matrices and positive definiteness"}
+annotations:
+  - {target: M18, anchor: "The Hessian and second-order Taylor", text: "M28: a function is convex exactly when this Hessian is positive semidefinite everywhere, and the ratio of its largest to smallest eigenvalue, the condition number, sets how slowly gradient descent converges."}
+  - {target: M13, anchor: "Quadratic forms and positive definiteness", text: "M28: a positive definite quadratic form is a strongly convex function; the elongation of its elliptical level sets is the square root of its condition number."}
+concepts:
+  - q: "Why does a convex function have no bad local minima?"
+    a: "If x were a local minimum and some y had f(y) < f(x), then along the segment from x to y convexity gives f(x + t(y - x)) <= (1 - t) f(x) + t f(y) < f(x) for every small t > 0, so points arbitrarily close to x would be lower, contradicting local minimality. For differentiable convex f, the tangent-plane inequality f(y) >= f(x) + grad f(x)^T (y - x) says the same: a zero gradient means no point is lower."
+katas: [e06]
