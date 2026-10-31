@@ -1,13 +1,22 @@
-# Capstone: an optimizer bake-off
+# Capstone: train a transformer on Shakespeare
 
-Race the optimizers you built on the L07 task, tune each one on a validation split, and write down a recipe that reaches at least 92 percent test accuracy within 800 steps. The L07 baseline, plain SGD at a fixed rate, reached about 90 percent.
+In the notebook, write causal multi-head attention, the pre-norm block and the model in PyTorch, check your attention against PyTorch's fused implementation, check causality by perturbation, and train a two-layer model on about a megabyte of Shakespeare to a validation loss below 1.70 nats per character. With the reference settings this takes about a minute on a T4.
 
 :::exercise{ref=capstone}
 :::
 
+:::colab{notebook=L09}
+:::
+
 ## When you finish
 
-Your recipe tunes four numbers for one small network. At scale the same questions return with higher stakes: L10 adds normalization so that deep networks stay trainable, L15 asks how the best learning rate moves as models grow, and L19 shows what a learning-rate mistake costs in a long run.
+Your model reads characters. L10 builds a byte-pair tokenizer, a proper data pipeline and sampling controls, and turns the same architecture into a small GPT; L08 rewrites its attention as one fused kernel.
 
-:::edge{to=L10 text="Normalization keeps deep networks trainable after initialization."}
+:::edge{to=L10 text="Add a tokenizer and a data pipeline: a GPT from scratch."}
+:::
+
+:::edge{to=L16 text="Fine-tuning adapts these projection matrices."}
+:::
+
+:::edge{to=L19 text="What individual heads learn to do."}
 :::

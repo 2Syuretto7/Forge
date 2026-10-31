@@ -1,21 +1,17 @@
 import numpy as np
 
 
-def softmax(z, T=1.0):
-    z = z / T
-    e = np.exp(z - z.max(axis=-1, keepdims=True))
-    return e / e.sum(axis=-1, keepdims=True)
+def dpo_loss(lp_c, lp_r, ref_c, ref_r, beta):
+    """DPO on n preference pairs: sequence log-probabilities of the chosen and rejected responses
+    under the policy (lp_c, lp_r) and the reference (ref_c, ref_r). The loss is the mean of
+    -log sigmoid(beta ((lp_c - ref_c) - (lp_r - ref_r))). Return (loss, d_lp_c, d_lp_r)."""
+    m = beta * ((lp_c - ref_c) - (lp_r - ref_r))
+    loss = np.mean(np.logaddexp(0.0, -m))
+    s = 0.5 * (1.0 - np.tanh(m / 2))
+    n = len(m)
+    return float(loss), -beta * s / n, beta * s / n
 
 
-def distill_loss(student, teacher, labels, T, alpha):
-    """alpha T^2 KL(softmax(teacher / T) || softmax(student / T)) + (1 - alpha) CE(student, labels),
-    each averaged over rows. Return (loss, gradient with respect to the student logits)."""
-    n = len(labels)
-    pt, ps = softmax(teacher, T), softmax(student, T)
-    kl = np.sum(pt * (np.log(pt) - np.log(ps)), axis=1).mean()
-    p = softmax(student)
-    ce = -np.log(p[np.arange(n), labels]).mean()
-    g_ce = p.copy()
-    g_ce[np.arange(n), labels] -= 1
-    grad = alpha * T * (ps - pt) / n + (1 - alpha) * g_ce / n
-    return alpha * T * T * kl + (1 - alpha) * ce, grad
+def implied_reward(lp, ref, beta):
+    """The reward DPO's policy implies for a response: beta times its log-ratio to the reference."""
+    return beta * (lp - ref)

@@ -1,27 +1,16 @@
-# Scale it: forgetting, packing and storing teachers
-
-## Forgetting
+# Scale it: serving, evaluation and an auditable pipeline
 
 :::exercise{ref=e08}
 :::
 
-## Packing
-
 :::exercise{ref=e09}
 :::
 
-## Teachers at scale
-
-::::predict{id=p3 kind=choice answer=c}
-You distill a teacher with a vocabulary of 50,000 tokens over a corpus of 10 billion tokens, storing the teacher's probabilities as 16-bit numbers. Storing the full distributions would take about:
-
-- 1 GB.
-- 100 GB.
-- 1 PB (a million GB).
-- 1 TB.
+::::predict{id=p3 kind=numeric answer=0.3 tol=0.01}
+A model solves a problem in 3 of 10 samples. What is its estimated pass@1?
 
 :::reveal
-$10^{10} \times 5 \times 10^4 \times 2$ bytes $= 10^{15}$ bytes: a petabyte. Keeping only the top few probabilities per token (exercise 10), or distilling online with the teacher running next to the student, are the practical options.
+$1 - \binom{7}{1}/\binom{10}{1} = 0.3$: the fraction correct. pass@2 is $1 - \binom{7}{2}/\binom{10}{2} = 1 - 21/45 \approx 0.53$, more than $1 - 0.7^2 = 0.51$ because the two samples are drawn without replacement from the ten. Report the $k$ that matches how the model will be used.
 :::
 ::::
 

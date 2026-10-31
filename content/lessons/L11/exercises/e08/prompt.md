@@ -1,11 +1,11 @@
-# Host-to-device transfers
+# How sure is the exponent?
 
-1. `transfer_time(nbytes, bw, latency_s=10e-6)`: a fixed latency plus bytes over bandwidth.
-2. `effective_bandwidth(nbytes, bw, latency_s=10e-6)`: bytes divided by that time. Small copies never reach the link's bandwidth.
-3. `input_pipeline_time(batch_bytes, compute_s, bw, overlap)`: the time per training step when each batch must be copied first; without overlap, copy then compute; with overlap (pinned memory and `non_blocking=True`, copying the next batch during this step), the larger of the two.
+A scaling exponent fitted to a handful of runs is uncertain, and the uncertainty grows with the distance you extrapolate. The bootstrap (M25) estimates it without any distributional assumptions.
+
+Implement `bootstrap_exponent(x, y, n_boot=1000, seed=0, level=0.9)`: with `np.random.default_rng(seed)`, draw `n_boot` resamples of the runs with replacement (`rng.integers(0, n, n)`), skip any with fewer than two distinct runs, refit $y = k x^{-a}$ in log-log coordinates, and return the central `level` percentile interval of $a$.
 
 ## Hints
 
-1. PCIe 3.0 x16 peaks near 16 GB/s; about 12 GB/s is typical from pinned memory.
-2. Half the link's bandwidth is reached when `nbytes / bw` equals the latency.
-3. Overlap hides the copy completely only when it is shorter than the compute.
+1. Resample indices and use them for both $x$ and $y$, so each run keeps its pair.
+2. `np.quantile(values, [(1 - level) / 2, (1 + level) / 2])`.
+3. Spreading the same number of runs over a wider range of $x$ shrinks the interval.

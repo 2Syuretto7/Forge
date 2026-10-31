@@ -1,32 +1,17 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(5)
-P = 2 ** 31 - 1
-a, b = rng.integers(1, P, 128), rng.integers(0, P, 128)
+rng = np.random.default_rng(2)
 
 
-def sig(ids):
-    x = np.asarray(sorted(ids), dtype=np.int64)
-    return ((np.outer(a, x) + b[:, None]) % P).min(axis=1)
+def test_merge():
+    x, W0, A, B = rng.normal(size=(3, 6)), rng.normal(size=(4, 6)), rng.normal(size=(2, 6)), rng.normal(size=(4, 2))
+    y = x @ W0.T + 8.0 / 2 * (x @ A.T) @ B.T
+    assert np.allclose(x @ sub.merge(W0, A, B, 8.0).T, y)
 
 
-bases = [set(rng.integers(0, 10 ** 9, 300).tolist()) for _ in range(6)]
-docs = []
-for i, s in enumerate(bases):
-    docs.append(s)
-    if i % 2 == 0:
-        near = set(list(s)[:290]) | set(rng.integers(0, 10 ** 9, 10).tolist())
-        docs.append(near)
-sigs = [sig(d) for d in docs]
-
-
-def test_candidates_find_near_copies():
-    pairs = sub.lsh_candidates(sigs, 16, 8)
-    assert (0, 1) in pairs and (3, 4) in pairs and (6, 7) in pairs
-    assert all(i < j for i, j in pairs) and pairs == sorted(pairs)
-
-
-def test_dedup_keeps_one_per_cluster():
-    keep = sub.dedup_keep(sigs, 16, 8, 0.8)
-    assert keep == [0, 2, 3, 5, 6, 8]
+def test_counts():
+    assert sub.lora_params(4096, 4096, 8) == 65536
+    f = sub.trainable_fraction(32, 4096, 8)
+    assert abs(f - 2 * 65536 / (12 * 4096 ** 2)) < 1e-15 and f < 0.001
+    assert sub.trainable_fraction(1, 4096, 8) == f

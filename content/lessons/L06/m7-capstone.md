@@ -1,13 +1,13 @@
-# Capstone: reproduce double descent and explain the peak
+# Capstone: a 30-layer network that trains
 
-You will reproduce the widget's double-descent curve from scratch on a provided problem, show that its peak is where the design matrix becomes singular, and show that ridge regularization removes it.
+Build and train a residual network with at least 30 hidden layers on the L03 digit task, with every gradient written by hand, and explain each choice that keeps it stable.
 
 :::exercise{ref=capstone}
 :::
 
 ## When you finish
 
-Large language models live far to the right of every peak in this lesson: billions of parameters, trained on even more tokens, with implicit regularization from the optimizer and explicit regularization from weight decay. L15 studies how their test loss falls with parameters and data, and finds smooth power laws with an irreducible floor, the descendants of this lesson's noise term.
+You have built, in miniature, the backbone of every transformer: a pre-norm residual stream. L09 replaces the MLP branch with attention, and L08 turns the layer norm into a fused GPU kernel.
 
-:::edge{to=L15 text="Test loss as a function of model size and data: scaling laws."}
+:::edge{to=L09 text="The residual stream becomes the transformer's backbone."}
 :::

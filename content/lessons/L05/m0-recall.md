@@ -1,23 +1,17 @@
-# Recall bridge: projections and likelihoods
+# Recall bridge: eigenvalues and the training loop
 
-This lesson joins two threads. From M12 it takes least squares and the normal equations; from M25 the likelihood, maximum likelihood and priors. Reviews due from those lessons appear above.
-
-## From M12
-
-The least-squares solution $\hat w = \arg\min_w \|Xw - y\|^2$ satisfies $X^\top X \hat w = X^\top y$, and the fit $X\hat w$ is the projection of $y$ onto the column space of $X$. Solving through QR is more accurate than forming $X^\top X$.
-
-## From M25
-
-The MLE maximizes $\sum_i \log p(y_i \mid \theta)$; a prior adds $\log p(\theta)$ and gives the MAP estimate; a Gaussian prior contributes $-\|\theta\|^2/(2\tau^2)$.
+Two earlier lessons carry this one. From M13 and M28: a symmetric matrix $A = Q \Lambda Q^\top$ has orthogonal eigenvectors, and the ratio of its largest to smallest eigenvalue is its **condition number** $\kappa$. From L03: training repeats forward, backward and the update $\theta \leftarrow \theta - \eta \nabla L$ on minibatches. Near a minimum every smooth loss looks like a quadratic whose Hessian has some condition number, and this lesson shows that $\kappa$ decides how fast that update can go. Reviews due from M13, L03 and L04 appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step
-The Gaussian log-density $\log \mathcal N(y; m, \sigma^2) = -\tfrac12\log(2\pi\sigma^2) - \dfrac{(y-m)^2}{2\sigma^2}$. Its derivative with respect to $m$ is [[(y-m)/sigma^2]].
+For $f(x) = \tfrac12 a x^2 - b x$, the derivative is $f'(x) =$ [[a*x - b]].
 :::
 :::step
-The Bernoulli log-likelihood of label $y \in \{0,1\}$ with $P(y=1) = s$ is $y\log s + (1-y)\log(1-s)$. At $y = 1$ and $s = 0.8$ it equals $\ln 0.8 \approx$ [[-0.2231]].
+The Hessian of $f(x, y) = \tfrac12 (x^2 + 100 y^2)$ is $\operatorname{diag}(1, 100)$. Its condition number is [[100]].
 :::
 :::step
-With $s = \sigma(a)$, the derivative of $\log\sigma(a)$ is $1 - \sigma(a)$. At $a = 0$ it is [[0.5]].
+An SGD step with learning rate $0.1$ on a weight whose gradient is $0.5$ changes it by [[-0.05]].
 :::
 ::::
+
+By the end of this lesson you will have built gradient descent, heavy-ball momentum, Adam and AdamW, warmup and cosine schedules, and Xavier and He initialization from scratch, and raced them on the L03 digit task.

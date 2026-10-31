@@ -1,21 +1,57 @@
 import numpy as np
 
 
-def best_of_m(M, n_test, seed=0):
-    rng = np.random.default_rng(seed)
-    y = rng.integers(0, 2, size=n_test)
-    P = rng.integers(0, 2, size=(M, n_test))
-    accs = (P == y).mean(axis=1)
-    i = int(np.argmax(accs))
-    return float(accs[i]), i
+def batchnorm_forward(x, gamma, beta, eps=1e-5):
+    """Normalize each feature (column) over the batch, then scale and shift. Return (y, cache)."""
+    mu = x.mean(axis=0)
+    var = x.var(axis=0)
+    r = 1.0 / np.sqrt(var + eps)
+    xh = (x - mu) * r
+    return gamma * xh + beta, (xh, r, gamma)
 
 
-def fresh_accuracy(n_fresh, seed=1):
-    rng = np.random.default_rng(seed)
-    y = rng.integers(0, 2, size=n_fresh)
-    p = rng.integers(0, 2, size=n_fresh)
-    return float(np.mean(p == y))
+def batchnorm_backward(dy, cache):
+    """Return (dx, dgamma, dbeta)."""
+    xh, r, gamma = cache
+    n = dy.shape[0]
+    dgamma = (dy * xh).sum(axis=0)
+    dbeta = dy.sum(axis=0)
+    dxh = dy * gamma
+    dx = r / n * (n * dxh - dxh.sum(axis=0) - xh * (dxh * xh).sum(axis=0))
+    return dx, dgamma, dbeta
 
 
-def expected_max_accuracy(M, n_test):
-    return 0.5 + np.sqrt(2 * np.log(M)) * 0.5 / np.sqrt(n_test)
+def layernorm_forward(x, gamma, beta, eps=1e-5):
+    """Normalize each example (row) over its features, then scale and shift. Return (y, cache)."""
+    mu = x.mean(axis=1, keepdims=True)
+    var = x.var(axis=1, keepdims=True)
+    r = 1.0 / np.sqrt(var + eps)
+    xh = (x - mu) * r
+    return gamma * xh + beta, (xh, r, gamma)
+
+
+def layernorm_backward(dy, cache):
+    """Return (dx, dgamma, dbeta)."""
+    xh, r, gamma = cache
+    d = dy.shape[1]
+    dgamma = (dy * xh).sum(axis=0)
+    dbeta = dy.sum(axis=0)
+    dxh = dy * gamma
+    dx = r / d * (d * dxh - dxh.sum(axis=1, keepdims=True) - xh * (dxh * xh).sum(axis=1, keepdims=True))
+    return dx, dgamma, dbeta
+
+
+def batch_of_one(x, gamma, beta):
+    """Train-mode batch norm on a batch holding the single row x, and the gradient it passes back
+    for an upstream gradient of ones. Return (y, dx)."""
+    y, cache = batchnorm_forward(x[None, :], gamma, beta)
+    dx, _, _ = batchnorm_backward(np.ones_like(y), cache)
+    return y[0], dx[0]
+
+
+def layernorm_of_one(x, gamma, beta):
+    """The same single row through layer norm, and its gradient for an upstream gradient that
+    weights the features 1, 2, ..., d. Return (y, dx)."""
+    y, cache = layernorm_forward(x[None, :], gamma, beta)
+    dx, _, _ = layernorm_backward(np.arange(1.0, x.shape[0] + 1)[None, :], cache)
+    return y[0], dx[0]

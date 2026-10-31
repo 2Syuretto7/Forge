@@ -1,18 +1,7 @@
-def matmul_cost(m, n, k, bytes_per=2):
-    """C = A B with A (m, k) and B (k, n): FLOPs and the minimum bytes moved (read A and B, write C)."""
+def count_params(vocab, ctx, d, n_layer):
+    """Parameters of the L10 GPT: token and position embeddings, n_layer pre-norm blocks (two
+    layer norms, a fused qkv projection, an output projection and a 4d MLP, all with biases), a
+    final layer norm, and an output layer tied to the token embedding.
+    Return {"total", "non_embedding", "approx"} where non_embedding leaves out both embeddings
+    and approx = 12 n_layer d^2."""
     raise NotImplementedError
-
-
-def elementwise_cost(n_elems, flops_per_elem, n_inputs, bytes_per=2):
-    """An elementwise op reading n_inputs arrays and writing one."""
-    raise NotImplementedError
-
-
-def softmax_cost(rows, cols, bytes_per=2):
-    """Row softmax counted as 5 FLOPs per element (max, subtract, exp, sum, divide); read once, write once."""
-    raise NotImplementedError
-
-
-def intensity(cost):
-    flops, nbytes = cost
-    return flops / nbytes

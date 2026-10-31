@@ -1,31 +1,31 @@
-# Break it: hangs and wrong averages
+# Break it: silent cache bugs and outliers
 
-## Collectives that never complete
+## A wrong position
 
-::::predict{id=p4 kind=choice answer=d}
-On one of 8 GPUs the loss comes out NaN, and the training loop's guard `if loss.isnan(): continue` skips that step on that GPU only. What happens?
+::::predict{id=p4 kind=choice answer=c}
+A cached generator gives each new token the position embedding of the token before it. What do you see?
 
-- That GPU's update is skipped and training continues normally.
-- The other GPUs average 7 gradients instead of 8.
-- An exception is raised on every GPU.
-- The other seven GPUs wait forever in their all-reduce, and the job hangs.
+- An index error on the first generated token.
+- Identical output, since positions are approximate anyway.
+- Plausible output that differs from what the model would produce without the cache, noticed only by comparing the two.
+- Output that is all one repeated token.
 
 :::reveal
-A collective completes only when every rank calls it. The rank that skipped moves on to the next step's forward pass while the other seven block in the gradient all-reduce, and from then on the ranks issue their collectives out of step. Nothing crashes; the job just stops making progress until a timeout kills it. Decisions that change which collectives run must be made together, with a collective of their own.
+Nothing crashes: the shapes are right and the text is fluent enough. The model is simply running on slightly wrong inputs. Comparing cached generation with full recomputation, token by token, finds the first divergence (exercise 11); run that comparison on every change to an inference engine.
 :::
 ::::
 
 :::exercise{ref=e11}
 :::
 
-## Averages that are not
+## Outliers
 
 :::exercise{ref=e12}
 :::
 
 ## What to take away
 
-- Count the bytes before you launch: model states, activations, then the margin for everything else.
-- Put tensor parallelism where the links are fastest, pipelines across servers, data parallelism outside.
-- Every rank must call the same collectives in the same order; make any skip decision with a collective.
-- Average gradients over examples, not over ranks, and check that the effective learning rate does not change with the number of GPUs.
+- Decode is memory-bound: batch requests, shrink the weights, and keep the caches small.
+- Test every cache, batching or quantization change against unoptimized generation.
+- Quantize per row or per group, calibrate on real activations, and keep outlier features in high precision.
+- Speculative decoding speeds up generation without changing its distribution; it pays when the draft agrees often and costs little.

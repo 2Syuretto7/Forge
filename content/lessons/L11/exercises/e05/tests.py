@@ -1,31 +1,24 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(5)
-X = rng.normal(size=(6, 4)) * 2
-B = rng.normal(size=4)
-DY = rng.normal(size=(6, 4))
+P = dict(E=1.69, A=406.4, B=410.7, alpha=0.34, beta=0.28)
+NN, DD = np.meshgrid(np.logspace(7, 9, 5), np.logspace(8, 10, 5))
+N, D = NN.ravel(), DD.ravel()
+L = sub.law(N, D, **P)
 
 
-def test_grad_gelu():
-    x = np.linspace(-4, 4, 41)
-    num = (sub.gelu(x + 1e-6) - sub.gelu(x - 1e-6)) / 2e-6
-    assert np.allclose(sub.gelu_grad(x), num, atol=1e-8)
+def test_linear_solve_is_exact_at_the_true_exponents():
+    E, A, B, sse = sub.fit_for_exponents(0.34, 0.28, N, D, L)
+    assert abs(E - 1.69) < 1e-8 and abs(A / 406.4 - 1) < 1e-8 and abs(B / 410.7 - 1) < 1e-8 and sse < 1e-20
 
 
-def test_grad_fused_bias_gelu():
-    f = lambda x, b: float(np.sum(sub.bias_gelu_forward(x, b)[0] * DY))
-    _, cache = sub.bias_gelu_forward(X, B)
-    dx, db = sub.bias_gelu_backward(DY, cache)
-    nx = np.zeros_like(X)
-    for idx in np.ndindex(X.shape):
-        E = np.zeros_like(X)
-        E[idx] = 1e-6
-        nx[idx] = (f(X + E, B) - f(X - E, B)) / 2e-6
-    nb = np.array([(f(X, B + e) - f(X, B - e)) / 2e-6 for e in np.eye(4) * 1e-6])
-    assert np.allclose(dx, nx, atol=1e-7) and np.allclose(db, nb, atol=1e-7)
+def test_recovers_noiseless_parameters():
+    p = sub.fit_parametric(N, D, L)
+    assert abs(p["alpha"] - 0.34) < 1e-6 and abs(p["beta"] - 0.28) < 1e-6 and abs(p["E"] - 1.69) < 1e-6
 
 
-def test_traffic():
-    assert sub.traffic(1000) == 4000 and sub.traffic(1000, fused=False) == 8000
-    assert sub.traffic(10, bytes_per=4, fused=False) == 160
+def test_predicts_a_larger_run_from_noisy_runs():
+    rng = np.random.default_rng(0)
+    p = sub.fit_parametric(N, D, L * (1 + 0.005 * rng.standard_normal(L.shape)))
+    truth = sub.law(3e9, 3e10, **P)
+    assert abs(sub.law(3e9, 3e10, **p) / truth - 1) < 0.015

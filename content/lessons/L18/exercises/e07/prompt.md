@@ -1,12 +1,13 @@
-# Splitting attention by heads
+# int8 weights
 
-Attention heads are independent until the output projection, so tensor parallelism gives each rank whole heads: the columns of $W_Q, W_K, W_V$ belonging to its heads, and the matching rows of $W_O$. `attention(x, Wq, Wk, Wv, Wo, heads)` is a dense reference.
+Decoding is memory-bound, so halving the bytes per weight nearly halves the step time. Weight-only quantization stores each weight in 8 bits with a scale per output row.
 
-1. `shard_attention(Wq, Wk, Wv, Wo, heads, tp)`: for each of `tp` ranks, its slices `(Wq_r, Wk_r, Wv_r, Wo_r)`.
-2. `tp_attention(x, shards, heads_per_rank)`: run each rank's heads with its slices, and sum the partial outputs (the all-reduce).
+1. `quantize_int8(W)`: each row's scale is its largest absolute value divided by 127; weights round to integers in $[-127, 127]$. Return the int8 array and the scales.
+2. `dequantize(q, scale)`.
+3. `int8_matmul(x, q, scale)`: $x W^\top$ computed with the integers, scaling each output column afterwards.
 
 ## Hints
 
-1. Head $h$ uses columns $h \cdot d_h$ to $(h + 1) d_h$, with $d_h = d / \text{heads}$; rank $r$ has heads $r \cdot \text{heads}/t$ to $(r+1) \cdot \text{heads}/t - 1$, a contiguous block.
-2. $W_O$ is split by rows, matching the columns of the concatenated head outputs.
-3. This is why the number of heads must be divisible by the tensor-parallel degree.
+1. Guard rows of zeros: give them scale 1.
+2. The rounding error of each weight is at most half its row's scale.
+3. Scaling after the product is exact because each output column uses one row's scale.

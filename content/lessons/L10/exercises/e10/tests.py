@@ -2,20 +2,22 @@ import numpy as np
 import sub
 
 rng = np.random.default_rng(10)
-x = rng.normal(size=8)
-A = rng.normal(size=(15, 8))
-B = rng.normal(size=(15, 8)) * 3 + 1
+Z = rng.normal(size=(5, 6)) * 2
+Y = rng.integers(0, 6, size=5)
 
 
-def test_batch_norm_depends_on_the_batch():
-    assert sub.batch_dependence("batch", x, A, B) > 0.3
+def test_reduces_to_cross_entropy():
+    loss, _ = sub.smoothed_xent(Z, Y, 0.0)
+    p = np.exp(Z - Z.max(axis=1, keepdims=True))
+    p /= p.sum(axis=1, keepdims=True)
+    assert np.isclose(loss, -np.mean(np.log(p[np.arange(5), Y])))
 
 
-def test_layer_norm_does_not():
-    assert sub.batch_dependence("layer", x, A, B) < 1e-12
-
-
-def test_noise_scales_like_inverse_sqrt():
-    n = [sub.batch_mean_noise(b) for b in (1, 4, 16, 64)]
-    for b, v in zip((1, 4, 16, 64), n):
-        assert abs(v * np.sqrt(b) - 1) < 0.06, (b, v)
+def test_grad_smoothed():
+    _, g = sub.smoothed_xent(Z, Y, 0.1)
+    num = np.zeros_like(Z)
+    for idx in np.ndindex(Z.shape):
+        E = np.zeros_like(Z)
+        E[idx] = 1e-6
+        num[idx] = (sub.smoothed_xent(Z + E, Y, 0.1)[0] - sub.smoothed_xent(Z - E, Y, 0.1)[0]) / 2e-6
+    assert np.allclose(g, num, atol=1e-8)

@@ -38,7 +38,7 @@ bf16 has 7: $\varepsilon = 2^{-7} =$ [[0.0078125|tol=0.00001]], so it cannot tel
 :::
 ::::
 
-:::edge{to=L17 text="machine epsilon returns as the limits of bf16 and fp8."}
+:::edge{to=L13 text="machine epsilon returns as the limits of bf16 and fp8."}
 :::
 
 ## 3. Catastrophic cancellation

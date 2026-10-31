@@ -1,17 +1,11 @@
 import numpy as np
 
 
-def design(x, degree):
+def batchnorm_forward(x, gamma, beta, eps=1e-5):
+    """Normalize each feature (column) over the batch, then scale and shift. Return (y, cache)."""
     raise NotImplementedError
 
 
-def fit_poly(x, y, degree):
-    raise NotImplementedError
-
-
-def predict(coef, x):
-    raise NotImplementedError
-
-
-def mse(yhat, y):
+def batchnorm_backward(dy, cache):
+    """Return (dx, dgamma, dbeta)."""
     raise NotImplementedError

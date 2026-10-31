@@ -1,14 +1,28 @@
+import numpy as np
 import sub
 
-
-def test_transfer_time():
-    assert abs(sub.transfer_time(64 * 2 ** 20, 12e9) - (10e-6 + 64 * 2 ** 20 / 12e9)) < 1e-15
-    assert abs(sub.effective_bandwidth(120_000, 12e9) - 6e9) < 1
+rng = np.random.default_rng(11)
 
 
-def test_pipeline():
-    mb = 4 * 2 ** 20
-    t_copy = sub.transfer_time(mb, 12e9)
-    assert abs(sub.input_pipeline_time(mb, 1e-3, 12e9, overlap=False) - (t_copy + 1e-3)) < 1e-15
-    assert sub.input_pipeline_time(mb, 1e-3, 12e9, overlap=True) == 1e-3
-    assert sub.input_pipeline_time(mb, 1e-4, 12e9, overlap=True) == t_copy
+def runs(lo, hi, n=8):
+    x = np.logspace(lo, hi, n)
+    return x, 5.0 * x ** -0.1 * np.exp(0.01 * rng.standard_normal(n))
+
+
+def test_interval_contains_the_truth():
+    x, y = runs(15, 21)
+    lo, hi = sub.bootstrap_exponent(x, y)
+    assert lo < 0.1 < hi and hi - lo < 0.02
+
+
+def test_narrow_range_is_less_certain():
+    x, y = runs(15, 21)
+    xn, yn = runs(15, 16)
+    wide = np.subtract(*sub.bootstrap_exponent(x, y)[::-1])
+    narrow = np.subtract(*sub.bootstrap_exponent(xn, yn)[::-1])
+    assert narrow > 3 * wide
+
+
+def test_reproducible():
+    x, y = runs(15, 21)
+    assert sub.bootstrap_exponent(x, y, seed=4) == sub.bootstrap_exponent(x, y, seed=4)

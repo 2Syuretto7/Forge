@@ -1,31 +1,32 @@
-# Break it: in-place updates and broadcasting bugs
+# Break it: overflowing softmaxes and unmasked blocks
 
-## Modifying a tensor the backward pass still needs
-
-Suppose `y = x * w` saved `x` for the gradient of `w`, and before calling `backward()` your code does `x.data *= 2` to "normalize" it. The gradient of `w` is now computed with the doubled `x`: wrong, with no error message. PyTorch prevents this with a version counter on every tensor; the counter increases on each in-place operation, and each backward rule checks that the saved tensors still have the versions they had when they were saved.
+## fp16 overflow
 
 :::exercise{ref=e11}
 :::
 
-## Broadcasting gradients
+## Block sizes that do not divide the data
 
-The bug from the puzzle, made concrete: an `add` whose backward forgets to unbroadcast hands a $(32, 4)$ gradient to a bias of shape $(4,)$. In NumPy, the update `b -= lr * grad` then either crashes or, worse, broadcasts the update and silently changes the shape of `b`. Your gradient checker from Movement 4 catches it; the next question asks you to predict what it reports.
+Triton block sizes are powers of two; tensor sizes are whatever the model needs. A kernel that loads a full block for the last, partial block reads past the end of its row: into the next row, or past the end of the tensor into unrelated memory. Without bounds checks on a GPU this rarely crashes. It returns wrong numbers.
 
-::::predict{id=p5 kind=choice answer=d}
-A bias $b$ of shape $(4,)$ is added to a $(32, 4)$ tensor. The buggy backward returns the first row of the output gradient instead of summing over rows. What does a finite-difference gradient check on $b$ report?
+::::predict{id=p5 kind=choice answer=a}
+A row-sum kernel uses blocks of 64 on rows of 100 values and forgets the mask. What is wrong with its output?
 
-- Agreement: one row is a fair sample.
-- A relative error near $10^{-8}$.
-- A shape error.
-- A large relative error, typically close to 1, because the true gradient is the sum of 32 rows.
+- Every row's sum includes 28 values that belong to the next row or to whatever follows the tensor.
+- Only the last row is wrong.
+- Nothing: the extra values are zeros.
+- The kernel fails to compile.
 
 :::reveal
-The true gradient is the sum over 32 rows; one row is roughly a thirty-second of it (or unrelated to it if rows differ in sign), so the relative error is large, typically above 0.9. Shape checks would not catch this bug, since one row has the correct shape. Only a numerical check does.
+Rows of 100 need two blocks; the second covers positions 64 to 127, of which 28 lie beyond the row. In row-major memory those are the first 28 values of the next row, and for the last row whatever follows the tensor. Every row is wrong, and nothing reports an error.
 :::
 ::::
 
+:::exercise{ref=e12}
+:::
+
 ## What to take away
 
-- Every operation's backward rule must return gradients with exactly the shapes of its inputs; unbroadcast after every elementwise operation.
-- Never modify a tensor in place between the forward and backward passes; if you must, copy it first.
-- Check every new operation numerically before using it in a model.
+- Exponentiate after subtracting the maximum, and accumulate in fp32.
+- Mask every load and store whose block can extend past the data.
+- Test every kernel against a simple reference at sizes that are not multiples of the block size.

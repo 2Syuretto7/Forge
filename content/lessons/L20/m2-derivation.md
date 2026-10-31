@@ -1,77 +1,79 @@
-# Derivation: fine-tuning, LoRA and distillation
+# The design document
 
-## 1. Supervised fine-tuning
+A design document states what you will build, how, and why each choice beats its alternatives, before you spend the compute. Yours covers the six stages of the capstone. For each decision, give the alternative you considered, the evidence (a measurement from an earlier lesson, a paper, or a calculation), and what result would change your mind. The sections below set out the decisions and the arithmetic; the document itself, 400 to 1,500 words, is written in movement 6 and graded with a design rubric: correctness, completeness, justification, tradeoffs and clarity.
 
-An instruction example is a prompt $x$ and a response $y$. Fine-tuning maximizes the likelihood of the response given the prompt,
-$$
-\mathcal{L}_\text{SFT} = -\sum_{t \in \text{response}} \log p_\theta(y_t \mid x, y_{<t}),
-$$
-which is the language-modeling loss of L14 with a **mask** that keeps only the response positions. The prompt and response are joined by a **template** with special tokens (a separator, an end token), and the end token is part of the response, so the model learns to stop. Short examples are **packed** into long sequences with an attention mask that keeps them apart (exercise 9).
+## 1. Data
 
-::::derivation{id=d1 title="Where the gradient goes"}
+The capstone starts from the noisy crawl of L12: exact and near duplicates, boilerplate, junk pages, and leaked validation text. Decide the order of the cleaning steps (boilerplate before exact deduplication, so pages that differ only by a footer collapse), the thresholds of the quality rules and of MinHash, and how you will show the cleaned data is better: a model trained on each at equal compute, scored on text that never leaked. Decontaminate against every evaluation set you will use later, including the fine-tuning test words.
+
+::::derivation{id=d1 title="How much data"}
 :::step
-With a 30-token prompt and a 10-token response, an unmasked loss spends a fraction [[0.25|tol=0.001]] of its terms on the response.
+Tiny Shakespeare has 1,115,394 bytes. With 90% for training, the training split has about [[1.004e6|tol=1e3]] bytes.
 :::
 ::::
 
-## 2. Forgetting
+:::edge{from=L15 text="the pretraining run"}
+:::
 
-Fine-tuning minimizes the new objective alone, and the gradient knows nothing about what pretraining taught. The weights drift, and the loss on the original distribution rises: **catastrophic forgetting**. Measure it directly, on the base evaluation, before and after. The remedies limit the drift: a small learning rate and few steps; **replay**, mixing some pretraining data into the fine-tuning batches; a penalty $\frac{\lambda}{2}\|\theta - \theta_\text{pre}\|^2$ that pulls the weights back (exercise 8); and training far fewer parameters.
+## 2. Model and budget
 
-## 3. LoRA: a low-rank update
+Choose the architecture (the decoder of L09 and L10 with pre-norm residual blocks, L06), the width, depth and context, and the number of steps and batch size. Defend the size against the data, not just the compute: with about a million training tokens the run is data-limited (puzzle 1), so you will train for many epochs with dropout and choose the final checkpoint by validation loss.
 
-LoRA (Hu et al., 2021) freezes each adapted weight $W_0$ and learns its change as a product of two thin matrices:
-$$
-W = W_0 + \frac{\alpha}{r} B A, \qquad A \in \mathbb{R}^{r \times d_\text{in}},\; B \in \mathbb{R}^{d_\text{out} \times r}.
-$$
-$B$ starts at zero, so training starts exactly at the pretrained model; $A$ starts random. The trainable parameters drop from $d_\text{in} d_\text{out}$ to $r (d_\text{in} + d_\text{out})$, the optimizer states with them, and after training $BA$ can be merged into $W_0$, so inference costs nothing extra. The scale $\alpha / r$ keeps the update's size comparable as $r$ changes.
-
-Why should a low-rank update suffice? By Eckart-Young (M14), the best rank-$r$ approximation of any update is its truncated SVD, with error set by the discarded singular values. Measured fine-tuning updates of large models have rapidly decaying spectra (Aghajanyan et al., 2020, found that fine-tuning works in a small "intrinsic dimension"), so a small $r$ captures most of them. LoRA can represent any update of rank $r$ and nothing beyond: if the task needs more directions, the loss plateaus (exercise 12).
-
-::::derivation{id=d2 title="Counting an adapter"}
+::::derivation{id=d2 title="The pretraining budget"}
 :::step
-A rank-8 adapter on a $4096 \times 4096$ matrix trains $8 \cdot (4096 + 4096) =$ [[65536]] parameters.
+3,000 steps of 32 windows of 256 tokens is [[24576000]] tokens.
 :::
 :::step
-That is a fraction $65536 / 4096^2 \approx$ [[0.0039|tol=0.0001]] of the matrix.
+That is about [[24.5|tol=0.1]] passes over the training split.
+:::
+:::step
+At $6ND$ with $N = 10.7$ million, the run costs about [[1.58e15|tol=1e13]] operations, roughly 11 minutes at 2.4 TFLOP/s.
 :::
 ::::
 
-:::edge{from=M14 text="the SVD and the best low-rank approximation"}
+## 3. Training that survives
+
+Name the recipe and why: AdamW with warmup and cosine decay (L05), gradient clipping, mixed precision where the hardware supports it (L13), checkpoints with every piece of state and a deterministic data order so a disconnected Colab session resumes exactly, and the spike check with rollback of L15. State what you will log and what would make you stop the run.
+
+## 4. Fine-tuning and RL
+
+Fine-tuning teaches the instruction format and the tasks (L16): the prompt is masked out of the loss, LoRA adapters train a small fraction of the parameters, and the base loss on ordinary text measures forgetting. Choose the rank, which layers get adapters, the learning rate and the number of steps, and the forgetting margin you accept. RL then raises accuracy on a task with a verifiable reward (L17): exact match on the answer. Choose the group size for group-relative advantages, the KL weight and the number of updates, and say how you will detect reward hacking.
+
+:::edge{from=L16 text="LoRA fine-tuning"}
 :::
 
-:::edge{from=L13 text="the weight matrices of a transformer block"}
+:::edge{from=L17 text="RL with a verifiable reward"}
 :::
 
-## 4. Distillation
+## 5. Evaluation
 
-A large **teacher** can train a small **student** with more than the right answers: its whole distribution over the next token says which wrong answers are nearly right. Hinton et al. (2015) soften both distributions with a temperature $T$ and minimize
-$$
-\mathcal{L} = \alpha\, T^2\, \mathrm{KL}\bigl(\operatorname{softmax}(t/T) \,\|\, \operatorname{softmax}(s/T)\bigr) + (1 - \alpha)\, \mathrm{CE}(s, y).
-$$
-The gradient of the KL term with respect to the student's logits is $(p_s - p_t)/T$, so the factor $T^2$ keeps its size independent of $T$. Raising $T$ flattens the distributions without changing their order, exposing the small probabilities. **Sequence-level distillation** (Kim and Rush, 2016) trains the student on the teacher's generated outputs instead, which needs no access to the teacher's probabilities.
+Every reported number gets an interval over items (L19). Decide the held-out sets: test words never seen in fine-tuning or RL, chosen before training and checked for overlap. Decide the comparisons: base against fine-tuned against RL, paired by item. Decide how many items you need to resolve the differences you expect.
 
-::::derivation{id=d3 title="Softening"}
+::::derivation{id=d3 title="Enough items"}
 :::step
-For logits $(2, 1, 0)$ at $T = 1$, the largest probability is about [[0.665|tol=0.002]].
-:::
-:::step
-At $T = 2$ it falls to about [[0.506|tol=0.002]], and the smallest rises from 0.090 to about [[0.186|tol=0.002]].
+To measure an accuracy near 50% to within $\pm 5$ points at 95% confidence, $1.96^2 \cdot 0.25 / 0.05^2$ rounds up to [[385]] items.
 :::
 ::::
 
-:::edge{from=L19 text="the pretrained model"}
+:::edge{from=L19 text="intervals over items"}
 :::
 
-## 5. Evaluating a fine-tune
+## 6. Serving
 
-Report two numbers: the **task metric** on held-out examples the model never trained on (here, exact-match accuracy on unseen inputs), and the **base evaluation**, the pretrained model's own loss, before and after, to measure forgetting. A fine-tune that wins the first and loses the second has traded one model for another.
+Serve the final model with the key-value cache and continuous batching of L18, state the latency and throughput targets and the workload you will test them with, and check that served outputs match full recomputation.
 
-:::edge{to=L21 text="Reinforcement learning starts from the fine-tuned model."}
+::::derivation{id=d4 title="The cache"}
+:::step
+In float32 the 6-layer, width-384 model caches $2 \times 6 \times 384 \times 4 =$ [[18432]] bytes per token.
+:::
+:::step
+32 sequences of 256 tokens take about [[151|tol=1]] MB, a tiny fraction of a T4's 16 GB: this server is limited by per-step overhead, not memory.
+:::
+::::
+
+:::edge{from=L18 text="the inference server"}
 :::
 
-:::edge{to=L22 text="A distilled student is a natural draft model for speculative decoding."}
-:::
+## 7. Reproducibility and the report
 
-:::edge{to=L24 text="The final capstone fine-tunes its own pretrained model."}
-:::
+Record a manifest: for each stage, a digest of its input, its configuration and its output (exercise 10), so every number in the report traces to the data and settings that produced it. The final report gives each stage's result with its interval, what went wrong, and what you would do with ten times the compute.

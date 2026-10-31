@@ -42,7 +42,7 @@ Moment matching gives mean 0 and standard deviation $\sqrt{4 + 0.36} \approx 2.0
 
 ## Why this matters later
 
-Maximum likelihood training minimizes the forward KL from data to model, so models trained this way are mass-covering: they put some probability on everything the data contains, which is why samples from them can be diverse and occasionally strange. RLHF in L21 adds a reverse KL from the policy to a reference model, which keeps the policy inside the region the reference finds plausible.
+Maximum likelihood training minimizes the forward KL from data to model, so models trained this way are mass-covering: they put some probability on everything the data contains, which is why samples from them can be diverse and occasionally strange. RLHF in L17 adds a reverse KL from the policy to a reference model, which keeps the policy inside the region the reference finds plausible.
 
-:::edge{to=L21 text="The KL penalty in RLHF is a reverse KL to the reference model."}
+:::edge{to=L17 text="The KL penalty in RLHF is a reverse KL to the reference model."}
 :::

@@ -1,13 +1,11 @@
 import numpy as np
 
 
-def ridge_loss(w, X, y, lam):
+def rmsnorm_forward(x, gamma, eps=1e-6):
+    """Divide each row by its root mean square (no centering), then scale. Return (y, cache)."""
     raise NotImplementedError
 
 
-def ridge_grad(w, X, y, lam):
-    raise NotImplementedError
-
-
-def ridge_closed_form(X, y, lam):
+def rmsnorm_backward(dy, cache):
+    """Return (dx, dgamma)."""
     raise NotImplementedError

@@ -1,9 +1,14 @@
-import numpy as np
-
-
-def activation_rms(depth, width, std, seed=0, batch=64):
+def pipelined_time(steps, cpu_s, gpu_s):
+    """The CPU issues work for step i + 1 while the GPU runs step i: after the first step, each step
+    costs the slower of the two."""
     raise NotImplementedError
 
 
-def predicted_growth(width, std):
+def synced_time(steps, cpu_s, gpu_s):
+    """A .item() (or print of a GPU value) at the end of every step makes the CPU wait for the GPU,
+    so nothing overlaps."""
+    raise NotImplementedError
+
+
+def sync_slowdown(steps, cpu_s, gpu_s):
     raise NotImplementedError

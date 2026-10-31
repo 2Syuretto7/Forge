@@ -1,17 +1,16 @@
-def gpt_params(vocab, n_ctx, d, n_layer):
-    """GPT-2 layout: token and position embeddings, n_layer blocks (attention with a fused qkv
-    projection and biases, MLP 4d with biases, two layer norms), a final layer norm, and an output
-    layer tied to the token embedding (no extra parameters)."""
-    block = (d * 3 * d + 3 * d) + (d * d + d) + (d * 4 * d + 4 * d) + (4 * d * d + d) + 4 * d
-    return vocab * d + n_ctx * d + n_layer * block + 2 * d
+def bytes_per_param(optimizer="adam", mixed=True):
+    """Training memory per parameter, without activations. Mixed precision with Adam: fp16 weights
+    and gradients (2 + 2) plus fp32 master weights, first and second moments (4 + 4 + 4). Plain fp32
+    with Adam: weights, gradients and two moments in fp32. SGD without momentum keeps no moments."""
+    if optimizer == "adam":
+        return (2 + 2 + 4 + 4 + 4) if mixed else (4 + 4 + 4 + 4)
+    return (2 + 2 + 4) if mixed else (4 + 4)
 
 
-def forward_flops_per_token(d, n_layer, n_ctx):
-    """2 FLOPs per non-embedding weight (about 12 d^2 per layer), plus attention over n_ctx
-    positions: scores and weighted values cost 2 * n_ctx * d FLOPs each per layer."""
-    return 2 * 12 * n_layer * d * d + 4 * n_layer * n_ctx * d
+def training_memory_gb(n_params, optimizer="adam", mixed=True):
+    return n_params * bytes_per_param(optimizer, mixed) / 1e9
 
 
-def attention_crossover_ctx(d):
-    """Context length where the attention term equals the weight term: 4 n d = 24 d^2."""
-    return 6 * d
+def inference_memory_gb(n_params, bytes_per_weight=2):
+    """Weights only, in the serving precision."""
+    return n_params * bytes_per_weight / 1e9

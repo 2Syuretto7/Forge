@@ -1,12 +1,11 @@
-# The softmax and its backward pass
+# Rounding to any format
 
-1. `softmax_rows(S)`: the softmax of every row (last axis) of `S`, computed stably by subtracting the row maximum. Entries equal to `-inf` must get weight exactly 0.
-2. `softmax_backward(P, dP)`: given the softmax output `P` and $\partial L/\partial P$, return $\partial L/\partial S$, row by row.
+Implement `round_to_format(x, exp_bits, man_bits)` for an array of float64 values: round each to the nearest number representable with `exp_bits` exponent bits and `man_bits` mantissa bits in the IEEE layout, ties to even, including subnormals; values beyond the largest finite number become $\pm\infty$.
 
-Both must work for arrays with any number of leading dimensions (for example `(heads, n, n)`).
+The tests compare your fp16 (5, 10) rounding with NumPy's `astype(np.float16)` on thousands of values across the whole range.
 
 ## Hints
 
-1. `np.exp(-np.inf)` is `0.0`, so masked entries need no special case once the maximum is subtracted.
-2. For one row, $\partial L/\partial s = p \odot (g - p^\top g)$ with $g = \partial L/\partial p$.
-3. Use `axis=-1, keepdims=True` throughout.
+1. Exponent $e = \lfloor \log_2 |x| \rfloor$, but never below $1 - \text{bias}$ (the subnormal range shares the smallest normal spacing).
+2. With $\text{ulp} = 2^{e - m}$, `np.round(|x| / ulp) * ulp` rounds to the grid; `np.round` breaks ties to even.
+3. Compare the result with the largest finite value $(2 - 2^{-m}) \cdot 2^{e_{\max}}$ to detect overflow.

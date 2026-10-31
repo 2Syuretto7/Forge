@@ -1,21 +1,29 @@
-import numpy as np
+def to_bytes(text):
+    """The UTF-8 bytes of text, as a list of integers 0..255."""
+    return list(text.encode("utf-8"))
 
 
-def batchnorm_forward(x, gamma, beta, eps=1e-5):
-    """Normalize each feature (column) over the batch, then scale and shift. Return (y, cache)."""
-    mu = x.mean(axis=0)
-    var = x.var(axis=0)
-    r = 1.0 / np.sqrt(var + eps)
-    xh = (x - mu) * r
-    return gamma * xh + beta, (xh, r, gamma)
+def from_bytes(ids):
+    """Decode a list of byte values back to text, replacing invalid sequences."""
+    return bytes(ids).decode("utf-8", errors="replace")
 
 
-def batchnorm_backward(dy, cache):
-    """Return (dx, dgamma, dbeta)."""
-    xh, r, gamma = cache
-    n = dy.shape[0]
-    dgamma = (dy * xh).sum(axis=0)
-    dbeta = dy.sum(axis=0)
-    dxh = dy * gamma
-    dx = r / n * (n * dxh - dxh.sum(axis=0) - xh * (dxh * xh).sum(axis=0))
-    return dx, dgamma, dbeta
+def count_pairs(ids, counts=None):
+    """Counts of adjacent pairs, in order of first occurrence."""
+    counts = {} if counts is None else counts
+    for a, b in zip(ids, ids[1:]):
+        counts[(a, b)] = counts.get((a, b), 0) + 1
+    return counts
+
+
+def merge(ids, pair, new_id):
+    """Replace every non-overlapping occurrence of pair, scanning left to right, with new_id."""
+    out, i = [], 0
+    while i < len(ids):
+        if i + 1 < len(ids) and ids[i] == pair[0] and ids[i + 1] == pair[1]:
+            out.append(new_id)
+            i += 2
+        else:
+            out.append(ids[i])
+            i += 1
+    return out

@@ -1,22 +1,51 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(6)
-x = rng.uniform(-1, 1, 40)
-y = np.sin(np.pi * x) + 0.3 * rng.normal(size=40)
-xt = rng.uniform(-1, 1, 5000)
-yt = np.sin(np.pi * xt) + 0.3 * rng.normal(size=5000)
+X, Y = sub.make_digits(6, 0)
 
 
-def _test_err(d):
-    c = np.linalg.lstsq(np.vander(x, d + 1, increasing=True), y, rcond=None)[0]
-    return np.mean((np.vander(xt, d + 1, increasing=True) @ c - yt) ** 2)
+def _check(mode):
+    p = sub.init_stack(3, 8, seed=1)
+    for k in p:
+        if k[0] in "gb":
+            p[k] = p[k] + 0.1 * np.arange(p[k].size)
+    _, g = sub.stack_loss_and_grads(p, X, Y, 3, mode)
+    assert sorted(g) == sorted(p)
+    for k in ["Win", "W0", "W2", "g1", "b2", "gf", "bf", "Wout"]:
+        num = np.zeros_like(p[k])
+        for idx in list(np.ndindex(p[k].shape))[:12]:
+            old = p[k][idx]
+            p[k][idx] = old + 1e-6
+            lp, _ = sub.stack_loss_and_grads(p, X, Y, 3, mode)
+            p[k][idx] = old - 1e-6
+            lm, _ = sub.stack_loss_and_grads(p, X, Y, 3, mode)
+            p[k][idx] = old
+            num[idx] = (lp - lm) / 2e-6
+            assert abs(num[idx] - g[k][idx]) < 1e-6, (mode, k, idx)
 
 
-def test_selected_model_is_near_the_best():
-    degrees = list(range(0, 13))
-    d = sub.select_degree(x, y, degrees, 5, 0)
-    c = sub.refit(x, y, d)
-    err = np.mean((np.vander(xt, d + 1, increasing=True) @ c - yt) ** 2)
-    best = min(_test_err(k) for k in degrees)
-    assert err < 1.2 * best, (d, err, best)
+def test_grad_plain():
+    _check("plain")
+
+
+def test_grad_plain_ln():
+    _check("plain_ln")
+
+
+def test_grad_res():
+    _check("res")
+
+
+def test_grad_pre():
+    _check("pre")
+
+
+def test_grad_post():
+    _check("post")
+
+
+def test_forward_shapes():
+    p = sub.init_stack(4, 16)
+    for mode in sub.MODES:
+        logits, hidden, _ = sub.stack_forward(p, X, 4, mode)
+        assert logits.shape == (6, 10) and hidden.shape == (6, 16)

@@ -1,6 +1,6 @@
-# Build: the optimizers from scratch
+# Build: attention from scratch in NumPy
 
-## Gradient descent and its speed limit
+## The softmax and one head
 
 :::exercise{ref=e01}
 :::
@@ -8,36 +8,39 @@
 :::exercise{ref=e02}
 :::
 
-## Momentum
-
 :::exercise{ref=e03}
 :::
+
+## Many heads
 
 :::exercise{ref=e04}
 :::
 
-## Adam
-
 :::exercise{ref=e05}
 :::
 
-::::predict{id=p3 kind=choice answer=c}
-You run Adam on a loss and then on the same loss multiplied by 1000. How do the two trajectories compare (ignoring $\epsilon$)?
-
-- The second moves 1000 times faster.
-- The second moves about 32 times faster, the square root of 1000.
-- They are identical.
-- The second diverges.
-
-:::reveal
-Scaling every gradient by $c$ scales $\hat m$ by $c$ and $\sqrt{\hat v}$ by $c$, so their ratio, and therefore every step, is unchanged. Plain SGD would move 1000 times faster and almost certainly diverge.
-:::
-::::
-
-## Schedules and initialization
+## Positions
 
 :::exercise{ref=e06}
 :::
 
+::::predict{id=p3 kind=choice answer=a}
+You apply RoPE to the queries and keys of a sentence, then shift every position by 100 (the same sentence starting later in a document). What happens to the attention weights?
+
+- They are unchanged: every query-key score depends only on the difference of positions.
+- They change a little, because the rotations are larger.
+- They become uniform.
+- The scores for distant pairs grow.
+
+:::reveal
+Each score is $q^\top R((n - m)\theta) k$, and shifting both positions by 100 leaves $n - m$ unchanged, so every score, and every weight, is exactly the same. Learned absolute position embeddings have no such guarantee.
+:::
+::::
+
 :::exercise{ref=e07}
+:::
+
+## The block
+
+:::exercise{ref=e08}
 :::

@@ -1,39 +1,24 @@
 import numpy as np
 
 
-class Adam:
-    """Adam for a single array. step(x, g) returns the updated array."""
-
-    def __init__(self, lr, b1=0.9, b2=0.999, eps=1e-8, bias_correction=True):
-        self.lr, self.b1, self.b2, self.eps = lr, b1, b2, eps
-        self.bias_correction = bias_correction
-        self.m = self.v = None
-        self.t = 0
-
-    def step(self, x, g):
-        if self.m is None:
-            self.m, self.v = np.zeros_like(g), np.zeros_like(g)
-        self.t += 1
-        self.m = self.b1 * self.m + (1.0 - self.b1) * g
-        self.v = self.b2 * self.v + (1.0 - self.b2) * g * g
-        m, v = self.m, self.v
-        if self.bias_correction:
-            m = m / (1.0 - self.b1 ** self.t)
-            v = v / (1.0 - self.b2 ** self.t)
-        return x - self.lr * m / (np.sqrt(v) + self.eps)
+def softmax_rows(S):
+    """Softmax of every row, stable for large entries; -inf entries get weight 0."""
+    m = S.max(axis=-1, keepdims=True)
+    E = np.exp(S - m)
+    return E / E.sum(axis=-1, keepdims=True)
 
 
-def uncorrected_factor(t, b1=0.9, b2=0.999):
-    """How many times larger step t is without bias correction: (1 - b1^t) / sqrt(1 - b2^t)."""
+def softmax_backward(P, dP):
+    """Given P = softmax_rows(S) and dL/dP, return dL/dS."""
+    return P * (dP - (dP * P).sum(axis=-1, keepdims=True))
+
+
+def leaks_future(attn_fn, X, eps=1e-3):
+    """attn_fn maps an (n, d) sequence to an (n, d) output. Perturb each position t in turn and report
+    whether any output at a position before t changes (by more than 1e-12)."""
     raise NotImplementedError
 
 
-def peak(b1=0.9, b2=0.999, tmax=10000):
-    """The step t in 1..tmax where the factor is largest, and its value."""
-    raise NotImplementedError
-
-
-def measured_factor(t, b1=0.9, b2=0.999, g=1.0):
-    """Run Adam with and without correction on a constant gradient g for t steps and return the
-    ratio of the sizes of their t-th steps."""
+def off_by_one_mask(n):
+    """The bug: masking j > i + 1 instead of j > i, so each position also sees the next one."""
     raise NotImplementedError

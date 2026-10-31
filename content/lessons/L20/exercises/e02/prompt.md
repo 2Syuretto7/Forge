@@ -1,9 +1,12 @@
-# From a pair to a training example
+# The data stage
 
-Implement `build_example(prompt, response, bos, sep, eos, pad, max_len)`. The token sequence is `[bos] + prompt + [sep] + response + [eos]`, truncated to `max_len + 1` tokens and padded with `pad`. Return `(inputs, targets, mask)`, each of length `max_len`: the inputs are the first `max_len` ids, the targets the same ids shifted left by one, and the mask is 1 exactly where the target is a response token or the `eos`.
+The first stage of the pipeline cleans the crawl and checks it against the evaluation set (L12). `normalize` and `ngrams` are provided.
+
+1. `clean(docs, min_len=50, min_alpha=0.6)`: the indices of documents kept after exact deduplication on normalized text and two quality rules.
+2. `contaminated(train_docs, test_docs, n=8)`: the indices of test documents sharing a word 8-gram with the training documents.
 
 ## Hints
 
-1. Track each id's kind (prompt or response) alongside the ids, and shift the kinds with the targets.
-2. The separator belongs to the prompt: the model is never trained to produce it.
-3. The `eos` is part of the response: a model that never learns to stop keeps generating.
+1. Hash the normalized text with SHA-1 and keep a set of digests; a duplicate is dropped even if it would pass the rules.
+2. The fraction of letters is the count of characters for which `str.isalpha` holds divided by the length.
+3. Collect every training n-gram into one set, then test each test document against it.

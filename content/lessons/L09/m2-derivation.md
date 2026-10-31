@@ -1,193 +1,139 @@
-# Derivation: speed limits, momentum, adaptive steps, schedules and initialization
+# Derivation: attention, heads, positions and the transformer block
 
-## 1. Gradient descent on a quadratic
+## 1. Attention as a soft lookup
 
-Near a minimum $x^\star$, a smooth loss is approximately $f(x) = \tfrac12 (x - x^\star)^\top A (x - x^\star)$ with a symmetric positive definite Hessian $A$. The gradient is $A(x - x^\star)$, so the error $e_t = x_t - x^\star$ evolves as
-
+Stack a sequence of $n$ vectors as the rows of $X$ ($n \times d$). Three learned projections give **queries** $Q = XW_Q$, **keys** $K = XW_K$ and **values** $V = XW_V$. The scores, weights and output are
 $$
-e_{t+1} = (I - \eta A)\, e_t.
+S = \frac{QK^\top}{\sqrt{d_k}}, \qquad P = \operatorname{softmax}_{\text{rows}}(S), \qquad O = PV.
 $$
+Row $i$ of $O$ is a weighted average of the values, with weights from how well query $i$ matches every key.
 
-Write $A = Q \Lambda Q^\top$ (M13). In the eigenbasis the coordinates decouple: the component along eigenvector $q_i$ is multiplied by $1 - \eta \lambda_i$ at every step.
+:::edge{from=M10 text="dot products as similarity and matrix products"}
+:::
 
-- The iteration converges if and only if $|1 - \eta\lambda_i| < 1$ for every $i$, that is $0 < \eta < 2/\lambda_{\max}$.
-- The slowest component decides the rate $\rho(\eta) = \max_i |1 - \eta \lambda_i|$, which is smallest when the two extreme eigenvalues are balanced: $1 - \eta\mu = -(1 - \eta L)$, giving $\eta^\star = 2/(\mu + L)$ and
+:::edge{from=L01 text="the softmax and its Jacobian"}
+:::
 
-$$
-\rho^\star = \frac{L - \mu}{L + \mu} = \frac{\kappa - 1}{\kappa + 1}, \qquad \kappa = L/\mu.
-$$
+## 2. Why divide by the square root of the dimension
 
-::::derivation{id=d1 title="Rates on a valley with condition number 100"}
+If the entries of $q$ and $k$ are independent with mean 0 and variance 1, then $q \cdot k = \sum_{j=1}^{d} q_j k_j$ has mean 0 and variance $d$.
+
+::::derivation{id=d1 title="The scale of a dot product"}
 :::step
-Take eigenvalues $\mu = 1$ and $L = 100$. With $\eta = 0.01$ the steep component is multiplied by $1 - 0.01 \cdot 100 =$ [[0]] per step and the flat component by [[0.99]].
+For $d_k = 64$, the score $q \cdot k$ has variance [[64]] and standard deviation [[8]].
 :::
 :::step
-The best fixed rate is $\eta^\star = 2/101$, which gives contraction $\rho^\star = 99/101 \approx$ [[0.9802|tol=0.0005]] per step.
-:::
-:::step
-To shrink the error by $10^{-6}$ you need $t$ with $(\rho^\star)^t = 10^{-6}$, about $\ln(10^6)/\ln(101/99) \approx$ [[691|tol=2]] steps. For large $\kappa$ this is about $\tfrac{\kappa}{2} \ln(1/\epsilon)$: the step count grows linearly with the condition number.
+After dividing by $\sqrt{64}$, its variance is [[1]], whatever the dimension.
 :::
 ::::
 
-:::edge{from=M28 text="eigendecomposition of symmetric matrices and the condition number"}
-:::
+Why it matters: the softmax's Jacobian is $\operatorname{diag}(p) - pp^\top$. When one weight approaches 1, every entry of that matrix approaches 0, and so does the gradient reaching the scores.
 
-## 2. Momentum is a low-pass filter
-
-Heavy-ball momentum keeps a velocity:
-
-$$
-v_{t+1} = \beta v_t + \nabla f(x_t), \qquad x_{t+1} = x_t - \eta v_{t+1}.
-$$
-
-Unrolled, $v_{t+1} = \sum_{k \ge 0} \beta^k \nabla f(x_{t-k})$: an exponentially weighted sum of past gradients. Feed it a signal $g_t = \cos(\omega t)$ and the steady-state output is a cosine of the same frequency with amplitude
-
-$$
-|H(\omega)| = \frac{1}{|1 - \beta e^{-i\omega}|}.
-$$
-
-At $\omega = 0$ (a gradient that keeps its sign) the gain is $1/(1 - \beta)$; at $\omega = \pi$ (a gradient that flips every step, the zig-zag across a valley) it is $1/(1 + \beta)$. Momentum amplifies the slow, consistent part of the gradient and suppresses the oscillating part.
-
-::::derivation{id=d2 title="Gains and the optimal heavy ball"}
+::::derivation{id=d2 title="A saturated softmax"}
 :::step
-With $\beta = 0.9$, a constant gradient is amplified by [[10]] and an alternating one by $1/1.9 \approx$ [[0.526|tol=0.001]].
+For two scores $(0, 8)$, the softmax puts weight $e^8/(1 + e^8) \approx$ [[0.99966|tol=0.00002]] on the second.
 :::
 :::step
-On a quadratic, the best heavy-ball parameters are $\eta = 4/(\sqrt{L} + \sqrt{\mu})^2$ and $\beta = \left(\frac{\sqrt\kappa - 1}{\sqrt\kappa + 1}\right)^2$, and the error then shrinks by about $\frac{\sqrt\kappa - 1}{\sqrt\kappa + 1}$ per step. For $\kappa = 100$ that rate is $9/11 \approx$ [[0.8182|tol=0.0005]].
-:::
-:::step
-Reducing the error by $10^{-6}$ then takes about $\ln(10^6)/\ln(11/9) \approx$ [[69|tol=1]] steps instead of 691: the step count grows like $\sqrt\kappa$ instead of $\kappa$.
+The derivative of that weight with respect to its own score is $p(1 - p) \approx$ [[0.000335|tol=0.00001]], against 0.25 when the two scores are equal.
 :::
 ::::
 
-The **exponential moving average** (EMA) $m_t = \beta m_{t-1} + (1 - \beta) g_t$ is the same filter scaled by $1 - \beta$, so its gain at frequency zero is exactly 1. Adam uses EMAs; heavy ball uses the unscaled sum. The two are equivalent up to a rescaling of $\eta$.
+## 3. The causal mask
 
-## 3. Adaptive steps: RMSProp and Adam
+A language model predicts token $t + 1$ from tokens $1, \dots, t$. Set the scores of every key after the query to $-\infty$ before the softmax: those weights become exactly 0, and position $i$ sees only positions $1, \dots, i$. Because no position sees its own future, one forward pass over a sequence of $n$ tokens yields $n$ valid next-token predictions, all trained at once.
 
-Momentum fixes the zig-zag but still uses one learning rate for every coordinate. **RMSProp** divides each coordinate's step by a running root mean square of its gradients, so steep coordinates take proportionally smaller steps. **Adam** combines this with momentum:
+## 4. Multiple heads
 
-$$
-m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t, \qquad v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2,
-$$
+One softmax can only form one weighted average per position. **Multi-head attention** splits the $d$ dimensions into $h$ heads of $d/h$ dimensions, runs attention independently in each, concatenates the $h$ outputs and mixes them with an output projection $W_O$. Each head can attend to a different position for a different reason (one to the previous token, another to the subject of the sentence) at the same cost as a single head of width $d$.
 
-$$
-\hat m_t = \frac{m_t}{1 - \beta_1^t}, \qquad \hat v_t = \frac{v_t}{1 - \beta_2^t}, \qquad \theta_t = \theta_{t-1} - \eta \frac{\hat m_t}{\sqrt{\hat v_t} + \epsilon}.
-$$
-
-Typical values are $\beta_1 = 0.9$, $\beta_2 = 0.999$, $\epsilon = 10^{-8}$.
-
-**Bias correction.** Both averages start at zero. If the gradients were constant, $g_t = g$, then $m_t = (1 - \beta_1^t) g$ exactly: the average is biased toward zero by the factor $1 - \beta_1^t$, which the division removes. The same holds for $v_t$ with $\beta_2$.
-
-::::derivation{id=d3 title="The first Adam steps"}
+::::derivation{id=d3 title="Counting"}
 :::step
-With $\beta_1 = 0.9$, the first average is $m_1 = 0.1\, g_1$. After correction, $\hat m_1 =$ [[1]] times $g_1$.
+With a causal mask over $n = 6$ positions, the number of query-key pairs that are not masked is $n(n + 1)/2 =$ [[21]].
 :::
 :::step
-With correction, $\hat v_1 = g_1^2$, so the first step of each coordinate has magnitude $\eta |g_1| / |g_1| = \eta$, whatever the size of the gradient. Multiplying every gradient by $1000$ changes Adam's trajectory by a factor of [[1]] (ignoring $\epsilon$).
-:::
-:::step
-Without correction, the first step is $\eta \cdot 0.1 g_1 / \sqrt{0.001 g_1^2}$, which is $0.1/\sqrt{0.001} \approx$ [[3.162|tol=0.002]] times too large.
+A model of width $d = 512$ with $h = 8$ heads gives each head [[64]] dimensions.
 :::
 ::::
 
-Scale invariance is Adam's main appeal: one learning rate works across layers whose gradients differ by orders of magnitude. Its cost is memory, two extra numbers per parameter, which matters for large models.
+## 5. Positions
 
-## 4. Weight decay: L2 and decoupled
+Attention treats its input as a set. Permute the rows of $X$ and, without a mask, the rows of the output are permuted the same way: attention is **permutation-equivariant**. Word order has to be supplied.
 
-**L2 regularization** adds $\tfrac{\lambda}{2}\lVert\theta\rVert^2$ to the loss, so the gradient gains $\lambda\theta$. For plain SGD the update becomes $\theta \leftarrow (1 - \eta\lambda)\theta - \eta g$: the weights shrink by a constant factor per step. This is **weight decay**, and for SGD the two names describe the same thing.
+**Sinusoidal encodings** add to the input a vector $\text{PE}_{p}$ with $\text{PE}_{p, 2i} = \sin(p\,\omega_i)$ and $\text{PE}_{p, 2i+1} = \cos(p\,\omega_i)$, with frequencies $\omega_i = 10000^{-2i/d}$. Learned position embeddings (used in the capstone) are a table of trainable vectors instead.
 
-For Adam they differ. Adding $\lambda\theta$ to the gradient sends it through the division by $\sqrt{\hat v}$, so a weight whose data gradient is large decays slowly and one whose gradient is tiny decays fast. **AdamW** (Loshchilov and Hutter) decouples the decay from the adaptive step:
-
+**Rotary embeddings** (RoPE) rotate each pair of query and key coordinates $(2i, 2i + 1)$ by the angle $p\,\theta_i$. Rotations compose: $R(m\theta)^\top R(n\theta) = R((n - m)\theta)$, so
 $$
-\theta_t = \theta_{t-1} - \eta \left( \frac{\hat m_t}{\sqrt{\hat v_t} + \epsilon} + \lambda \theta_{t-1} \right),
+\big(R(m\theta)\,q\big)^\top \big(R(n\theta)\,k\big) = q^\top R((n - m)\theta)\, k,
 $$
+and the score depends only on the **relative** position $n - m$.
 
-with $\hat m, \hat v$ computed from the data gradient only. Every weight now shrinks by the factor $1 - \eta\lambda$ per step.
-
-::::derivation{id=d4 title="Decay rates"}
+::::derivation{id=d4 title="Positions"}
 :::step
-SGD with $\eta = 0.1$ and L2 coefficient $\lambda = 0.01$ multiplies the weights by [[0.999]] per step before the gradient step.
+At position 0, the sinusoidal encoding's even coordinates are all [[0]] and its odd coordinates are all [[1]].
 :::
 :::step
-AdamW with $\eta = 0.01$ and $\lambda = 0.1$ over 1000 steps multiplies a weight with no consistent data gradient by about $0.999^{1000} \approx$ [[0.368|tol=0.002]].
+With $\theta = 0.1$, a query at position 3 and a key at position 7 interact through a rotation by [[0.4]] radians.
 :::
 ::::
 
-## 5. Schedules
+## 6. The backward pass of attention
 
-**Why decay.** With noisy gradients, SGD does not converge to the minimum but to a cloud around it. For $f(x) = \tfrac12 \lambda x^2$ with gradient noise of variance $\sigma^2$, the update $x \leftarrow (1 - \eta\lambda) x - \eta \xi$ has stationary variance
-
+With $c = 1/\sqrt{d_k}$, $O = PV$, $P = \operatorname{softmax}(S)$ and $S = cQK^\top$, and $\partial L/\partial O = \text{d}O$:
 $$
-\operatorname{Var}(x) = \frac{\eta^2\sigma^2}{1 - (1 - \eta\lambda)^2} = \frac{\eta \sigma^2}{\lambda(2 - \eta\lambda)},
+\begin{aligned}
+\text{d}V &= P^\top \text{d}O, \qquad \text{d}P = \text{d}O\, V^\top, \\
+\text{d}S &= P \odot \big(\text{d}P - \operatorname{rowsum}(\text{d}P \odot P)\big), \\
+\text{d}Q &= c\,\text{d}S\, K, \qquad \text{d}K = c\,\text{d}S^\top Q.
+\end{aligned}
 $$
+The middle formula is L01's softmax Jacobian applied row by row.
 
-roughly proportional to $\eta$. A large rate makes fast progress but leaves a wide cloud; lowering it later shrinks the cloud.
-
-**Why warm up.** At initialization the curvature can be much larger than later in training, and Adam's $\hat v$ rests on a handful of gradients. A linear ramp from zero to the peak rate over the first few hundred or thousand steps avoids early divergence.
-
-**Warmup plus cosine.** With $W$ warmup steps, $T$ total steps, peak $\eta_{\max}$ and floor $\eta_{\min}$:
-
-$$
-\eta_t = \begin{cases} \eta_{\max}\, t/W & t < W, \\ \eta_{\min} + \tfrac12(\eta_{\max} - \eta_{\min})\left(1 + \cos\!\left(\pi \frac{t - W}{T - W}\right)\right) & W \le t \le T. \end{cases}
-$$
-
-::::derivation{id=d5 title="Noise floor and the cosine schedule"}
+::::derivation{id=d5 title="One query, two positions"}
 :::step
-With $\lambda = 1$, $\sigma^2 = 1$ and $\eta = 0.1$, the stationary variance is $0.1/1.9 \approx$ [[0.0526|tol=0.0005]]. Halving $\eta$ to $0.05$ gives about [[0.0256|tol=0.0005]].
+A query attends to two positions with weights $P = (0.25, 0.75)$ and scalar values $v = (2, 6)$. Its output is [[5]].
 :::
 :::step
-With $\eta_{\max} = 0.003$, $\eta_{\min} = 0$, $W = 100$ and $T = 1100$, the rate at step 600, halfway through the decay, is [[0.0015]].
+With $\text{d}O = 1$, the gradient reaching the second value is [[0.75]].
+:::
+:::step
+$\text{d}P = (2, 6)$, and $\text{d}S = P \odot (\text{d}P - 5)$, so the gradient of the first score is [[-0.75]]: raising it would move weight toward the smaller value.
 :::
 ::::
 
-:::edge{to=L19 text="Warmup and the peak learning rate return when a large run spikes and has to be rewound."}
+:::edge{from=L03 text="backpropagation through matrix products"}
 :::
 
-:::edge{to=L15 text="Scaling laws assume a tuned rate and schedule per model size."}
-:::
+## 7. The decoder block
 
-## 6. Initialization from variance preservation
-
-L07 showed activations exploding or vanishing through depth. Make it exact. A layer computes $z_j = \sum_{i=1}^{n_{\text{in}}} W_{ij} x_i$ with independent zero-mean weights of variance $s^2$, independent of the inputs. Then
-
+A transformer decoder stacks $L$ identical **pre-norm residual blocks** (L06), each with two branches:
 $$
-\mathbb{E}[z_j^2] = n_{\text{in}}\, s^2\, \mathbb{E}[x_i^2].
+x \leftarrow x + \operatorname{MHA}(\operatorname{LN}_1(x)), \qquad x \leftarrow x + \operatorname{MLP}(\operatorname{LN}_2(x)),
 $$
+where the MLP maps $d \to 4d \to d$ with a GELU. Attention moves information between positions; the MLP processes each position on its own. Token and position embeddings feed the first block; a final layer norm and a linear layer to vocabulary logits follow the last.
 
-To keep the second moment constant through a linear layer, choose $s^2 = 1/n_{\text{in}}$. The same choice suits tanh, which is close to linear near zero; because tanh is slightly contractive, activations still shrink slowly with depth (exercise 7 measures about a factor of five over 30 layers). The backward pass multiplies gradients by $W^\top$, which asks for $s^2 = 1/n_{\text{out}}$; **Xavier (Glorot) initialization** compromises with $s^2 = 2/(n_{\text{in}} + n_{\text{out}})$.
+**Parameters.** Attention has four $d \times d$ matrices ($4d^2$), the MLP two $d \times 4d$ matrices ($8d^2$): about $12d^2$ per block. **FLOPs.** About 2 per parameter per token in the forward pass, plus the attention itself: scores and weighted values cost $2nd$ each per layer, per token, for context length $n$.
 
-ReLU zeroes the negative half of a symmetric input, so $\mathbb{E}[\operatorname{relu}(z)^2] = \tfrac12 \mathbb{E}[z^2]$. Keeping the second moment then needs $n_{\text{in}} s^2 \cdot \tfrac12 = 1$: **He initialization**, $s^2 = 2/n_{\text{in}}$.
-
-::::derivation{id=d6 title="Initialization scales"}
+::::derivation{id=d6 title="Sizes"}
 :::step
-For a ReLU layer with $n_{\text{in}} = 256$, He initialization uses standard deviation $\sqrt{2/256} =$ [[0.0884|tol=0.0002]].
+At $d = 768$ (GPT-2 small), one block has about $12 \cdot 768^2 =$ [[7077888]] parameters.
 :::
 :::step
-Using $s^2 = 1/n_{\text{in}}$ with ReLU instead multiplies the second moment by $\tfrac12$ per layer. After 40 layers it has shrunk by $2^{-40} \approx$ [[9.09e-13|tol=1e-14]].
+The attention term $4nd$ per layer equals the weight term $24d^2$ when the context length is $n = 6d$: for $d = 768$, [[4608]] tokens.
 :::
 ::::
 
-:::widget{name=ActivationStats depth=30 init=xavier act=relu}
+:::edge{from=L06 text="pre-norm residual blocks"}
 :::
 
-In the widget, compare Xavier with He for ReLU and for tanh at depth 30; watch both the activations and the gradients.
+## 8. Attention on the roofline
 
-:::edge{to=L10 text="Initialization sets the scale only at the start; normalization keeps it during training."}
+The score matrix has $n^2$ entries per head. Computing it, applying the mask and softmax, and multiplying by $V$ in separate steps writes and reads that matrix through device memory several times, and the softmax in between is memory-bound. For long contexts this, not the FLOPs, is what makes naive attention slow, which is the problem FlashAttention solves in L08.
+
+:::edge{from=L07 text="arithmetic intensity and the roofline"}
 :::
 
-:::edge{from=L07 text="the MLP, its backward pass and the minibatch SGD loop"}
+:::edge{to=L08 text="Fuse scores, mask, softmax and weighted sum into one kernel: FlashAttention."}
 :::
 
-:::edge{from=L08 text="parameters and gradients exposed by an autograd engine"}
+:::edge{to=L18 text="At inference, cache past keys and values instead of recomputing them."}
 :::
-
-## Summary
-
-| Method | Update | Fixes |
-| --- | --- | --- |
-| Gradient descent | $\theta \leftarrow \theta - \eta g$ | step limited by $2/L$; $\sim\kappa$ steps |
-| Heavy ball | $v \leftarrow \beta v + g$, $\theta \leftarrow \theta - \eta v$ | zig-zag; $\sim\sqrt\kappa$ steps |
-| Adam | $\theta \leftarrow \theta - \eta \hat m / (\sqrt{\hat v} + \epsilon)$ | per-coordinate scale |
-| AdamW | adds $-\eta\lambda\theta$ outside the adaptive step | weight decay independent of gradient scale |
-| Warmup and cosine | $\eta_t$ ramps up, then decays | early instability, late noise |
-| Xavier, He | $s^2 = 2/(n_{\text{in}} + n_{\text{out}})$, $2/n_{\text{in}}$ | activation scale through depth |

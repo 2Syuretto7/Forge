@@ -1,15 +1,15 @@
-# Recall bridge: capacity, learning rates and the loss
+# Recall bridge: schedules, sizes, data and memory
 
-From L06: test error depends on capacity and on how much data the model sees, and the bias-variance picture changes once models are large enough to interpolate. From L09: the learning rate and its schedule decide how far a training run gets; a rate tuned for one model is not right for another. From L14: a language model's validation loss in nats per token is the number everyone reports. This lesson asks how that number falls as you spend more parameters, more tokens and more compute, and how to spend a budget well. Reviews due from L06, L09 and L14 appear above.
+From L05: the learning rate and its warmup decide whether training is stable at all. From L11: a scaling fit sizes the model and the token budget. From L12: data flows through a pipeline that must resume exactly. From L14: memory and communication shape how the run is laid out. This lesson is about what happens after you press start: a run of days or weeks, on hardware that fails, fed by data that is sometimes broken, and how to keep it on track. Reviews due from L05, L11, L12 and L14 appear above.
 
-::::derivation{id=d0 title="Warm-up: lines in log-log coordinates"}
+::::derivation{id=d0 title="Warm-up"}
 :::step
-For $y = 5 x^{-0.5}$, at $x = 100$ the value is $y =$ [[0.5]].
+Gradient descent on a quadratic with curvature $\lambda = 50$ is stable for learning rates below $2/\lambda =$ [[0.04]].
 :::
 :::step
-Taking logarithms, $\log y = \log 5 - 0.5 \log x$: a straight line in $(\log x, \log y)$ with slope [[-0.5]].
+A run of 5000 steps that checkpoints every 250 steps writes [[20]] checkpoints.
 :::
 :::step
-Multiplying $x$ by 10 multiplies $y$ by $10^{-0.5} \approx$ [[0.3162|tol=0.0005]], whatever $x$ was.
+If it fails at a random time, it loses on average half an interval: [[125]] steps.
 :::
 ::::

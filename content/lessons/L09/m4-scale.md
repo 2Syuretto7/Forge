@@ -1,23 +1,22 @@
-# Scale and measure: optimizers on the L07 network
+# Scale and measure: parameters, FLOPs and attention memory
 
-The quadratic told us what to expect; now test it on a real network. The exercises in this movement use the L07 digit task and its 64-64-32-10 ReLU network, with the forward and backward pass provided.
-
-:::exercise{ref=e08}
-:::
+A transformer's cost has two parts that grow differently: the weights grow with $d^2$, attention grows with the context length. These exercises put numbers on both.
 
 :::exercise{ref=e09}
 :::
 
-:::exercise{ref=e10}
-:::
-
-::::predict{id=p4 kind=sketch answer="1,0.95,0.85,0.52,0.19,0.06,0.03,0.99" tol=0.2 xlabel="log10 learning rate: -3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5" ylabel="final training loss (scaled)"}
-Sketch the final training loss after 300 steps of SGD as a function of the learning rate, from $10^{-3}$ to $10^{0.5}$ in half-decade steps.
+::::predict{id=p4 kind=numeric answer=805 tol=20}
+A model with 12 heads processes a batch of 8 sequences of 2048 tokens. How many megabytes ($10^6$ bytes) does one layer's matrix of attention weights take in fp16?
 
 :::reveal
-A slope down to a cliff. At $10^{-3}$ the loss barely moves from its starting value near $\ln 10 \approx 2.3$; it falls steadily as the rate grows and is lowest at a rate of 1 (about 0.06). At $10^{0.5} \approx 3.2$ it is back at 2.3: the first large steps push the second layer's ReLUs into the region where they never fire, and the network can only output the class frequencies. The best rate sits just below the failure point, which is why practical sweeps start high and back off.
+$8 \cdot 12 \cdot 2048^2 \cdot 2 \approx 805$ MB, for one layer, and the backward pass needs it again. A 12-layer model would hold almost 10 GB of attention weights alone if it kept them all, more than its 124 million weights by a factor of about 40. Quadratic memory in the context length is why long-context attention is computed in tiles that are never stored whole.
 :::
 ::::
 
-:::exercise{ref=e11}
+:::exercise{ref=e10}
 :::
+
+:::widget{name=Roofline hardware=t4 precision=fp16}
+:::
+
+On the roofline, the attention scores for a 2048-token context with 64-dimensional heads sit at about 60 FLOP per byte: below the T4's ridge, so memory-bound even before the softmax.

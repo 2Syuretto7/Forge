@@ -1,18 +1,20 @@
 import numpy as np
 
 
-def matmul_backward(dY, X, W):
-    """Y = X W. Return (dX, dW)."""
-    return dY @ W.T, X.T @ dY
+def law(N, D, E, A, B, alpha, beta):
+    """The parametric loss L(N, D) = E + A N^-alpha + B D^-beta."""
+    return E + A * N ** -alpha + B * D ** -beta
 
 
-def step_flops(batch_tokens, layer_shapes):
-    """FLOPs of one training step through linear layers of the given (n_in, n_out) shapes:
-    forward 2 * tokens * n_in * n_out per layer, backward twice that."""
-    fwd = sum(2 * batch_tokens * a * b for a, b in layer_shapes)
-    return 3 * fwd
+def optimal_allocation(C, E, A, B, alpha, beta):
+    """The compute-optimal (N, D, loss) for a budget of C = 6 N D FLOPs."""
+    G = (alpha * A / (beta * B)) ** (1 / (alpha + beta))
+    N = G * (C / 6) ** (beta / (alpha + beta))
+    D = C / (6 * N)
+    return N, D, law(N, D, E, A, B, alpha, beta)
 
 
-def flops_per_token_per_param():
-    """The rule of thumb that follows: training costs about this many FLOPs per token per parameter."""
-    return 6
+def dloss_dlogN(N, C, E, A, B, alpha, beta):
+    """The derivative of L(N, C / 6N) with respect to log N at a fixed budget C."""
+    D = C / (6 * N)
+    return -alpha * A * N ** -alpha + beta * B * D ** -beta

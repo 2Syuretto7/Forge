@@ -1,15 +1,15 @@
-# Recall bridge: the operations on the tape
+# Recall bridge: capacity, learning rates and the loss
 
-From L08: an autograd engine records every tensor operation and replays a backward rule for each. On a GPU, each of those operations becomes at least one **kernel**, a function that thousands of GPU threads run in parallel. This lesson is about what such a kernel costs. Reviews due from L08 appear above.
+From L02: test error depends on capacity and on how much data the model sees, and the bias-variance picture changes once models are large enough to interpolate. From L05: the learning rate and its schedule decide how far a training run gets; a rate tuned for one model is not right for another. From L10: a language model's validation loss in nats per token is the number everyone reports. This lesson asks how that number falls as you spend more parameters, more tokens and more compute, and how to spend a budget well. Reviews due from L02, L05 and L10 appear above.
 
-::::derivation{id=d0 title="Warm-up"}
+::::derivation{id=d0 title="Warm-up: lines in log-log coordinates"}
 :::step
-A matrix product of a $64 \times 512$ matrix with a $512 \times 512$ matrix costs $2 \cdot 64 \cdot 512 \cdot 512 =$ [[33554432]] FLOPs (each multiply-add counts as two).
+For $y = 5 x^{-0.5}$, at $x = 100$ the value is $y =$ [[0.5]].
 :::
 :::step
-Its backward pass computes two matrix products of the same size, so it costs [[2]] times the forward pass.
+Taking logarithms, $\log y = \log 5 - 0.5 \log x$: a straight line in $(\log x, \log y)$ with slope [[-0.5]].
 :::
 :::step
-Adding two vectors of $10^6$ fp32 numbers reads two vectors and writes one, moving $3 \cdot 4 \cdot 10^6 =$ [[12000000]] bytes for $10^6$ FLOPs.
+Multiplying $x$ by 10 multiplies $y$ by $10^{-0.5} \approx$ [[0.3162|tol=0.0005]], whatever $x$ was.
 :::
 ::::

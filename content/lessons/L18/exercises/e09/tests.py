@@ -1,30 +1,28 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(5)
-Ws = [rng.normal(size=(4, 4)) * 0.6 for _ in range(16)]
-x = rng.normal(size=(3, 4))
-dout = rng.normal(size=(3, 4))
+p = np.array([0.5, 0.3, 0.15, 0.05])
+q = np.array([0.2, 0.5, 0.2, 0.1])
 
 
-def test_grad_checkpointed():
-    grads, _ = sub.checkpointed_grads(x, Ws, dout, 4)
-    for layer, (i, j) in [(0, (1, 2)), (7, (0, 0)), (15, (3, 1))]:
-        P = [w.copy() for w in Ws]
-        P[layer][i, j] += 1e-6
-        up = np.sum(sub.forward(x, P)[-1] * dout)
-        P[layer][i, j] -= 2e-6
-        down = np.sum(sub.forward(x, P)[-1] * dout)
-        assert abs((up - down) / 2e-6 - grads[layer][i, j]) < 1e-6
+def test_distribution_preserved():
+    assert np.allclose(sub.emitted_distribution(p, q), p)
+    assert np.allclose(sub.emitted_distribution(p, p), p)
+    assert abs(sub.acceptance_rate(p, q) - 0.7) < 1e-12
 
 
-def test_same_as_plain_backward():
-    plain = sub.backward(sub.forward(x, Ws), Ws, dout)
-    for k in [1, 2, 4, 8, 16]:
-        grads, _ = sub.checkpointed_grads(x, Ws, dout, k)
-        assert all(np.allclose(a, b) for a, b in zip(plain, grads))
+def test_grad_acceptance():
+    z = np.log(q) + 0.1
+    g = sub.acceptance_grad(p, z)
+    num = []
+    for i in range(4):
+        e = np.zeros(4)
+        e[i] = 1e-6
+        f = lambda zz: sub.acceptance_rate(p, np.exp(zz) / np.exp(zz).sum())
+        num.append((f(z + e) - f(z - e)) / 2e-6)
+    assert np.allclose(g, num, atol=1e-8)
 
 
-def test_square_root_rule():
-    peaks = {k: sub.checkpointed_grads(x, Ws, dout, k)[1] for k in [1, 2, 4, 8, 16]}
-    assert peaks[1] == 17 and peaks[4] == min(peaks.values()) and peaks[4] < peaks[16]
+def test_expected_tokens():
+    assert sub.expected_tokens(0.0, 4) == 1.0 and sub.expected_tokens(1.0, 4) == 5
+    assert abs(sub.expected_tokens(0.8, 4) - (1 - 0.8 ** 5) / 0.2) < 1e-12

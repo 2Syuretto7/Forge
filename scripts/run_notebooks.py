@@ -2,7 +2,7 @@
 
 Fails if a notebook raises or if its autograder reports any FAIL line.
 Tests that need full-scale (GPU) results raise unittest.SkipTest in SMALL mode.
-Usage: python3 scripts/run_notebooks.py [L08 L11 ...]
+Usage: python3 scripts/run_notebooks.py [L04 L07 ...]
 """
 import os
 import re

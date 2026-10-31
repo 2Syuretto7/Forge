@@ -1,31 +1,19 @@
 import numpy as np
-import math
 
 
-C = math.sqrt(2.0 / math.pi)
+def law(N, D, E, A, B, alpha, beta):
+    """The parametric loss L(N, D) = E + A N^-alpha + B D^-beta."""
+    return E + A * N ** -alpha + B * D ** -beta
 
 
-def gelu(x):
-    """The tanh approximation used by GPT-2: 0.5 x (1 + tanh(c (x + 0.044715 x^3)))."""
-    return 0.5 * x * (1.0 + np.tanh(C * (x + 0.044715 * x ** 3)))
-
-
-def gelu_grad(x):
-    """d gelu / dx."""
+def fit_for_exponents(alpha, beta, N, D, L):
+    """With the exponents fixed, L = E + A N^-alpha + B D^-beta is linear in (E, A, B). Solve for
+    them by least squares on the relative errors (each run's equation divided by its L). Return
+    (E, A, B, sum of squared relative errors)."""
     raise NotImplementedError
 
 
-def bias_gelu_forward(x, b):
-    """y = gelu(x + b) in one pass; return (y, cache)."""
-    raise NotImplementedError
-
-
-def bias_gelu_backward(dy, cache):
-    """Return (dx, db)."""
-    raise NotImplementedError
-
-
-def traffic(n, bytes_per=2, fused=True):
-    """Bytes moved for x + b followed by gelu on n elements (the bias vector is negligible).
-    Unfused: the add reads x and writes z, the GELU reads z and writes y. Fused: read x, write y."""
+def fit_parametric(N, D, L):
+    """Search alpha and beta over 0.05, 0.07, ..., 0.95, then over a grid ten times finer
+    (step 0.002) within 0.02 of the best pair. Return a dict with E, A, B, alpha, beta."""
     raise NotImplementedError

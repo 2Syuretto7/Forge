@@ -1,93 +1,24 @@
 import numpy as np
-import math
 
 
-def softmax_rows(S):
-    """Softmax of every row, stable for large entries; -inf entries get weight 0."""
-    m = S.max(axis=-1, keepdims=True)
-    E = np.exp(S - m)
-    return E / E.sum(axis=-1, keepdims=True)
+def mse_grad(w, X, y):
+    """L = mean((X w - y)^2) / 2 and its gradient."""
+    r = X @ w - y
+    return 0.5 * float(np.mean(r * r)), X.T @ r / len(y)
 
 
-def softmax_backward(P, dP):
-    """Given P = softmax_rows(S) and dL/dP, return dL/dS."""
-    return P * (dP - (dP * P).sum(axis=-1, keepdims=True))
-
-
-def causal_mask(n):
-    """Boolean (n, n) array, True where query i may not see key j (j > i)."""
-    return np.triu(np.ones((n, n), dtype=bool), k=1)
-
-
-def attention(Q, K, V, causal=True, scale=True):
-    """Single-head attention for Q, K of shape (n, d) and V of shape (n, dv). Return (O, P)."""
-    S = Q @ K.T
-    if scale:
-        S = S / np.sqrt(Q.shape[-1])
-    if causal:
-        S = np.where(causal_mask(Q.shape[0]), -np.inf, S)
-    P = softmax_rows(S)
-    return P @ V, P
-
-
-def split_heads(X, h):
-    """(n, d) -> (h, n, d // h): head i gets columns i * d/h to (i + 1) * d/h."""
-    n, d = X.shape
-    return X.reshape(n, h, d // h).transpose(1, 0, 2)
-
-
-def merge_heads(Y):
-    """(h, n, dh) -> (n, h * dh), the inverse of split_heads."""
-    h, n, dh = Y.shape
-    return Y.transpose(1, 0, 2).reshape(n, h * dh)
-
-
-def mha_forward(X, Wq, Wk, Wv, Wo, h, causal=True):
-    """Multi-head self-attention: project, split into h heads, attend per head, merge, project.
-    Return (Y, cache)."""
-    Q, K, V = split_heads(X @ Wq, h), split_heads(X @ Wk, h), split_heads(X @ Wv, h)
-    outs, Ps = [], []
-    for i in range(h):
-        O, P = attention(Q[i], K[i], V[i], causal=causal)
-        outs.append(O)
-        Ps.append(P)
-    M = merge_heads(np.stack(outs))
-    return M @ Wo, (X, Q, K, V, np.stack(Ps), M)
-
-
-C = math.sqrt(2.0 / math.pi)
-
-
-def gelu(x):
-    return 0.5 * x * (1.0 + np.tanh(C * (x + 0.044715 * x ** 3)))
-
-
-def layernorm(x, g, b, eps=1e-5):
-    mu = x.mean(axis=-1, keepdims=True)
-    var = x.var(axis=-1, keepdims=True)
-    return g * (x - mu) / np.sqrt(var + eps) + b
-
-
-def init_block(d, seed=0):
-    rng = np.random.default_rng(seed)
-    w = lambda a, b: rng.normal(size=(a, b)) * 0.02
-    return {
-        "ln1_g": np.ones(d), "ln1_b": np.zeros(d),
-        "Wq": w(d, d), "Wk": w(d, d), "Wv": w(d, d), "Wo": w(d, d), "bo": np.zeros(d),
-        "ln2_g": np.ones(d), "ln2_b": np.zeros(d),
-        "W1": w(d, 4 * d), "b1": np.zeros(4 * d), "W2": w(4 * d, d), "b2": np.zeros(d),
-    }
-
-
-def block_forward(X, p, h):
-    """Pre-norm decoder block: X + MHA(LN1(X)), then + MLP(LN2(.)) with a 4d GELU hidden layer."""
-    a, _ = mha_forward(layernorm(X, p["ln1_g"], p["ln1_b"]), p["Wq"], p["Wk"], p["Wv"], p["Wo"], h)
-    X = X + a + p["bo"]
-    m = gelu(layernorm(X, p["ln2_g"], p["ln2_b"]) @ p["W1"] + p["b1"]) @ p["W2"] + p["b2"]
-    return X + m
-
-
-def block_param_count(d):
-    """Parameters of one block as created by init_block: four d x d attention matrices, the output
-    bias, the two MLP matrices with their biases, and two layer norms."""
-    return 12 * d * d + 10 * d
+def train(X, y, lr, steps, master):
+    """Gradient descent where the forward and backward pass use float16 copies of w. With
+    master=True, a float32 master copy receives the updates; with master=False, w itself lives in
+    float16 and every update is rounded to float16. Return the final float32 loss."""
+    w32 = np.zeros(X.shape[1], dtype=np.float32)
+    w16 = w32.astype(np.float16)
+    X16, y16 = X.astype(np.float16), y.astype(np.float16)
+    for _ in range(steps):
+        _, g = mse_grad(w16.astype(np.float32), X16.astype(np.float32), y16.astype(np.float32))
+        if master:
+            w32 = (w32 - np.float32(lr) * g.astype(np.float32)).astype(np.float32)
+            w16 = w32.astype(np.float16)
+        else:
+            w16 = (w16 - (np.float32(lr) * g).astype(np.float16)).astype(np.float16)
+    return mse_grad(w16.astype(np.float64), X, y)[0]

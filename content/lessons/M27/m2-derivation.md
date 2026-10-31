@@ -83,7 +83,7 @@ If $q(x) = 0$ for some $x$ with $p(x) > 0$, then $\mathrm{KL}(p\|q)$ is infinite
 
 The asymmetry has a sharp practical consequence when you fit a simple $q$ to a complicated $p$. Minimizing $\mathrm{KL}(p\|q)$ (the **forward** KL) punishes $q$ for missing any region where $p$ has mass, so $q$ spreads out to **cover** all of $p$. Minimizing $\mathrm{KL}(q\|p)$ (the **reverse** KL) punishes $q$ for putting mass where $p$ has little, so $q$ **locks onto one mode**. You will see both in Movement 5.
 
-:::edge{to=L21 text="RLHF penalizes KL(policy || reference): a reverse KL that keeps the policy inside what the reference model considers plausible."}
+:::edge{to=L17 text="RLHF penalizes KL(policy || reference): a reverse KL that keeps the policy inside what the reference model considers plausible."}
 :::
 
 **Gaussians.** For two univariate Gaussians the KL has a closed form, derived by taking the expectation of $\log p - \log q$ under $p$:
@@ -155,10 +155,10 @@ This is why language modeling works at all. The entropy of the next character wi
 
 A per-token cross-entropy $L$ in nats converts to **bits per token** $L / \ln 2$ and to **perplexity** $e^{L}$, the size of a uniform choice with the same average surprise. All three are monotone in each other: lower is better for all of them, and they rank models identically.
 
-:::edge{to=L14 text="Your GPT's validation loss, bits per character and perplexity are this section's three units."}
+:::edge{to=L10 text="Your GPT's validation loss, bits per character and perplexity are this section's three units."}
 :::
 
-:::edge{to=L06 text="Held-out cross-entropy is the generalization measure for probabilistic models."}
+:::edge{to=L02 text="Held-out cross-entropy is the generalization measure for probabilistic models."}
 :::
 
 :::edge{to=M30 text="maximum-entropy distributions from Lagrange duality."}

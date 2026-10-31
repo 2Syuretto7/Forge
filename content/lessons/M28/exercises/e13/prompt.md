@@ -12,4 +12,4 @@ The tests run at 1.9/L and 2.1/L, watch the steep coordinate shrink in one and e
 
 1. With $A$ diagonal, coordinate $i$ evolves as $x_i \leftarrow (1 - \eta\lambda_i)x_i$.
 2. Sign changes: `np.sign(path[1:, i]) != np.sign(path[:-1, i])`.
-3. In a network, the steepest direction is set by the largest Hessian eigenvalue, which is why warm-up and gradient clipping exist (L09).
+3. In a network, the steepest direction is set by the largest Hessian eigenvalue, which is why warm-up and gradient clipping exist (L05).

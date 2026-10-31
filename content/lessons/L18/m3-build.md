@@ -1,6 +1,6 @@
-# Build: collectives, ZeRO and model parallelism
+# Build: caches, batches and smaller weights
 
-## Accounting and collectives
+## The cost model
 
 :::exercise{ref=e01}
 :::
@@ -8,21 +8,23 @@
 :::exercise{ref=e02}
 :::
 
+## The KV cache
+
 :::exercise{ref=e03}
 :::
-
-## Data parallelism and ZeRO
 
 :::exercise{ref=e04}
 :::
 
+## Scheduling and memory
+
 :::exercise{ref=e05}
 :::
 
-## Tensor parallelism
-
 :::exercise{ref=e06}
 :::
+
+## Quantization
 
 :::exercise{ref=e07}
 :::

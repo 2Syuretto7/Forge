@@ -1,13 +1,12 @@
-# Break it: averaging gradients wrongly
+# Break it: outliers
 
-Each rank holds the **sum** of its examples' gradients and how many examples it had (the last batch of an epoch is often smaller).
+Large language models develop a few input features with huge activations (Dettmers et al., 2022). With one scale for the whole matrix, those features' weights set the scale and every other weight rounds to almost nothing.
 
-1. `correct_average(grad_sums, counts)`: the full-batch mean gradient.
-2. `mean_of_means(grad_sums, counts)`: the common bug of averaging the ranks' means.
-3. `sum_of_means(grad_sums, counts)`: the bug of all-reducing with a sum and not dividing by the number of ranks.
+1. `per_tensor_int8(W)`: one scale for the matrix; return the dequantized weights.
+2. `mixed_precision_int8(W, X, k)`: keep the `k` input features (columns of $W$) with the largest mean absolute activation in $X$ in full precision, and quantize the rest per output row (the LLM.int8 recipe).
 
 ## Hints
 
-1. The correct mean divides the total gradient by the total count.
-2. The mean of means is right only when every rank has the same count; otherwise examples on small ranks weigh more.
-3. Summing without dividing multiplies the gradient, and so the learning rate, by the number of ranks: a run that worked on 8 GPUs diverges on 64.
+1. Rank features by `np.abs(X).mean(axis=0)`.
+2. Quantize the remaining columns with per-row scales as in exercise 7.
+3. Keeping a handful of columns in 16 bits costs little memory and removes most of the error.

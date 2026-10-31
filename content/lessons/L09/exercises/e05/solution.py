@@ -1,31 +1,77 @@
 import numpy as np
 
 
-def rosenbrock_fg(p, a=1.0, b=100.0):
-    """f(x, y) = (a - x)^2 + b (y - x^2)^2 and its gradient."""
-    x, y = p
-    r = y - x * x
-    f = (a - x) ** 2 + b * r * r
-    return f, np.array([-2.0 * (a - x) - 4.0 * b * x * r, 2.0 * b * r])
+def softmax_rows(S):
+    """Softmax of every row, stable for large entries; -inf entries get weight 0."""
+    m = S.max(axis=-1, keepdims=True)
+    E = np.exp(S - m)
+    return E / E.sum(axis=-1, keepdims=True)
 
 
-class Adam:
-    """Adam for a single array. step(x, g) returns the updated array."""
+def softmax_backward(P, dP):
+    """Given P = softmax_rows(S) and dL/dP, return dL/dS."""
+    return P * (dP - (dP * P).sum(axis=-1, keepdims=True))
 
-    def __init__(self, lr, b1=0.9, b2=0.999, eps=1e-8, bias_correction=True):
-        self.lr, self.b1, self.b2, self.eps = lr, b1, b2, eps
-        self.bias_correction = bias_correction
-        self.m = self.v = None
-        self.t = 0
 
-    def step(self, x, g):
-        if self.m is None:
-            self.m, self.v = np.zeros_like(g), np.zeros_like(g)
-        self.t += 1
-        self.m = self.b1 * self.m + (1.0 - self.b1) * g
-        self.v = self.b2 * self.v + (1.0 - self.b2) * g * g
-        m, v = self.m, self.v
-        if self.bias_correction:
-            m = m / (1.0 - self.b1 ** self.t)
-            v = v / (1.0 - self.b2 ** self.t)
-        return x - self.lr * m / (np.sqrt(v) + self.eps)
+def causal_mask(n):
+    """Boolean (n, n) array, True where query i may not see key j (j > i)."""
+    return np.triu(np.ones((n, n), dtype=bool), k=1)
+
+
+def attention(Q, K, V, causal=True, scale=True):
+    """Single-head attention for Q, K of shape (n, d) and V of shape (n, dv). Return (O, P)."""
+    S = Q @ K.T
+    if scale:
+        S = S / np.sqrt(Q.shape[-1])
+    if causal:
+        S = np.where(causal_mask(Q.shape[0]), -np.inf, S)
+    P = softmax_rows(S)
+    return P @ V, P
+
+
+def attention_backward(dO, Q, K, V, P, scale=True):
+    """Gradients of single-head attention given dL/dO and the weights P. Return (dQ, dK, dV)."""
+    c = 1.0 / np.sqrt(Q.shape[-1]) if scale else 1.0
+    dV = P.T @ dO
+    dP = dO @ V.T
+    dS = softmax_backward(P, dP) * c
+    return dS @ K, dS.T @ Q, dV
+
+
+def split_heads(X, h):
+    """(n, d) -> (h, n, d // h): head i gets columns i * d/h to (i + 1) * d/h."""
+    n, d = X.shape
+    return X.reshape(n, h, d // h).transpose(1, 0, 2)
+
+
+def merge_heads(Y):
+    """(h, n, dh) -> (n, h * dh), the inverse of split_heads."""
+    h, n, dh = Y.shape
+    return Y.transpose(1, 0, 2).reshape(n, h * dh)
+
+
+def mha_forward(X, Wq, Wk, Wv, Wo, h, causal=True):
+    """Multi-head self-attention: project, split into h heads, attend per head, merge, project.
+    Return (Y, cache)."""
+    Q, K, V = split_heads(X @ Wq, h), split_heads(X @ Wk, h), split_heads(X @ Wv, h)
+    outs, Ps = [], []
+    for i in range(h):
+        O, P = attention(Q[i], K[i], V[i], causal=causal)
+        outs.append(O)
+        Ps.append(P)
+    M = merge_heads(np.stack(outs))
+    return M @ Wo, (X, Q, K, V, np.stack(Ps), M)
+
+
+def mha_backward(dY, cache, Wq, Wk, Wv, Wo):
+    """Return (dX, dWq, dWk, dWv, dWo)."""
+    X, Q, K, V, P, M = cache
+    h = Q.shape[0]
+    dWo = M.T @ dY
+    dO = split_heads(dY @ Wo.T, h)
+    dQ, dK, dV = np.zeros_like(Q), np.zeros_like(K), np.zeros_like(V)
+    for i in range(h):
+        dQ[i], dK[i], dV[i] = attention_backward(dO[i], Q[i], K[i], V[i], P[i])
+    dQm, dKm, dVm = merge_heads(dQ), merge_heads(dK), merge_heads(dV)
+    dX = dQm @ Wq.T + dKm @ Wk.T + dVm @ Wv.T
+    return dX, X.T @ dQm, X.T @ dKm, X.T @ dVm, dWo

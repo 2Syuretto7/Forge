@@ -1,17 +1,17 @@
 import numpy as np
 
 
-def scores(Q, K, dtype):
-    """Q K^T computed with inputs and result in dtype (as an fp16 matmul without scaling would)."""
+def softmax(z):
+    e = np.exp(z - np.max(z, axis=-1, keepdims=True))
+    return e / e.sum(axis=-1, keepdims=True)
+
+
+def kl_optimum(ref, reward, beta):
+    """The maximizer of E[r] - beta KL(pi || ref): pi proportional to ref exp(r / beta)."""
     raise NotImplementedError
 
 
-def scaled_first(Q, K, dtype):
-    """Divide Q by sqrt(d) before the product, so the scores stay in range."""
-    raise NotImplementedError
-
-
-def stable_lse(x):
-    """log(sum(exp(x))) of a float vector computed in float64 after subtracting the maximum, and its
-    gradient (the softmax)."""
+def tradeoff(ref, proxy, truth, betas):
+    """For each beta, optimize the proxy reward and report (KL to ref, expected proxy, expected true
+    reward) of the optimum."""
     raise NotImplementedError

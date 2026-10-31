@@ -1,16 +1,23 @@
 import numpy as np
 
 
-def mean_with_ci(values, n_boot=2000, seed=0, level=0.95):
-    """The mean of per-example losses and a percentile bootstrap interval for it."""
-    values = np.asarray(values, dtype=float)
-    rng = np.random.default_rng(seed)
-    means = values[rng.integers(0, len(values), (n_boot, len(values)))].mean(axis=1)
-    lo, hi = np.quantile(means, [(1 - level) / 2, (1 + level) / 2])
-    return float(values.mean()), float(lo), float(hi)
-
-
-def paired_difference(a, b, n_boot=2000, seed=0, level=0.95):
-    """Two checkpoints scored on the same examples: the mean of a - b and a bootstrap interval that
-    resamples examples (keeping each pair together)."""
-    return mean_with_ci(np.asarray(a, dtype=float) - np.asarray(b, dtype=float), n_boot, seed, level)
+def sae_loss(params, X, l1):
+    """A sparse autoencoder on activations X (n, d) with m latents: z = relu((X - b_d) W_e^T + b_e),
+    X_hat = z W_d + b_d, loss = mean over rows of |X - X_hat|^2 + l1 * sum(z). params = (W_e (m, d),
+    b_e (m,), W_d (m, d), b_d (d,)). Return (loss, gradients in the same order)."""
+    We, be, Wd, bd = params
+    n = len(X)
+    U = X - bd
+    pre = U @ We.T + be
+    z = np.maximum(pre, 0)
+    Xh = z @ Wd + bd
+    E = Xh - X
+    loss = np.sum(E ** 2) / n + l1 * np.sum(z) / n
+    dXh = 2 * E / n
+    dWd = z.T @ dXh
+    dz = dXh @ Wd.T + l1 / n
+    dpre = dz * (pre > 0)
+    dWe = dpre.T @ U
+    dbe = dpre.sum(axis=0)
+    dbd = dXh.sum(axis=0) - (dpre @ We).sum(axis=0)
+    return float(loss), (dWe, dbe, dWd, dbd)

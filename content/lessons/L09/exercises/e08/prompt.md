@@ -1,12 +1,12 @@
-# Optimizers for a whole network
+# The decoder block
 
-Parameters now live in a dictionary like L07's (`"W1"`, `"b1"`, ...), and every optimizer has a method `step(params, grads, lr=None)` that updates the arrays **in place**, using `lr` instead of its own rate when one is passed (so a schedule can drive it). Weight decay applies to the weight matrices only, the keys starting with `"W"`.
+Multi-head attention, `gelu`, `layernorm` and `init_block(d)` (which creates the block's parameters) are provided.
 
-1. `SGD(lr, momentum=0.0, weight_decay=0.0)`: weight decay adds `weight_decay * W` to the gradient (for SGD that is the same as decay); with momentum, keep a velocity per parameter, $v \leftarrow \beta v + g$, and step by $\eta v$.
-2. `Adam(lr, b1=0.9, b2=0.999, eps=1e-8, weight_decay=0.0, decoupled=True, bias_correction=True)`: with `decoupled=True` this is AdamW, shrinking each weight by `lr * weight_decay * W` outside the adaptive step; with `decoupled=False` the decay term is added to the gradient before the moments are updated (L2 inside Adam).
+1. `block_forward(X, p, h)`: the pre-norm block. First $X \leftarrow X + \operatorname{MHA}(\operatorname{LN}_1(X)) + b_o$, then $X \leftarrow X + \operatorname{gelu}(\operatorname{LN}_2(X) W_1 + b_1) W_2 + b_2$, with causal attention.
+2. `block_param_count(d)`: the number of parameters `init_block(d)` creates, as a formula in $d$.
 
 ## Hints
 
-1. Keep state in dictionaries keyed like `params`; `self.v.get(k, 0.0)` starts a velocity at zero.
-2. Adam's step counter is shared by all parameters: increment it once per `step` call.
-3. Update in place with `params[k] -= ...` so the caller's dictionary sees the change.
+1. Call `mha_forward(layernorm(X, ...), Wq, Wk, Wv, Wo, h)` and keep only its output.
+2. Count: four $d \times d$ attention matrices, two $d \times 4d$ MLP matrices, biases of sizes $d$, $4d$ and $d$, and two layer norms with $2d$ each.
+3. The block must stay causal: its output at position $t$ cannot depend on later positions.

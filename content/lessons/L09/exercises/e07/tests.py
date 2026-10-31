@@ -1,31 +1,25 @@
 import numpy as np
 import sub
 
-
-def test_scales():
-    rng = np.random.default_rng(0)
-    W = sub.xavier(300, 500, rng)
-    assert W.shape == (300, 500) and abs(W.std() - np.sqrt(2 / 800)) < 0.002
-    W = sub.he(300, 500, rng)
-    assert abs(W.std() - np.sqrt(2 / 300)) < 0.002
+rng = np.random.default_rng(7)
 
 
-def test_he_relu_preserves_scale():
-    r = sub.depth_rms("he", "relu")
-    assert len(r) == 30 and 0.5 < r[-1] < 2.0, r[-1]
+def test_position_zero_and_norm():
+    X = rng.normal(size=(4, 8))
+    assert np.allclose(sub.rope(X, np.zeros(4)), X)
+    R = sub.rope(X, np.array([1, 5, 20, 300]))
+    assert np.allclose(np.linalg.norm(R, axis=1), np.linalg.norm(X, axis=1))
 
 
-def test_xavier_relu_vanishes():
-    r = sub.depth_rms("xavier", "relu")
-    assert r[-1] < 1e-3, r[-1]
-    assert 0.6 < (r[20] / r[10]) ** 0.1 < 0.8
+def test_relative_positions():
+    q, k = rng.normal(size=(1, 16)), rng.normal(size=(1, 16))
+    def score(m, n):
+        return float((sub.rope(q, np.array([m])) @ sub.rope(k, np.array([n])).T)[0, 0])
+    assert np.isclose(score(3, 7), score(103, 107))
+    assert np.isclose(score(0, 4), score(50, 54))
+    assert not np.isclose(score(3, 7), score(3, 8))
 
 
-def test_unit_init():
-    assert sub.depth_rms("unit", "relu")[-1] > 1e10
-    assert sub.depth_rms("unit", "tanh")[-1] > 0.9
-
-
-def test_xavier_tanh_shrinks_slowly():
-    r = sub.depth_rms("xavier", "tanh")
-    assert 0.05 < r[-1] < r[0] / 2
+def test_single_pair():
+    x = np.array([[1.0, 0.0]])
+    assert np.allclose(sub.rope(x, np.array([2.0])), [[np.cos(2), np.sin(2)]])

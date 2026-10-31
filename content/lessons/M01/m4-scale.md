@@ -24,7 +24,7 @@ Python in the browser multiplies two $128 \times 128$ matrices with NumPy. Which
 - Between $10^{12}$ and $10^{14}$ FLOP/s, like a GPU.
 
 :::reveal
-Typically between $10^8$ and $10^{10}$: a few hundred million to a few billion FLOPs per second on one CPU core, without the vector units and many cores that native libraries exploit. A data-centre GPU is about $10^5$ times faster, which is the gap that GPU lessons (L11) are about. Whatever your number, the estimate-then-measure habit is the point: the factor between them tells you how good your model of the machine is.
+Typically between $10^8$ and $10^{10}$: a few hundred million to a few billion FLOPs per second on one CPU core, without the vector units and many cores that native libraries exploit. A data-centre GPU is about $10^5$ times faster, which is the gap that GPU lessons (L07) are about. Whatever your number, the estimate-then-measure habit is the point: the factor between them tells you how good your model of the machine is.
 :::
 ::::
 

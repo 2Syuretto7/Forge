@@ -1,16 +1,13 @@
 import numpy as np
 
 
-def underflow_fraction(grads, scale=1.0):
-    """Fraction of the nonzero float32 gradients that become exactly 0 when (grads * scale) is cast to
-    float16."""
-    g = np.asarray(grads, dtype=np.float32)
-    nz = g != 0
-    return float(np.mean((g[nz] * np.float32(scale)).astype(np.float16) == 0))
-
-
-def scaled_loss_and_grad(w, X, y, scale):
-    """Loss scaling: return (scale * L, scale * dL/dw) for the least-squares loss
-    L = mean((X w - y)^2) / 2. The optimizer divides by scale before using the gradient."""
-    r = X @ w - y
-    return scale * 0.5 * float(np.mean(r * r)), scale * (X.T @ r) / len(y)
+def ppo_objective(logp, logp_old, adv, eps):
+    """The mean over samples of min(rho A, clip(rho, 1 - eps, 1 + eps) A) with rho = exp(logp -
+    logp_old), and its gradient with respect to logp (zero where the clipped term is the smaller)."""
+    rho = np.exp(logp - logp_old)
+    unclipped = rho * adv
+    clipped = np.clip(rho, 1 - eps, 1 + eps) * adv
+    use = unclipped <= clipped
+    obj = np.mean(np.where(use, unclipped, clipped))
+    grad = np.where(use, rho * adv, 0.0) / len(adv)
+    return float(obj), grad

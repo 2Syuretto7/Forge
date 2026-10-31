@@ -1,32 +1,31 @@
-# Break it: tokenizer edge cases and extreme temperatures
+# Break it: hangs and wrong averages
 
-## Strings that break tokenizers
+## Collectives that never complete
 
-Whitespace, unusual Unicode and normalization are where tokenizers misbehave: two strings that look identical can be different byte sequences, and leading spaces change how words are split.
+::::predict{id=p4 kind=choice answer=d}
+On one of 8 GPUs the loss comes out NaN, and the training loop's guard `if loss.isnan(): continue` skips that step on that GPU only. What happens?
+
+- That GPU's update is skipped and training continues normally.
+- The other GPUs average 7 gradients instead of 8.
+- An exception is raised on every GPU.
+- The other seven GPUs wait forever in their all-reduce, and the job hangs.
+
+:::reveal
+A collective completes only when every rank calls it. The rank that skipped moves on to the next step's forward pass while the other seven block in the gradient all-reduce, and from then on the ranks issue their collectives out of step. Nothing crashes; the job just stops making progress until a timeout kills it. Decisions that change which collectives run must be made together, with a collective of their own.
+:::
+::::
 
 :::exercise{ref=e11}
 :::
 
-## Too cold, too hot
-
-::::predict{id=p5 kind=choice answer=d}
-You sample 300 tokens from a trained model at temperature 0.05. What do you typically get?
-
-- The most fluent text the model can produce.
-- Random tokens.
-- An error, because the logits overflow.
-- A short phrase repeated over and over.
-
-:::reveal
-Near-zero temperature is greedy decoding: always the single most likely token. Once the model's most likely continuation leads back to a context it has seen, it loops. High temperatures fail the other way, sampling unlikely tokens until the text dissolves. Exercise 12 measures both with distinct n-gram ratios.
-:::
-::::
+## Averages that are not
 
 :::exercise{ref=e12}
 :::
 
 ## What to take away
 
-- Test every tokenizer on empty strings, runs of whitespace, newlines and non-ASCII text, and decide on a Unicode normalization before training.
-- Report losses in bits per character when tokenizers differ.
-- Sample with a temperature below 1 and top-p for readable text; greedy decoding repeats.
+- Count the bytes before you launch: model states, activations, then the margin for everything else.
+- Put tensor parallelism where the links are fastest, pipelines across servers, data parallelism outside.
+- Every rank must call the same collectives in the same order; make any skip decision with a collective.
+- Average gradients over examples, not over ranks, and check that the effective learning rate does not change with the number of GPUs.

@@ -1,14 +1,13 @@
-# Break it: Python-level loops
+# Break it: fitting too narrow a range
 
-1. `row_norms_loop(X)`: the Euclidean norm of every row of `X`, computed with two nested Python loops, one multiply and add per element.
-2. `row_norms_vector(X)`: the same with one vectorized expression.
-3. `time_per_call(f, X, min_time=0.02)`: call `f(X)` 1, 2, 4, ... times in a row until one batch takes at least `min_time` seconds by `time.perf_counter`, and return that batch's time divided by its number of calls. Browser clocks tick in steps of up to a tenth of a millisecond, so a single fast call can measure as zero.
-4. `overhead_ratio(rows=200, cols=100, repeats=3)`: on `np.random.default_rng(0).normal(size=(rows, cols))`, the best of `repeats` measurements of the loop version's time per call divided by that of the vectorized one.
+You have compute-optimal runs between $10^{18}$ and $10^{21}$ FLOPs and want the loss at $10^{24}$. The true frontier is $L^*(C) = E + K C^{-\gamma}$, which curves in log-log coordinates as it approaches $E$.
 
-Each loop iteration is one interpreted operation on one number, much as each eager PyTorch call is one kernel launch on one tensor. The ratio is the cost of overhead.
+1. `fit_pure(C, L)`: the pure power law $L = k C^{-g}$, by a log-log line.
+2. `fit_floor(C, L, grid=400)`: $L = E + k C^{-g}$: for each $E$ in `np.linspace(0, min(L) * (1 - 1e-6), grid + 1)`, fit $\log(L - E)$ by a line and keep the $E$ with the smallest squared error. Return $(E, k, g)$.
+3. `extrapolation_errors(C, L, target_C, target_L)`: the relative errors (prediction / truth − 1) of both fits at `target_C`.
 
 ## Hints
 
-1. Index with `X[i, j]` inside the loops.
-2. `np.sqrt((X * X).sum(axis=1))` for the vectorized version.
-3. Repeating a fast call until the total is long compared with the clock's step, then taking the best of several such measurements, removes both rounding and noise (this is what `timeit` does).
+1. `np.polyfit(x, y, 1, full=True)` also returns the sum of squared residuals.
+2. A straight line cannot bend toward a floor, so the pure fit keeps falling at the same log-log slope.
+3. With no floor the pure fit predicts too low a loss: it is optimistic.

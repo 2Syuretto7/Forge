@@ -1,14 +1,11 @@
-# Learning-rate sweeps
+# Break it: attention without the scale
 
-Before comparing optimizers, find each one's best learning rate. Implement:
+Your softmax and its backward pass are provided. Implement `saturation(d, scaled, n=16, seed=0)`: draw queries and keys of shape `(n, d)` with unit-normal entries from `np.random.default_rng(seed)`, form the scores (divided by $\sqrt d$ if `scaled`), take the softmax, and return two numbers: the mean over rows of the largest weight, and the mean absolute value of `softmax_backward(P, G)` for a random upstream gradient `G` drawn next from the same generator.
 
-1. `sweep(make_opt, lrs, X, y, steps=300, seed=0)`: for each rate, train with `make_opt(lr)` (your `train` from exercise 10 is provided) and record the final training loss on the full data set with `full_loss`; record `inf` for a run whose loss is not finite or exceeds 10.
-2. `best_lr(lrs, losses)`: the rate with the lowest loss.
-
-Then sweep SGD over $10^{-3}$ to $10^{0.5}$ and Adam over $10^{-4}$ to $10^{-0.5}$ in half-decade steps, and compare the shapes of the two curves with your sketch.
+Compare $d = 16$ and $d = 512$, scaled and unscaled. Unscaled, the weights become nearly one-hot and the gradient reaching the scores shrinks about tenfold.
 
 ## Hints
 
-1. Wrap the training in `with np.errstate(all="ignore"):` so overflowing runs do not flood the output with warnings.
-2. `np.isfinite(v) and v <= 10` decides whether a run survived.
-3. Look at the SGD runs at rates 2 and 3: the loss does not explode, it gets stuck near $\ln 10$. Count the ReLU units of the second layer that never fire.
+1. Draw `Q`, then `K`, then `G` with shape `(n, n)`.
+2. `P.max(axis=1).mean()`.
+3. Divide by `np.sqrt(d)` only when `scaled`.

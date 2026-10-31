@@ -1,106 +1,100 @@
-# Derivation: the anatomy of an autograd engine
+# Derivation: Triton kernels, fusion and FlashAttention
 
-An autograd engine has four ingredients: a tensor that remembers how it was made, a backward rule per operation, a correct order in which to run those rules, and an accounting of what has to be kept in memory. This movement derives each, then maps them onto PyTorch's internals.
+## 1. The Triton programming model
 
-## 1. Recording the graph
+CUDA programs describe what one thread does. **Triton** programs describe what one **program instance** does to a block of data: you launch a grid of program instances, each finds its block with `tl.program_id`, builds vectors of offsets with `tl.arange`, loads whole blocks with `tl.load`, computes on them (`tl.dot` for small matrix products, reductions such as `tl.max` and `tl.sum`), and stores with `tl.store`. The compiler decides how the block is spread over threads, warps, registers and shared memory. Masks on loads and stores handle the ragged last block.
 
-Each tensor carries its value, a slot for its gradient, references to its parent tensors, and a closure `_backward` that knows how to push its own gradient to its parents. Every operation:
+## 2. Coalesced access
 
-1. computes the output value,
-2. creates the output tensor with the inputs as parents,
-3. attaches a `_backward` closure that captures whatever the VJP needs (inputs, outputs, shapes).
+A warp's 32 threads issue their loads together. If they read 32 consecutive 4-byte words, the hardware serves them with a few 32-byte transactions; if each thread reads an element far from its neighbour's, every thread needs its own transaction.
 
-The result is a directed acyclic graph from the parameters and inputs to the loss.
-
-## 2. The backward rules
-
-You know most of them from M19 and L07. For an output with gradient $G$:
-
-| Operation | Gradient to inputs |
-| --- | --- |
-| $c = a + b$ | $G$ to $a$, $G$ to $b$ (then unbroadcast) |
-| $c = a \odot b$ | $G \odot b$ to $a$, $G \odot a$ to $b$ (then unbroadcast) |
-| $C = AB$ | $GB^\top$ to $A$, $A^\top G$ to $B$ |
-| $c = \sum a$ (over an axis) | $G$ broadcast back to $a$'s shape |
-| $c = e^a$ | $G \odot c$ |
-| $c = \log a$ | $G / a$ |
-| $c = \max(0, a)$ | $G \odot [a > 0]$ |
-| reshape, transpose | apply the inverse reshape or transpose to $G$ |
-
-**Accumulation.** If a tensor is used by several operations, each sends it a contribution, and the chain rule says to add them. So gradients accumulate with `+=`, which is also why training loops must zero gradients before each backward pass.
-
-## 3. Broadcasting and its gradient
-
-NumPy broadcasting aligns shapes from the right; a missing dimension is treated as size 1, and a size-1 dimension is stretched to match. A broadcast input was effectively copied along the stretched axes, so its gradient is the sum of the output gradient over those axes.
-
-::::derivation{id=d1 title="Unbroadcasting a gradient"}
+::::derivation{id=d1 title="Transactions per warp"}
 :::step
-$a$ has shape $(4,)$ and is added to $Z$ of shape $(32, 4)$. The output gradient has shape $(32, 4)$; summing over axis 0 gives a gradient with [[4]] entries.
+32 threads reading consecutive fp32 values touch $128$ bytes: [[4]] aligned 32-byte segments.
 :::
 :::step
-$s$ has shape $(32, 1)$ (one scale per row) and multiplies $Z$ of shape $(32, 4)$. Its gradient is $\sum_j G_{ij} Z_{ij}$ over axis 1, kept as shape $(32, 1)$. If row 0 has $G = (1, 1, 1, 1)$ and $Z = (0.5, -1, 2, 0.5)$, the entry for row 0 is [[2]].
-:::
-:::step
-The general recipe: first sum over the leading axes the input does not have (the output has more dimensions), then sum, keeping dimensions, over every axis where the input had size 1. A scalar added to a tensor of shape $(2, 3, 5)$ receives the sum of all [[30]] entries of the gradient.
+With a stride of 8 elements between threads, the warp touches [[32]] segments, and only $128/(32 \cdot 32) =$ [[0.125]] of the transferred bytes are used.
 :::
 ::::
 
-## 4. The order of the backward pass
+In row-major storage, reading along a row is coalesced and reading down a column is strided: lay out tiles so that consecutive threads read consecutive addresses.
 
-A node may pass its gradient on only when it is complete, which is after every consumer has contributed. Process nodes in **reverse topological order**: build an order in which every node appears after all of its parents (a depth-first search that appends a node after visiting its parents does this), then walk it backwards.
+## 3. Fusion
 
-::::derivation{id=d2 title="Ordering a small graph"}
+Written as separate operations, a row softmax reads its input for the maximum, reads it again and writes the exponentials, reads those for the sum, and reads them again to write the result: six arrays of traffic. A fused kernel keeps the row on chip: one read and one write.
+
+::::derivation{id=d2 title="A fused softmax"}
 :::step
-Graph: $x \to a$, $x \to b$, $(a, b) \to c$, $c \to L$. A valid topological order lists $x$ first and $L$ last. The number of nodes processed before $c$ in the backward pass (starting from $L$) is [[1]].
+For a $4096 \times 4096$ fp16 matrix, the unfused softmax moves $6 \cdot 4096^2 \cdot 2 =$ [[201326592]] bytes and the fused one [[67108864]].
 :::
 :::step
-In backward, $x$ is processed last. When it is, its gradient already includes the contributions from both $a$ and $b$: [[2]] contributions in total.
-:::
-:::step
-A topological order exists exactly when the graph has no directed cycle. An autograd graph is always acyclic, because each operation creates a new tensor whose parents already existed. The number of possible topological orders of a chain of 5 nodes is [[1]].
+At 320 GB/s the fused kernel needs at least [[0.21|tol=0.01]] ms.
 :::
 ::::
 
-## 5. What has to be saved
+On the roofline, fusion does not move a kernel's arithmetic: it divides its bytes, which moves a memory-bound kernel to the right, to a higher intensity and a higher attainable throughput. The widget draws the softmax already fused, at 1.25 FLOP per byte in fp16; unfused, its six passes over memory would put it at about 0.42, three times further down the memory roof.
 
-A backward rule needs some forward values: $\partial(a b)/\partial a$ needs $b$; ReLU needs its input's sign; $\exp$ needs its output; matmul needs both inputs. The engine keeps these alive until backward has used them. That **saved-tensor memory** is usually the largest memory cost of training.
+:::widget{name=Roofline hardware=t4 precision=fp16}
+:::
 
-::::derivation{id=d3 title="Counting saved activations"}
+:::edge{from=L07 text="the roofline, tiling and kernel fusion"}
+:::
+
+:::edge{from=L06 text="the layer norm forward and backward passes"}
+:::
+
+## 4. The online softmax
+
+Process a vector in blocks. Keep $m$, the maximum so far, and $l = \sum_{\text{seen}} e^{x_j - m}$. For a new block $b$ with maximum $m_b$:
+$$
+m' = \max(m, m_b), \qquad l' = l\, e^{m - m'} + \sum_{j \in b} e^{x_j - m'}.
+$$
+Starting from $m = -\infty$, $l = 0$, after the last block $p_j = e^{x_j - m}/l$. Two summaries of disjoint parts merge the same way: $m = \max(m_1, m_2)$, $l = l_1 e^{m_1 - m} + l_2 e^{m_2 - m}$.
+
+::::derivation{id=d3 title="Two blocks"}
 :::step
-A linear layer $Y = XW + b$ saves $X$ (for $\partial W$) and $W$ (for $\partial X$). With $X$ of shape $(64, 512)$ in float32 (4 bytes), the saved input occupies $64 \cdot 512 \cdot 4 =$ [[131072]] bytes.
+The first block is $(1, 3)$: $m = 3$ and $l = e^{-2} + e^0 \approx$ [[1.1353|tol=0.0005]].
 :::
 :::step
-A ReLU after it saves a boolean mask or its input: another $64 \times 512$ values. A network of 24 such blocks with batch 64 and width 512 therefore saves roughly $24 \times 2 \times 64 \times 512 \approx$ [[1572864]] activation values, independent of how many parameters it has.
+The second block is $(2, 5)$: $m' = 5$, and $l' = 1.1353\, e^{-2} + e^{-3} + e^{0} \approx$ [[1.2034|tol=0.0005]], which equals $\sum_j e^{x_j - 5}$ over all four values.
 :::
 ::::
 
-Inference needs none of this: under `torch.no_grad()` operations record nothing and save nothing. And modifying a saved tensor **in place** after the forward pass would silently change the gradient; frameworks prevent it with a **version counter** on each tensor, checked when the backward rule runs (Movement 5).
+## 5. FlashAttention
 
-:::edge{to=L18 text="Saved activations become the dominant memory term at scale; activation checkpointing trades them for recomputation."}
+Apply the online softmax to attention. A program owns a block of queries $Q_i$ and keeps, per query, a running maximum $m$, a running sum $l$ and an accumulator $a$ for the output. For each block of keys and values $K_j, V_j$:
+$$
+S = c\,Q_i K_j^\top, \quad m' = \max(m, \operatorname{rowmax} S), \quad P = e^{S - m'}, \quad \alpha = e^{m - m'}, \quad l' = \alpha l + \operatorname{rowsum} P, \quad a' = \alpha a + P V_j.
+$$
+At the end, $O_i = a / l$. The $N \times N$ scores exist only one tile at a time, on chip. Standard attention moves $\Theta(Nd + N^2)$ elements to and from device memory; FlashAttention moves $\Theta(N^2 d^2 / M)$ for on-chip memory of $M$ elements, many times less for typical $d$ and $M$ (Dao et al., 2022).
+
+For the backward pass, FlashAttention stores only $L_i = m + \ln l$, the log-sum-exp of each row, and recomputes each tile of probabilities as $P = e^{S - L}$. With $D_i = \sum_k \text{d}O_{ik} O_{ik}$, the softmax gradient becomes $\text{d}S = P \odot (\text{d}P - D)$: L09's formula, without the stored matrix.
+
+::::derivation{id=d4 title="Memory for one head"}
+:::step
+At $N = 4096$, the attention weights of one head in fp16 take $4096^2 \cdot 2 =$ [[33554432]] bytes.
+:::
+:::step
+FlashAttention keeps one fp32 log-sum-exp per query: [[16384]] bytes.
+:::
+::::
+
+:::edge{from=L09 text="scaled dot-product attention and its backward pass"}
 :::
 
-## 6. The module API
+## 6. Choosing block sizes
 
-On top of tensors, a small object layer makes models composable: a `Module` owns parameters and submodules, `parameters()` lists them recursively, `zero_grad()` clears their gradients, and `__call__` runs `forward`. An optimizer holds the parameter list and applies an update rule after each backward pass. PyTorch's `nn.Module`, `nn.Linear` and `torch.optim.SGD` are this design, with many more features.
+Each program holds its tiles in shared memory and registers. With block sizes $B_m$ (queries) and $B_n$ (keys) and head dimension $d$, a FlashAttention program needs a $B_m \times d$ query tile, $B_n \times d$ key and value tiles, and fp32 accumulators of $B_m \times d$ and $B_m \times B_n$. Larger blocks reuse each loaded value more; blocks too large for on-chip memory spill or fail to compile, and fewer programs fit on each SM.
 
-## 7. Mapping onto PyTorch
-
-| Your engine | PyTorch |
-| --- | --- |
-| `Tensor.data`, `.grad` | `tensor`, `tensor.grad` (leaf tensors with `requires_grad=True`) |
-| `_parents`, `_backward` | `tensor.grad_fn` and `grad_fn.next_functions` |
-| saved inputs in closures | `ctx.save_for_backward(...)` in an `autograd.Function` |
-| topological sort in `backward()` | the autograd engine (C++), running backward nodes in dependency order |
-| version check | `RuntimeError: one of the variables needed for gradient computation has been modified by an inplace operation` |
-| global recording flag | `torch.no_grad()` |
-
-The Colab notebook for this lesson trains the same network with your engine and with PyTorch, walks a real `grad_fn` graph, and writes a custom `torch.autograd.Function`.
-
-:::edge{to=L11 text="Each recorded operation launches at least one GPU kernel; L11 measures the cost of that granularity."}
+::::derivation{id=d5 title="Fitting 64 KB"}
+:::step
+For $B_m = B_n = 64$ and $d = 64$: $(64 \cdot 64 + 2 \cdot 64 \cdot 64) \cdot 2 + 4 \cdot (64 \cdot 64 + 64 \cdot 64) =$ [[57344]] bytes, which fits in a T4 SM's 64 KB.
 :::
+::::
 
-:::edge{from=M19 text="reverse-mode differentiation and vector-Jacobian products"}
-:::
+## 7. Numerics inside kernels
 
-:::edge{from=L07 text="hand-written backward passes for an MLP"}
+Load fp16, compute in fp32: $e^x$ overflows fp16 above $\ln 65504 \approx 11.09$, and an fp16 sum of thousands of terms loses its low bits. Subtract the maximum before exponentiating. For statistics such as a variance, the one-pass formula $\mathbb E[x^2] - \mathbb E[x]^2$ cancels catastrophically when the mean is large compared with the spread; Welford's update, $\delta = x - \mu$, $\mu \mathrel{+}= \delta / n$, $M_2 \mathrel{+}= \delta (x - \mu)$, does not.
+
+:::edge{to=L18 text="Inference kernels: attention over cached and paged keys and values."}
 :::

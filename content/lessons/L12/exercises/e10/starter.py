@@ -1,8 +1,14 @@
 import numpy as np
 
 
-def fused_cross_entropy(logits, y, block=8):
-    """Mean cross-entropy computed per row in one pass over vocabulary blocks with a running max and
-    sum (no full softmax array), and its gradient (softmax - onehot) / B written once.
-    Return (loss, dlogits)."""
+def epoch_order(shard_sizes, epoch, seed):
+    """The (shard, item) pairs of one epoch: shards in the order of
+    np.random.default_rng([seed, epoch]).permutation, and inside shard s the items in the order of
+    np.random.default_rng([seed, epoch, s]).permutation(shard_sizes[s])."""
+    raise NotImplementedError
+
+
+def next_batch(shard_sizes, batch_size, seed, state):
+    """state = {"epoch": e, "index": i}: the position of the next item. Return (batch, new_state):
+    batch_size (shard, item) pairs, continuing into the next epoch when one runs out."""
     raise NotImplementedError

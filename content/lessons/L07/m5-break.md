@@ -1,40 +1,32 @@
-# Break it: symmetry, dead units and explosions
+# Break it: tiny kernels and needless synchronization
 
-Section 7 named three ways a network can fail before learning anything. Each exercise here builds one on purpose and measures it.
+## Launch-bound loops
 
-## Symmetry
-
-:::exercise{ref=e10}
-:::
-
-## Dead ReLUs
+The fastest way to make a GPU slow is to give it work in tiny pieces. A Python loop over rows that calls a tensor operation per element or per row pays the launch overhead every time, and the GPU spends most of its time idle. The same happens, more mildly, in NumPy: every Python-level operation costs far more than the arithmetic it performs.
 
 :::exercise{ref=e11}
 :::
 
-::::predict{id=p5 kind=choice answer=a}
-After one step with a learning rate 100 times too large, 70 percent of a layer's ReLU units output zero on every training example. Lowering the learning rate back to normal, what happens to those units?
+## Synchronizing every step
 
-- They stay dead: their gradients are exactly zero, so nothing moves their weights again.
-- They recover slowly as the other units' gradients pull them back.
-- They recover immediately once the learning rate is reasonable.
-- They become negative and start contributing with the opposite sign.
+::::predict{id=p5 kind=choice answer=a}
+A training loop logs `loss.item()` after every step. Each step needs 2 ms of CPU time to launch its kernels and 6 ms of GPU time. How much slower is the loop than one that logs only every 100 steps?
+
+- About a third slower: 8 ms per step instead of 6.
+- No slower: logging is cheap.
+- Twice as slow.
+- About 100 times slower.
 
 :::reveal
-A dead ReLU has zero output and zero local derivative on every input, so the gradient with respect to its incoming weights and bias is exactly zero. No learning rate fixes that. Remedies are prevention: sensible initialization, learning-rate warmup (L09), or activations with a nonzero slope for negative inputs.
+Without synchronization, the CPU issues step $i + 1$ while the GPU runs step $i$, so a step costs $\max(2, 6) = 6$ ms. With `.item()` every step, the CPU waits for the GPU, then the GPU waits while the CPU issues the next step: $2 + 6 = 8$ ms. The loss is the same; only the overlap is lost. When the CPU and GPU times are close, synchronizing every step nearly doubles the time.
 :::
 ::::
-
-## Exploding activations
 
 :::exercise{ref=e12}
 :::
 
-:::widget{name=ActivationStats depth=10 init=unit act=relu}
-:::
-
 ## What to take away
 
-- Initialize weights randomly with a scale near $\sqrt{2/n_{\text{in}}}$ for ReLU and $\sqrt{1/n_{\text{in}}}$ for tanh; start biases at zero.
-- Watch the fraction of active ReLU units and the scale of activations per layer during the first steps of training.
-- A network that does not learn at all is usually broken by one of these three, not by a subtle optimization problem.
+- Before optimizing a kernel, find out which roof it is under: memory-bound kernels need fewer bytes (fusion, lower precision), not faster arithmetic.
+- Give the GPU large operations; fuse or batch small ones.
+- Keep GPU values on the GPU: log them every so often, never every step.

@@ -1,12 +1,12 @@
 import numpy as np
 
 
-def global_norm(grads):
-    """The L2 norm of all gradient arrays taken together."""
+def accuracy_ci(correct, n_boot=2000, seed=0, level=0.95):
+    """Accuracy over items (an array of 0/1) with a percentile bootstrap interval that resamples
+    items. Return (accuracy, low, high)."""
     raise NotImplementedError
 
 
-def clip_by_global_norm(grads, max_norm):
-    """Scale every gradient by min(1, max_norm / norm) so the global norm is at most max_norm.
-    Return (clipped grads, the norm before clipping)."""
+def standard_error(p, n):
+    """The standard error of an accuracy p measured on n independent items."""
     raise NotImplementedError

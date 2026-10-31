@@ -1,32 +1,20 @@
-import hashlib
+import numpy as np
 
 
-def normalize(doc):
-    """Lowercase and collapse whitespace runs to single spaces."""
-    return " ".join(doc.lower().split())
+def best_rank_r(M, r):
+    """The rank-r matrix closest to M in Frobenius norm: the truncated SVD (Eckart-Young)."""
+    U, S, Vt = np.linalg.svd(M, full_matrices=False)
+    return (U[:, :r] * S[:r]) @ Vt[:r]
 
 
-def exact_dedup(docs):
-    """Indices of the first occurrence of each document, comparing SHA-1 digests of the normalized
-    text."""
-    seen, keep = set(), []
-    for i, d in enumerate(docs):
-        h = hashlib.sha1(normalize(d).encode("utf-8")).hexdigest()
-        if h not in seen:
-            seen.add(h)
-            keep.append(i)
-    return keep
+def relative_error(M, r):
+    """|M - best_rank_r(M, r)|_F / |M|_F, from the singular values alone."""
+    S = np.linalg.svd(M, compute_uv=False)
+    return float(np.sqrt(np.sum(S[r:] ** 2) / np.sum(S ** 2)))
 
 
-def boilerplate_lines(docs, min_docs):
-    """The set of stripped, non-empty lines that occur in at least min_docs different documents."""
-    counts = {}
-    for d in docs:
-        for line in {l.strip() for l in d.split("\n") if l.strip()}:
-            counts[line] = counts.get(line, 0) + 1
-    return {line for line, c in counts.items() if c >= min_docs}
-
-
-def strip_lines(doc, lines):
-    """doc without the lines whose stripped text is in `lines`."""
-    return "\n".join(l for l in doc.split("\n") if l.strip() not in lines)
+def rank_for(M, tol):
+    """The smallest rank whose relative error is at most tol."""
+    for r in range(min(M.shape) + 1):
+        if relative_error(M, r) <= tol:
+            return r

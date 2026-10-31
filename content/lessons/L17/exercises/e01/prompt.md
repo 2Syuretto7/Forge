@@ -1,11 +1,17 @@
-# Rounding to any format
+# The policy gradient
 
-Implement `round_to_format(x, exp_bits, man_bits)` for an array of float64 values: round each to the nearest number representable with `exp_bits` exponent bits and `man_bits` mantissa bits in the IEEE layout, ties to even, including subnormals; values beyond the largest finite number become $\pm\infty$.
+For a policy $\pi_\theta = \operatorname{softmax}(\theta)$ over actions with rewards $r_a$, the gradient of the expected reward is
+$$
+\nabla_\theta\, \mathbb{E}_{a \sim \pi}[r_a] = \mathbb{E}_{a \sim \pi}\bigl[r_a\, \nabla_\theta \log \pi_\theta(a)\bigr],
+$$
+so it can be estimated from samples alone.
 
-The tests compare your fp16 (5, 10) rounding with NumPy's `astype(np.float16)` on thousands of values across the whole range.
+1. `score(theta, a)`: $\nabla_\theta \log \pi_\theta(a) = \text{onehot}(a) - p$, L03's $p - y$ with the sign flipped.
+2. `exact_policy_gradient(theta, rewards)`: the expectation, by enumerating actions.
+3. `reinforce_estimate(theta, rewards, n, seed, baseline=0.0)`: the average of $(r_a - b)\,\text{score}(a)$ over $n$ actions sampled with `np.random.default_rng(seed).choice(..., p=p)`.
 
 ## Hints
 
-1. Exponent $e = \lfloor \log_2 |x| \rfloor$, but never below $1 - \text{bias}$ (the subnormal range shares the smallest normal spacing).
-2. With $\text{ulp} = 2^{e - m}$, `np.round(|x| / ulp) * ulp` rounds to the grid; `np.round` breaks ties to even.
-3. Compare the result with the largest finite value $(2 - 2^{-m}) \cdot 2^{e_{\max}}$ to detect overflow.
+1. The identity follows from $\nabla \pi = \pi \nabla \log \pi$.
+2. Subtracting a constant baseline leaves the estimate unbiased, because $\mathbb{E}[\text{score}] = 0$.
+3. Sample all $n$ actions at once with `rng.choice(K, size=n, p=p)`.

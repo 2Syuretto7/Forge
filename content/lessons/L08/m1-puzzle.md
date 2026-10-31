@@ -1,36 +1,24 @@
-# Puzzle: how does loss.backward() know what to do?
+# Puzzle: a softmax that never sees the whole row
 
-In PyTorch you write a forward computation as ordinary code, with loops, branches and arbitrary tensor operations, then call `loss.backward()`, and every parameter receives its gradient. You never wrote a backward pass.
+A softmax normalizes by the sum of $e^{x_j}$ over the whole row, and the numerically safe version first subtracts the row's maximum. Both seem to require the entire row before any output can be written. For attention over 32,000 positions, a row of scores does not fit in a GPU core's fast memory.
 
 ::::predict{id=p1 kind=choice answer=b}
-How does the framework know which operations to differentiate?
+Can you compute a numerically stable softmax by reading the row once, in blocks, keeping only a few numbers between blocks?
 
-- It parses your Python source code and differentiates it symbolically.
-- Every tensor operation, as it runs, records itself and its inputs in a graph; backward walks that graph in reverse.
-- It uses finite differences on every parameter.
-- It traces the program once and compiles it to a fixed backward program that ignores branches.
+- No: the maximum is needed before any exponential can be computed.
+- Yes: keep a running maximum and a running sum, and rescale the sum whenever the maximum grows.
+- Only if the row is sorted.
+- Only approximately.
 
 :::reveal
-PyTorch builds the graph dynamically: each operation creates an output tensor that remembers which function produced it (its `grad_fn`) and which tensors were its inputs. `backward()` sorts that graph and calls each function's backward rule in reverse order. Because the graph is recorded as the code runs, loops and branches just produce whatever graph actually happened.
+Keep $m$, the largest value seen so far, and $l = \sum e^{x_j - m}$ over the values seen so far. When a block raises the maximum to $m'$, multiply the old $l$ by $e^{m - m'}$, which converts every old term to the new reference, and add the block's terms. After the last block, $l$ is the exact normalizer. This **online softmax** is the idea behind FlashAttention.
 :::
 ::::
 
-A second puzzle hides in a single line. You add a bias vector $b$ of shape $(4,)$ to activations $Z$ of shape $(32, 4)$. NumPy and PyTorch **broadcast** $b$ across the 32 rows.
-
-::::predict{id=p2 kind=choice answer=c}
-The gradient of the loss with respect to $Z + b$ is a $32 \times 4$ array $G$. What is the gradient with respect to $b$?
-
-- $G$ itself, shape $(32, 4)$.
-- The first row of $G$.
-- The sum of $G$ over its rows, shape $(4,)$.
-- The mean of $G$ over its rows.
+::::predict{id=p2 kind=numeric answer=11.09 tol=0.05}
+In fp16, the largest finite number is 65504. Above what input does $e^x$ overflow to infinity?
 
 :::reveal
-$b$ was used 32 times, once per row, so its gradient is the sum of 32 contributions: $G$ summed over the broadcast dimension. Every gradient must have the shape of the tensor it belongs to; whenever the forward pass stretched a tensor, the backward pass sums back over the stretched axes. Getting this wrong (keeping the shape $(32, 4)$, or averaging) is one of the most common autograd bugs.
+$\ln 65504 \approx 11.09$. Attention scores beyond 11 are common, so an fp16 softmax that exponentiates without subtracting the maximum, or that accumulates in fp16, produces infinities and NaNs. Kernels load fp16 and compute in fp32.
 :::
 ::::
-
-:::widget{name=ComputationGraph preset=default}
-:::
-
-In the widget, $x$ is used twice, by $a = xy$ and by $b = \sin x$. Step through the backward pass and watch its gradient arrive in two pieces that add up. Your engine will do exactly this, for tensors.

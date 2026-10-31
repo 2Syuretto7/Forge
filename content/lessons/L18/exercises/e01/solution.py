@@ -1,21 +1,15 @@
-def model_state_bytes(n_params, zero=0, dp=1):
-    """Mixed-precision Adam: 2 bytes of 16-bit weights, 2 of 16-bit gradients and 12 of fp32 master
-    weights, momentum and variance per parameter. ZeRO stage k shards the first k of (optimizer
-    states, gradients, weights) over the dp data-parallel ranks. Return a dict with the bytes of
-    "weights", "grads" and "optim" on one GPU."""
-    return {
-        "weights": 2 * n_params / (dp if zero >= 3 else 1),
-        "grads": 2 * n_params / (dp if zero >= 2 else 1),
-        "optim": 12 * n_params / (dp if zero >= 1 else 1),
-    }
+def decode_intensity(n_params, batch, kv_bytes, weight_bytes=2):
+    """FLOPs per byte of one decode step: 2 n_params FLOPs per sequence in the batch, against
+    reading every weight once (n_params * weight_bytes) plus the KV cache (kv_bytes)."""
+    return 2 * n_params * batch / (n_params * weight_bytes + kv_bytes)
 
 
-def activation_bytes(seq, batch, d, heads, layers, tp=1, flash=False, checkpoint=False):
-    """Activations stored for backward in 16-bit training: s b d (34 + 5 a s / d) bytes per layer
-    (Korthikanti et al.), divided by tp under tensor and sequence parallelism; FlashAttention drops
-    the 5 a s / d term. With full checkpointing only each layer's 2 s b d byte input is kept, plus
-    one layer's activations while it is recomputed."""
-    per_layer = seq * batch * d * (34 + (0 if flash else 5 * heads * seq / d)) / tp
-    if checkpoint:
-        return layers * 2 * seq * batch * d / tp + per_layer
-    return layers * per_layer
+def prefill_intensity(n_params, prompt_tokens, weight_bytes=2):
+    """FLOPs per byte of processing a whole prompt at once: 2 n_params per token, weights read once
+    (ignoring the cache, which prefill writes)."""
+    return 2 * n_params * prompt_tokens / (n_params * weight_bytes)
+
+
+def step_time(flops, bytes_moved, peak_flops, bandwidth):
+    """Roofline time of a step: the slower of compute and memory traffic."""
+    return max(flops / peak_flops, bytes_moved / bandwidth)

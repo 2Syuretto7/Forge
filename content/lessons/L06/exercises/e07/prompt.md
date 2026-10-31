@@ -1,15 +1,11 @@
-# Minimum-norm interpolation and implicit regularization
+# Statistics through depth
 
-With more features than points ($p > n$):
+Implement `layer_stats(p, X, y, depth, mode)`: return two lists of length `depth`, the root mean square of the hidden state after each layer, and the root mean square of the gradient of each `W{l}` (from your `stack_loss_and_grads`, provided).
 
-- `min_norm(X, y)`: $X^\top(XX^\top)^{-1}y$.
-- `mse(w, X, y)` and `mse_grad(w, X, y)` for $\tfrac1n\|Xw - y\|^2$.
-- `gd_from_zero(X, y, lr, steps)`: gradient descent on the MSE from $w = 0$.
-
-The tests check that the minimum-norm solution interpolates, that adding any null-space vector keeps the fit but increases the norm, and that gradient descent from zero converges to the minimum-norm solution (Section 4).
+Then compare the five variants at depth 20 and width 64 on 200 digits, at initialization. Which variants keep the activations at a stable scale? Which keep the gradients similar across layers?
 
 ## Hints
 
-1. Solve with `np.linalg.solve(X @ X.T, y)` and multiply by `X.T`.
-2. A null-space vector: take any `v` and subtract its projection onto the row space.
-3. With `lr` below $1/\lambda_{\max}(\tfrac2n X X^\top)$, a few thousand steps converge.
+1. Recompute the forward pass layer by layer, recording `sqrt(mean(h**2))` after each update.
+2. For the gradients, call `stack_loss_and_grads` once and read `grads[f"W{l}"]`.
+3. The last layer's gradient is the one closest to the loss; compare the first with the last.

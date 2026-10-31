@@ -1,13 +1,15 @@
-# Peak FLOPs and occupancy
+# Hoffmann's fitting objective
 
-1. `peak_flops(sms, cores_per_sm, clock_hz, flops_per_core_cycle=2)`.
-2. `blocks_per_sm(threads_per_block, regs_per_thread, smem_per_block, lim=TURING)`: how many blocks fit on one SM at once, the smallest of: the block limit, the warp limit (`max_warps // warps_per_block`), the register limit (`registers // (regs_per_thread * threads in whole warps)`) and, if the block uses shared memory, the shared-memory limit.
-3. `occupancy(...)`: resident warps divided by the maximum warps per SM.
+Hoffmann et al. fit $L(N, D) = E + A N^{-\alpha} + B D^{-\beta}$ by minimizing, over all runs, the Huber loss of the error in $\log L$. Writing $A = e^a$, $B = e^b$, $E = e^e$, the predicted log loss is a log-sum-exp:
+$$
+\log \hat L = \operatorname{LSE}(a - \alpha \log N,\; b - \beta \log D,\; e).
+$$
 
-`TURING` holds the per-SM limits of the T4's architecture.
+1. `huber(r, delta)`: elementwise $\tfrac12 r^2$ for $|r| \le \delta$ and $\delta(|r| - \tfrac12\delta)$ beyond, and its derivative.
+2. `hoffmann_objective(theta, N, D, L, delta=1e-3)` with $\theta = (a, b, e, \alpha, \beta)$: return $\sum_i \operatorname{huber}(\log \hat L_i - \log L_i, \delta)$ and its gradient with respect to $\theta$.
 
 ## Hints
 
-1. Warps per block round up: `-(-threads // 32)`.
-2. Registers are allocated per warp, so count `warps * 32` threads.
-3. Skip the shared-memory limit when the block uses none (division by zero).
+1. The derivative of LSE with respect to each argument is the softmax weight of that argument.
+2. Subtract the largest of the three terms before exponentiating.
+3. The gradient with respect to $\alpha$ is $-\sum_i h'(r_i)\, p_{i,1} \log N_i$, where $p_{i,1}$ is the weight of the first term.

@@ -1,20 +1,22 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(4)
-U, _ = np.linalg.qr(rng.normal(size=(16, 16)))
-V, _ = np.linalg.qr(rng.normal(size=(16, 16)))
-target = (U[:, :4] * np.array([1.0, 0.7, 0.5, 0.3])) @ V[:, :4].T
+rng = np.random.default_rng(2)
+logits, ref = rng.normal(size=(6, 4)), rng.normal(size=(6, 4))
+actions = rng.integers(0, 4, 6)
+adv = rng.normal(size=6)
 
 
-def test_reaches_the_svd_optimum():
-    S = np.linalg.svd(target, compute_uv=False)
-    for r in [1, 2, 4]:
-        A, B, loss = sub.fit_lora(target, r, alpha=r)
-        assert A.shape == (r, 16) and B.shape == (16, r)
-        assert abs(loss - 0.5 * np.sum(S[r:] ** 2)) < 2e-3
+def test_advantages():
+    a = sub.group_advantages([[1, 0, 0, 1], [1, 1, 1, 1]])
+    assert np.allclose(a[0], [1, -1, -1, 1], atol=1e-5) and np.allclose(a[1], 0)
 
 
-def test_starts_at_the_base_model():
-    A, B, _ = sub.fit_lora(target, 2, alpha=2, steps=0)
-    assert np.all(B == 0)
+def test_grad_pg():
+    _, g = sub.pg_loss(logits, actions, adv, ref, 0.1)
+    num = np.zeros_like(logits)
+    for idx in np.ndindex(logits.shape):
+        E = np.zeros_like(logits); E[idx] = 1e-6
+        num[idx] = (sub.pg_loss(logits + E, actions, adv, ref, 0.1)[0] - sub.pg_loss(logits - E, actions, adv, ref, 0.1)[0]) / 2e-6
+    assert np.allclose(g, num, atol=1e-8)
+    assert abs(sub.pg_loss(logits, actions, np.zeros(6), logits, 0.5)[0]) < 1e-12

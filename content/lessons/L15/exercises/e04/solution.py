@@ -1,30 +1,20 @@
 import numpy as np
 
 
-def huber(r, delta):
-    """Elementwise Huber loss and its derivative: r^2 / 2 for |r| <= delta, linear beyond."""
-    a = np.abs(r)
-    value = np.where(a <= delta, 0.5 * r * r, delta * (a - 0.5 * delta))
-    return value, np.where(a <= delta, r, delta * np.sign(r))
+def detect_spikes(losses, window, k):
+    """1-based steps whose loss exceeds the mean of the previous `window` losses by more than k of
+    their standard deviations (a non-finite loss always counts). Steps before a full window are
+    never flagged."""
+    out = []
+    for i in range(window, len(losses)):
+        prev = np.asarray(losses[i - window:i], dtype=float)
+        if not np.isfinite(losses[i]) or losses[i] > prev.mean() + k * prev.std():
+            out.append(i + 1)
+    return out
 
 
-def hoffmann_objective(theta, N, D, L, delta=1e-3):
-    """theta = (a, b, e, alpha, beta), with A = exp(a), B = exp(b), E = exp(e). The predicted log
-    loss is LSE(a - alpha log N, b - beta log D, e); return the sum over runs of
-    huber(predicted - log L, delta) and its gradient with respect to theta."""
-    a, b, e, alpha, beta = theta
-    lN, lD = np.log(N), np.log(D)
-    z = np.stack([a - alpha * lN, b - beta * lD, np.full(lN.shape, e)])
-    m = z.max(axis=0)
-    w = np.exp(z - m)
-    s = w.sum(axis=0)
-    p = w / s
-    h, dh = huber(m + np.log(s) - np.log(L), delta)
-    grad = np.array([
-        np.sum(dh * p[0]),
-        np.sum(dh * p[1]),
-        np.sum(dh * p[2]),
-        -np.sum(dh * p[0] * lN),
-        -np.sum(dh * p[1] * lD),
-    ])
-    return h.sum(), grad
+def rollback_point(flagged_step, checkpoint_every):
+    """The loss at step s is measured before update s, so update s - 1 may already be damaged:
+    return the last checkpoint step saved before it (checkpoints are saved after steps
+    checkpoint_every, 2 checkpoint_every, ...; step 0 is the initialization)."""
+    return (flagged_step - 2) // checkpoint_every * checkpoint_every

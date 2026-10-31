@@ -1,35 +1,35 @@
 id: L06
-hours: 7
-capstone: "Reproduce a double-descent curve with random features and explain where the peak sits"
-teaser: "Why test error falls, rises and falls again as models grow, and how not to fool yourself measuring it."
+hours: 8
+capstone: "A 30-layer residual MLP that trains stably to at least 85 percent test accuracy on the L03 digit task, with each stabilizing choice explained"
+teaser: "Derive batch, layer and RMS normalization with their backward passes, and see why residual connections and pre-norm make depth trainable."
 movements:
   - {file: m0-recall.md,     mode: theory,   minutes: 20}
-  - {file: m1-puzzle.md,     mode: theory,   minutes: 35}
-  - {file: m2-derivation.md, mode: theory,   minutes: 130}
-  - {file: m3-build.md,      mode: practice, minutes: 90}
-  - {file: m4-scale.md,      mode: practice, minutes: 50}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 160}
+  - {file: m3-build.md,      mode: practice, minutes: 120}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
   - {file: m5-break.md,      mode: both,     minutes: 40}
   - {file: m6-feynman.md,    mode: theory,   minutes: 20}
-  - {file: m7-capstone.md,   mode: practice, minutes: 35}
+  - {file: m7-capstone.md,   mode: practice, minutes: 20}
 hooks:
-  - {to: L15, text: "Scaling laws are learning curves on a log-log plot; the irreducible-error term is the noise floor of this lesson."}
-  - {to: L16, text: "Test-set leakage returns at scale as benchmark contamination of pretraining data."}
+  - {to: L09, text: "Every transformer block is a pre-norm residual block: x + attention(LN(x)), then x + MLP(LN(x))."}
+  - {to: L08, text: "The layer norm you differentiate here becomes a fused GPU kernel in L08."}
 reuses:
-  - {from: M25, concept: "bias and variance of estimators"}
-  - {from: M27, concept: "held-out cross-entropy"}
-  - {from: L05, concept: "ridge regression and least squares"}
+  - {from: L05, concept: "variance-preserving initialization, Adam and warmup"}
 annotations:
-  - {target: M25, anchor: "mean squared error", text: "The same bias-variance split, applied to a model's predictions instead of a parameter, explains overfitting (L06)."}
-  - {target: L05, anchor: "ridge", text: "Ridge trades a little bias for a large cut in variance; near the interpolation threshold it removes the double-descent peak (L06)."}
+  - {target: L03, movement: m2-derivation, anchor: "Initialization: three ways to fail before training starts", text: "L06 adds two lasting fixes: normalization keeps activations at unit scale during training, and residual connections keep gradients flowing through depth."}
+  - {target: L05, movement: m2-derivation, anchor: "Initialization from variance preservation", text: "Variance preservation holds only at initialization; the normalization layers of L06 enforce it throughout training."}
 concepts:
-  - q: "State the bias-variance decomposition of expected squared error at a point."
-    a: "E[(y - f_hat(x))^2] = noise variance + (f(x) - E[f_hat(x)])^2 + Var(f_hat(x)): irreducible noise plus squared bias plus variance."
-  - q: "Why does test error peak when the number of parameters equals the number of training points?"
-    a: "At the interpolation threshold the fitted model must pass exactly through noisy points using the only solution available; the design matrix's smallest singular value is near zero, so noise is amplified enormously. With more parameters, the minimum-norm interpolant spreads the fit over many directions and the variance falls again."
-  - q: "What does gradient descent from zero converge to on an underdetermined least-squares problem?"
-    a: "The minimum-norm solution, because every update lies in the row space of X, so the iterate never acquires a component in the null space."
-  - q: "Why is selecting features on the full dataset before cross-validation a leak?"
-    a: "The selection has already looked at the validation labels, so features chosen for spurious correlation with those labels make the cross-validated score optimistic, even on pure noise."
-  - q: "Why can a test score used to pick among many models no longer be trusted?"
-    a: "The maximum of many noisy scores is biased upward; the chosen model's test score includes luck that will not repeat on fresh data."
-katas: [e03, e05, e07]
+  - q: "What does batch norm compute in training mode, and what changes at evaluation?"
+    a: "Each feature is normalized by the mean and variance over the batch, then scaled by gamma and shifted by beta; at evaluation it uses running averages of those statistics, so each example's output no longer depends on the rest of the batch."
+  - q: "How does layer norm differ from batch norm?"
+    a: "Layer norm normalizes each example over its own features, so it needs no batch statistics, behaves identically in training and evaluation, and works with a batch of one."
+  - q: "Why does a residual connection help gradients reach early layers?"
+    a: "The Jacobian of h + F(h) is I + J_F, so the backward pass always contains an identity path that carries the gradient unchanged, whatever F does."
+  - q: "What is the difference between pre-norm and post-norm residual blocks?"
+    a: "Post-norm normalizes after the addition, LN(h + F(h)), so even the skip path passes through every norm; pre-norm normalizes only the branch input, h + F(LN(h)), leaving a clean identity path, and needs a final norm before the output."
+  - q: "Why does batch norm fail with a batch of size one?"
+    a: "The batch mean equals the single example and the variance is zero, so every feature normalizes to zero: the output is beta whatever the input, and no gradient flows back."
+  - q: "How does the second moment of a residual stream grow with depth?"
+    a: "If each branch adds an uncorrelated, zero-mean update of the same size scaled by alpha, it is multiplied by 1 + alpha^2 per layer; scaling branches by 1/sqrt(L) keeps the total bounded."
+katas: [e01, e03, e04]

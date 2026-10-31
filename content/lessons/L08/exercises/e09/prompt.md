@@ -1,13 +1,10 @@
-# Train on the spiral and compare with L07
+# Block sizes that fit
 
-The full engine is provided. `make_spiral()` returns 300 points of three interleaved spiral arms (a classic dataset no linear classifier can separate), and `manual_grads(model, X, y)` is the hand-written backward pass from L07 for the same network.
-
-Implement `train(sizes, X, y, lr, steps, seed=0)`: build `MLP(sizes, seed)`, an `SGD` optimizer, and run `steps` full-batch steps of zero-grad, forward, `cross_entropy_fused`, backward, step. Return `(model, losses)` with the loss of every step as a float.
-
-The tests check that your engine's gradients equal L07's hand-written ones to machine precision, and that a `2-64-3` network trained for 300 steps at learning rate 1 classifies the spiral with at least 90 percent training accuracy.
+1. `flash_smem_bytes(block_m, block_n, d, bytes_per=2)`: on-chip bytes of one FlashAttention program, counting the $Q$, $K$ and $V$ tiles in the input precision and fp32 accumulators for the output ($B_m \times d$) and the scores ($B_m \times B_n$).
+2. `best_blocks(d, budget, sizes=(16, 32, 64, 128), bytes_per=2)`: the largest square block size from `sizes` that fits the budget, or `None`.
 
 ## Hints
 
-1. Call `opt.zero_grad()` before `loss.backward()`; without it, gradients from all earlier steps accumulate.
-2. Wrap the input once per step: `model(Tensor(X))`.
-3. Record `float(loss.data)` after the backward pass.
+1. $(B_m d + 2 B_n d) \cdot \text{bytes} + 4 (B_m d + B_m B_n)$.
+2. Doubling $d$ roughly halves the block that fits.
+3. Real kernels also keep values in registers and use software pipelining that needs extra buffers; treat this count as a lower bound.

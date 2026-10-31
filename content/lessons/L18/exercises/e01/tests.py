@@ -1,19 +1,14 @@
 import sub
 
 
-def test_zero_figure_one():
-    def total(z):
-        return sum(sub.model_state_bytes(7.5e9, z, 64).values()) / 1e9
-    assert abs(total(0) - 120) < 1e-9
-    assert abs(total(1) - 31.40625) < 1e-9
-    assert abs(total(2) - 16.640625) < 1e-9
-    assert abs(total(3) - 1.875) < 1e-9
+def test_intensities():
+    assert sub.decode_intensity(7e9, 1, 0) == 1.0
+    assert sub.decode_intensity(7e9, 32, 0) == 32.0
+    assert sub.decode_intensity(7e9, 32, 14e9) == 16.0
+    assert sub.prefill_intensity(7e9, 1000) == 1000.0
 
 
-def test_activations():
-    full = sub.activation_bytes(2048, 1, 12288, 96, 96)
-    assert full == 96 * 2048 * 12288 * (34 + 80)
-    assert sub.activation_bytes(2048, 1, 12288, 96, 96, tp=8, flash=True) == 96 * 2048 * 12288 * 34 / 8
-    ck = sub.activation_bytes(2048, 1, 12288, 96, 96, checkpoint=True)
-    assert ck == 96 * 2 * 2048 * 12288 + 2048 * 12288 * 114
-    assert ck < full / 30
+def test_step_time():
+    t = sub.step_time(2 * 7e9, 14e9, 65e12, 320e9)
+    assert abs(t - 14e9 / 320e9) < 1e-15
+    assert sub.step_time(2e15, 1e9, 65e12, 320e9) == 2e15 / 65e12

@@ -1,29 +1,22 @@
+import warnings
 import numpy as np
 import sub
 
 rng = np.random.default_rng(1)
+X = np.concatenate([
+    rng.normal(size=3000) * np.exp(rng.uniform(-25, 12, size=3000)),
+    [0.0, 0.1, 1 / 3, 1 + 2 ** -11, 1 + 3 * 2 ** -11, 65504, 65519, 65520, 1e5, 2 ** -24, 2 ** -25, 3e-8, -2.5, 2 ** -14],
+])
 
 
-def test_rows_sum_to_one_and_stable():
-    S = rng.normal(size=(3, 4, 5)) * 50 + 1000
-    P = sub.softmax_rows(S)
-    assert P.shape == S.shape and np.allclose(P.sum(axis=-1), 1)
-    assert np.all(np.isfinite(P))
+def test_matches_numpy_float16():
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        ref = X.astype(np.float16).astype(np.float64)
+    assert np.array_equal(sub.round_to_format(X, 5, 10), ref)
 
 
-def test_masked_entries():
-    S = np.array([[0.0, -np.inf, np.log(3)]])
-    assert np.allclose(sub.softmax_rows(S), [[0.25, 0.0, 0.75]])
-
-
-def test_grad_softmax():
-    S = rng.normal(size=(4, 6))
-    G = rng.normal(size=(4, 6))
-    P = sub.softmax_rows(S)
-    dS = sub.softmax_backward(P, G)
-    num = np.zeros_like(S)
-    for idx in np.ndindex(S.shape):
-        E = np.zeros_like(S)
-        E[idx] = 1e-6
-        num[idx] = (np.sum(sub.softmax_rows(S + E) * G) - np.sum(sub.softmax_rows(S - E) * G)) / 2e-6
-    assert np.allclose(dS, num, atol=1e-8)
+def test_bfloat16_examples():
+    r = sub.round_to_format(np.array([1.0 + 2 ** -8, 1.0 + 3 * 2 ** -8, 3e38, 4e38, 1e-40]), 8, 7)
+    assert r[0] == 1.0 and r[1] == 1.0 + 2 ** -6
+    assert np.isfinite(r[2]) and np.isinf(r[3]) and 0 < r[4] < 1e-39

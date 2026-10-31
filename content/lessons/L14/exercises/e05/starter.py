@@ -1,17 +1,13 @@
 import numpy as np
 
 
-def train_val_split(ids, frac=0.9):
-    """The first frac of the tokens for training, the rest for validation (never shuffled across)."""
+def adam_update(w, g, m, v, t, lr, b1=0.9, b2=0.999, eps=1e-8):
+    """One Adam step (with bias correction) on arrays; return (w, m, v)."""
     raise NotImplementedError
 
 
-def get_batch(ids, ctx, batch, rng):
-    """batch random windows: x[b] = ids[s:s + ctx] and y[b] = ids[s + 1:s + ctx + 1], with starts
-    drawn by rng.integers(0, len(ids) - ctx, size=batch)."""
-    raise NotImplementedError
-
-
-def tokens_per_epoch(n_tokens, ctx, batch):
-    """Training steps per pass over the data, if every window position is used once: n / (ctx * batch)."""
+def zero1_step(w, rank_grads, states, t, lr):
+    """ZeRO stage 1 over P = len(rank_grads) ranks. Average the gradients, then rank r updates only
+    its shard np.array_split(range(len(w)), P)[r] of the weights, using its own (m, v) shard in
+    states[r]; the updated shards are gathered into the full weights. Return (w, states)."""
     raise NotImplementedError

@@ -1,15 +1,12 @@
-# Stochastic rounding
+# A reward model from preferences
 
-On a grid of spacing `step`:
+People compare two responses more reliably than they score one. The Bradley-Terry model turns comparisons into a reward: $P(a \succ b) = \sigma(r_a - r_b)$. With a linear reward $r = F w$ on response features:
 
-1. `round_down_up(x, step)`: the grid points just below and just above `x`.
-2. `stochastic_round(x, step, rng)`: round `x` up with probability $(x - \ell)/\text{step}$, where $\ell$ is the point below, and down otherwise.
-3. `accumulate(w0, update, n, step, mode, rng=None)`: apply $w \leftarrow \operatorname{round}(w + \text{update})$ `n` times, with `mode` `"nearest"` or `"stochastic"`.
-
-Start from 1.0 on bf16's grid near 1 ($2^{-7}$) and add 0.001 a thousand times.
+1. `bt_loss(w, F_win, F_lose)`: the mean $-\log \sigma(r_\text{win} - r_\text{lose})$ over pairs, and its gradient.
+2. `fit_bt(F_win, F_lose, steps=2000, lr=1.0)`: gradient descent from zero.
 
 ## Hints
 
-1. `lo = np.floor(x / step) * step`.
-2. `rng.random(shape) < p` picks "up" with probability `p`.
-3. The expected value of a stochastic rounding is exactly `x`.
+1. $-\log \sigma(d) = \log(1 + e^{-d})$: `np.logaddexp(0, -d)`.
+2. The gradient is $-\sum (F_\text{win} - F_\text{lose})^\top \sigma(-d)/n$.
+3. Only differences of rewards are identified: adding a constant to every reward changes nothing.

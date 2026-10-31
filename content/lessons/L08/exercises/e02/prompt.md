@@ -1,11 +1,11 @@
-# Unbroadcasting a gradient
+# A tiled matrix product
 
-Implement `unbroadcast(g, shape)`: given the gradient `g` of a broadcast result, return the gradient of the input that had shape `shape`, by summing over every axis that broadcasting added or stretched. The result must have exactly shape `shape`.
+Implement `tiled_matmul(A, B, T)`: compute $C = AB$ in $T \times T$ output tiles. For each output tile, loop over $K$ in steps of $T$, multiply the $A$ tile by the $B$ tile and accumulate. Sizes need not be multiples of $T$ (slicing past the end of an array returns a shorter slice). Return `(C, loads)`, where `loads` counts every element read from $A$ and $B$.
 
-Examples: `g` of shape `(32, 4)` and `shape=(4,)` gives the column sums; `shape=(32, 1)` gives the row sums kept as a column; `shape=()` gives the sum of everything.
+Compare `loads` with the $2n^3/T$ of the derivation, and with the $2n^3$ an untiled product (one row times one column per output) would read.
 
 ## Hints
 
-1. While `g` has more dimensions than `shape`, sum over axis 0.
-2. Then, for each axis where `shape` has size 1 but `g` does not, sum over it with `keepdims=True`.
-3. Check your function against NumPy: for `x` of shape `shape`, the gradient of `np.sum(G * (Z + x))` with respect to `x` is `unbroadcast(G, shape)`.
+1. Three nested loops: output row tiles, output column tiles, and the reduction.
+2. Add `a.size + b.size` for every pair of tiles loaded.
+3. Accumulate in a small array and write it into `C` once per output tile.

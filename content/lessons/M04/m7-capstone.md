@@ -9,7 +9,7 @@ Build an adaptive drawer: start with one straight piece, find the piece with the
 
 ## When you finish
 
-You have built, by hand, the function class of a one-hidden-layer ReLU network, and placed its corners by an explicit rule. In L07 gradient descent places them for you. Along the way: M05 makes sums of infinitely many pieces precise, M06 inverts the exponential, and M07 composes rotations.
+You have built, by hand, the function class of a one-hidden-layer ReLU network, and placed its corners by an explicit rule. In L03 gradient descent places them for you. Along the way: M05 makes sums of infinitely many pieces precise, M06 inverts the exponential, and M07 composes rotations.
 
-:::edge{to=L07 text="a one-hidden-layer ReLU network is a sum of shifted ReLUs."}
+:::edge{to=L03 text="a one-hidden-layer ReLU network is a sum of shifted ReLUs."}
 :::

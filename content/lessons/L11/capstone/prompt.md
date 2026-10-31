@@ -1,11 +1,12 @@
-# Capstone: profile and fix a slow training step
+# Capstone: predict a run before you train it
 
-Open the Colab notebook with a **T4 GPU** runtime and run it top to bottom. You will:
+Open the Colab notebook with a **T4 GPU** runtime and work through it:
 
-1. Fill in the FLOP and byte counts of the benchmarked matrix products and additions, and see them on the T4's roofline.
-2. Measure pageable and pinned host-to-device copies.
-3. Profile the provided `slow_step` with `torch.profiler` and count its kernels per step.
-4. Write `prepare`, `make_optimizer` and `fast_step` so that the training step runs at least twice as fast and produces the same losses (within half-precision rounding).
-5. Write a report of at least 80 words: what the profile showed, what you changed, and the measured speedup.
+1. Write `non_embedding_params`, the parameter count that scaling laws use.
+2. Run the sweep: five model sizes at four token budgets, every run with its own learning-rate schedule.
+3. Write `fit_parametric`, the variable-projection fit of $L(N, D) = E + A N^{-\alpha} + B D^{-\beta}$ from exercise 5, over exponents up to 1.5 (the provided `fit_for_exponents` keeps the floor non-negative).
+4. Write `optimal_allocation` and compare the fitted frontier with the runs you trained.
+5. Record the fit's prediction for the larger held-out model, then train it.
+6. Write a report of at least 80 words: the exponents, how close the prediction was, and why the fit could mislead at much larger scale.
 
-The autograder cell prints a completion code; the speedup test runs only on a GPU, so a CPU run cannot produce the full code.
+The autograder checks the parameter count, the sweep, the frontier, that the fit describes the sweep within **3% relative RMS error**, that the prediction was recorded before the held-out run started and lands within **8%** of it, and the report.

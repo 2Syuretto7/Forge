@@ -1,12 +1,9 @@
-# Spacing between numbers
+# REINFORCE on a bandit
 
-1. `ulp(x, exp_bits=5, man_bits=10)`: the spacing of representable numbers at $|x|$, $2^{\lfloor \log_2 |x| \rfloor - m}$, never below the subnormal spacing.
-2. `largest_exact_integer(man_bits)`: every integer up to $2^{m+1}$ is exactly representable; return that bound.
-
-Then check: in fp16, $2048 + 1$ rounds back to 2048, and in bf16 the update $1 + 0.001$ rounds back to 1.
+Implement `train_bandit(means, steps, lr, seed, batch=16)`: arm $a$ pays `means[a]` plus standard normal noise. Each step, sample `batch` arms from $\operatorname{softmax}(\theta)$ (with one `np.random.default_rng(seed)` for the whole run), use the batch's mean reward as the baseline, and add `lr` times the average of $(r - b)(\text{onehot}(a) - p)$ to $\theta$. Return the final probabilities.
 
 ## Hints
 
-1. Clamp the exponent at $1 - \text{bias}$.
-2. `np.float16(2048) + np.float16(1)` shows the effect directly.
-3. A relative change smaller than half the epsilon always rounds away.
+1. Draw the arms and the noise from the same generator, arms first.
+2. The baseline is the mean of this batch's rewards.
+3. The policy should end up on the best arm even though every reward is noisy.

@@ -1,18 +1,12 @@
-def words_of(doc):
-    """Lowercased words with surrounding punctuation stripped, empty ones dropped."""
+import numpy as np
+
+
+def packed_attention_mask(lengths):
+    """Several examples packed into one sequence: position i may attend to position j only if
+    j <= i and both belong to the same example. Return a boolean (T, T) array."""
     raise NotImplementedError
 
 
-def ngrams(words, n=13):
-    """The set of n-word tuples of a word list."""
-    raise NotImplementedError
-
-
-def build_index(eval_docs, n=13):
-    """Every n-gram of every evaluation document."""
-    raise NotImplementedError
-
-
-def decontaminate(train_docs, eval_docs, n=13):
-    """Indices of the training documents that share no n-gram with any evaluation document."""
+def packed_positions(lengths):
+    """Position ids that restart at 0 for every packed example."""
     raise NotImplementedError

@@ -1,22 +1,54 @@
 import numpy as np
 
 
-def ema(xs, beta, debias=False):
-    """m_t = beta m_{t-1} + (1 - beta) x_t from m_0 = 0, for t = 1..len(xs).
-    With debias=True, divide m_t by 1 - beta**t."""
-    out = np.zeros(len(xs))
-    m = 0.0
-    for t, x in enumerate(xs, start=1):
-        m = beta * m + (1.0 - beta) * x
-        out[t - 1] = m / (1.0 - beta ** t) if debias else m
-    return out
+def softmax_rows(S):
+    """Softmax of every row, stable for large entries; -inf entries get weight 0."""
+    m = S.max(axis=-1, keepdims=True)
+    E = np.exp(S - m)
+    return E / E.sum(axis=-1, keepdims=True)
 
 
-def momentum_gain(beta, omega):
-    """Steady-state amplitude of v_t = beta v_{t-1} + g_t for the input g_t = cos(omega t)."""
-    return 1.0 / abs(1.0 - beta * np.exp(-1j * omega))
+def softmax_backward(P, dP):
+    """Given P = softmax_rows(S) and dL/dP, return dL/dS."""
+    return P * (dP - (dP * P).sum(axis=-1, keepdims=True))
 
 
-def ema_gain(beta, omega):
-    """The same for the EMA, which is the momentum sum scaled by 1 - beta."""
-    return (1.0 - beta) * momentum_gain(beta, omega)
+def causal_mask(n):
+    """Boolean (n, n) array, True where query i may not see key j (j > i)."""
+    return np.triu(np.ones((n, n), dtype=bool), k=1)
+
+
+def attention(Q, K, V, causal=True, scale=True):
+    """Single-head attention for Q, K of shape (n, d) and V of shape (n, dv). Return (O, P)."""
+    S = Q @ K.T
+    if scale:
+        S = S / np.sqrt(Q.shape[-1])
+    if causal:
+        S = np.where(causal_mask(Q.shape[0]), -np.inf, S)
+    P = softmax_rows(S)
+    return P @ V, P
+
+
+def split_heads(X, h):
+    """(n, d) -> (h, n, d // h): head i gets columns i * d/h to (i + 1) * d/h."""
+    n, d = X.shape
+    return X.reshape(n, h, d // h).transpose(1, 0, 2)
+
+
+def merge_heads(Y):
+    """(h, n, dh) -> (n, h * dh), the inverse of split_heads."""
+    h, n, dh = Y.shape
+    return Y.transpose(1, 0, 2).reshape(n, h * dh)
+
+
+def mha_forward(X, Wq, Wk, Wv, Wo, h, causal=True):
+    """Multi-head self-attention: project, split into h heads, attend per head, merge, project.
+    Return (Y, cache)."""
+    Q, K, V = split_heads(X @ Wq, h), split_heads(X @ Wk, h), split_heads(X @ Wv, h)
+    outs, Ps = [], []
+    for i in range(h):
+        O, P = attention(Q[i], K[i], V[i], causal=causal)
+        outs.append(O)
+        Ps.append(P)
+    M = merge_heads(np.stack(outs))
+    return M @ Wo, (X, Q, K, V, np.stack(Ps), M)

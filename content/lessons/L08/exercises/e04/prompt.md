@@ -1,17 +1,11 @@
-# The core tensor
+# What fusion saves
 
-Now the engine for arrays. A `Tensor` holds `data` (a float NumPy array), `grad` (`None` until a gradient arrives), `_parents` and a `_backward` closure. `_accumulate(g)` (given) adds a gradient contribution.
-
-Implement:
-
-- `__add__` and `__mul__`, elementwise with NumPy broadcasting; their backward rules must **unbroadcast** (the function from the previous exercise is provided).
-- `sum(axis=None, keepdims=False)`: its backward broadcasts the gradient back to the input's shape (when `keepdims=False` and an axis was given, first restore the summed axis with `np.expand_dims`).
-- `backward()`: build a topological order of the graph that ends at this tensor, reset the gradients of non-leaf tensors (those with parents) to `None`, set this tensor's gradient to ones, and call each `_backward` in reverse order, skipping tensors that received no gradient.
-
-Use an iterative depth-first search in `backward`: graphs from real training loops are deeper than Python's recursion limit.
+1. `softmax_traffic(rows, cols, bytes_per=2, fused=True)`: bytes moved by a row softmax, counting 6 array passes when unfused (as in the derivation) and 2 when fused.
+2. `predicted_speedup(rows, cols, bytes_per=2)`: the ratio, which is what a memory-bound kernel gains.
+3. `fits_on_chip(cols, bytes_per=4, budget=64 * 1024)`: whether one row, held in fp32, fits a program's on-chip budget. Rows longer than that need the online softmax instead of a single block.
 
 ## Hints
 
-1. In `__add__`: `out = Tensor(self.data + other.data, (self, other), "add")`, then a closure that calls `self._accumulate(unbroadcast(out.grad, self.shape))` and the same for `other`.
-2. Wrap plain numbers and arrays with `as_tensor` so `t * 2.0` works.
-3. An iterative post-order: push `(node, False)`; when popped, push `(node, True)` and then its unvisited parents; append a node to the order when it is popped with `True`.
+1. Each array pass is `rows * cols * bytes_per` bytes.
+2. The ratio does not depend on the shape.
+3. 64 KB holds 16,384 fp32 values.

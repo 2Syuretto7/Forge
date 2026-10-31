@@ -1,124 +1,117 @@
-# Derivation: what test error is made of
+# Derivation: normalization layers and residual streams
 
-This movement defines the quantity we care about (risk on new data), decomposes its expected value into noise, bias and variance, and uses the decomposition to explain both the classical U-shaped curve and double descent. It ends with the rules for estimating risk honestly: held-out sets, cross-validation, and the two ways to leak.
+## 1. Batch normalization
 
-## 1. Risk and its estimates
+For a minibatch $X$ of shape $N \times d$, **batch norm** normalizes each feature (column) with the batch's own statistics:
 
-Data come from an unknown distribution: inputs $x$ and targets $y = f(x) + \epsilon$ with noise $\mathbb{E}\epsilon = 0$, $\operatorname{Var}\epsilon = \sigma^2$. A learning algorithm takes a training set $\mathcal D$ of $n$ points and returns a predictor $\hat f_{\mathcal D}$. Its **risk** is the expected loss on a fresh point, $R(\hat f) = \mathbb{E}_{x,y}\big[(y - \hat f(x))^2\big]$. Its **training error** is the average loss on $\mathcal D$ itself, which is optimistic: the predictor was chosen to make exactly those losses small.
+$$
+\mu_j = \frac1N \sum_i x_{ij}, \qquad \sigma_j^2 = \frac1N \sum_i (x_{ij} - \mu_j)^2, \qquad \hat x_{ij} = \frac{x_{ij} - \mu_j}{\sqrt{\sigma_j^2 + \epsilon}}, \qquad y_{ij} = \gamma_j \hat x_{ij} + \beta_j.
+$$
 
-A **test set** drawn independently of $\mathcal D$ gives an unbiased estimate of the risk, but only as long as nothing about the predictor was chosen by looking at it. The moment you pick a model, a hyperparameter or a feature because it scored well on the test set, its score becomes a training error in disguise (Movement 5).
+The learned $\gamma$ and $\beta$ let the layer undo the normalization if that helps. At evaluation time there may be one example, so batch norm keeps **running averages** of $\mu$ and $\sigma^2$ during training and uses those instead. The output of an example in training mode therefore depends on the other examples in its batch.
 
-## 2. The bias-variance decomposition
+## 2. Its backward pass
 
-Fix an input $x$ and consider the randomness of the training set. Write $\bar f(x) = \mathbb{E}_{\mathcal D}[\hat f_{\mathcal D}(x)]$ for the average prediction over training sets.
+Write $r = 1/\sqrt{\sigma^2 + \epsilon}$ and $g = \partial L/\partial \hat x = \gamma \odot \partial L/\partial y$, per feature. Every $x_i$ affects $\hat x_i$ directly, and every $\hat x_k$ through $\mu$ and $\sigma^2$. Collecting the three paths and using $\sum_i \hat x_i = 0$ and $\sum_i \hat x_i^2 = N$ (up to $\epsilon$):
 
-::::derivation{id=d1 title="Splitting the expected error at one point"}
+$$
+\frac{\partial L}{\partial x_i} = \frac{r}{N}\left(N g_i - \sum_k g_k - \hat x_i \sum_k g_k \hat x_k\right).
+$$
+
+The two subtracted terms remove the components of $g$ along the directions the normalization cannot see: a constant shift of the batch and a rescaling of it.
+
+::::derivation{id=d1 title="What batch norm's gradient removes"}
 :::step
-Write $y - \hat f = (y - f) + (f - \bar f) + (\bar f - \hat f)$, dropping the argument $x$. The three pieces are the noise $\epsilon$, a fixed number (the **bias**), and a zero-mean random variable (the **fluctuation**). Square and take expectations over the noise and the training set. The noise is independent of the training set and has mean zero, so every cross term involving it vanishes. The term $2(f - \bar f)\,\mathbb{E}[\bar f - \hat f]$ vanishes because $\mathbb{E}[\hat f] =$ [[word:fbar/f bar/the average prediction/average prediction]].
+Over a batch of $N = 4$, the normalized values of one feature sum to [[0]] and their squares sum to [[4]].
 :::
 :::step
-What remains is $\mathbb{E}[(y - \hat f)^2] = \sigma^2 + (f - \bar f)^2 + \mathbb{E}[(\hat f - \bar f)^2]$: **noise + bias squared + variance**. If the noise variance is $0.09$, the squared bias $0.01$ and the variance $0.05$, the expected error at that point is [[0.15]].
+If the upstream gradient is the same for every example, $g = (1, 1, 1, 1)$, the formula gives $\partial L/\partial x_i =$ [[0]] for every $i$: shifting the whole batch does not change the output.
 :::
 :::step
-Averaging over $x$ gives the same split for the risk. The noise term is the floor no model can beat. In a polynomial fit, raising the degree lowers the bias and raises the variance. If a degree-1 model has bias squared $0.4$ and variance $0.01$ while a degree-15 model has bias squared $0.001$ and variance $0.6$, with noise $0.09$, the better of the two has expected error [[0.5]].
+If $g = 3\hat x$, the three terms are $3N\hat x_i$, $0$ and $\hat x_i \cdot 3N$, so the gradient is again [[0]]: scaling the batch does not change the output either.
 :::
 ::::
 
-:::edge{from=M25 text="bias and variance of estimators"}
-:::
+## 3. Layer norm and RMSNorm
 
-The decomposition explains the classical U. Simple models are wrong in the same way on every training set (high bias, low variance). Flexible models follow the noise of whichever training set they see (low bias, high variance). Somewhere in between the sum is smallest.
+**Layer norm** applies the same formulas to each example (row) over its $d$ features, with per-feature $\gamma, \beta$. No batch statistics are involved, so training and evaluation agree and a batch of one works. Its backward pass is the batch-norm formula with sums over features instead of over the batch, which is why transformers, with variable-length sequences and small per-device batches, use it.
 
-## 3. Regularization moves along the tradeoff
-
-Ridge regression (L05) shrinks coefficients toward zero. That adds bias (the shrunk fit is systematically too small) and removes variance (the fit moves less from one training set to the next). A useful way to measure a ridge model's capacity is its **effective degrees of freedom**,
+**RMSNorm** drops the centering: $y = \gamma \odot x / \operatorname{rms}(x)$ with $\operatorname{rms}(x) = \sqrt{\tfrac1d\sum_j x_j^2 + \epsilon}$. With $r = \operatorname{rms}(x)$ and $g = \gamma \odot \partial L/\partial y$,
 
 $$
-\mathrm{df}(\lambda) = \operatorname{tr}\big(X(X^\top X + \lambda I)^{-1}X^\top\big) = \sum_j \frac{s_j^2}{s_j^2 + \lambda},
+\frac{\partial L}{\partial x_j} = \frac{g_j}{r} - \frac{x_j}{d\, r^3}\sum_k g_k x_k.
 $$
 
-where $s_j$ are the singular values of $X$. At $\lambda = 0$ it counts the parameters; as $\lambda$ grows it slides continuously to zero. Each direction is kept in proportion to how strongly the data support it, the same singular-value story as M14.
+It is cheaper (one reduction instead of two) and works as well in practice; LLaMA-style models use it.
 
-## 4. More parameters than data: interpolation and the minimum norm
-
-With $p > n$ features (and $X$ of full row rank) the equations $Xw = y$ have infinitely many solutions. The **minimum-norm interpolant** is
-
-$$
-\hat w = X^\top (X X^\top)^{-1} y ,
-$$
-
-the solution with no component in the null space of $X$. It is also what you get from ridge as $\lambda \to 0$, and from gradient descent started at zero.
-
-::::derivation{id=d2 title="Gradient descent from zero picks the minimum norm"}
+::::derivation{id=d2 title="RMSNorm by hand"}
 :::step
-The gradient of $\|Xw - y\|^2$ is $2X^\top(Xw - y)$, a combination of the rows of $X$. Starting from $w_0 = 0$, every iterate is a sum of such vectors, so it always lies in the [[word:row space/row space of X/span of the rows]].
+For $x = (3, 4)$, $d = 2$ and $\epsilon$ negligible, $\operatorname{rms}(x) = \sqrt{12.5} \approx$ [[3.5355|tol=0.001]].
 :::
 :::step
-The interpolating solutions are $\hat w + v$ for $v$ in the null space, and the null space is orthogonal to the row space. The only interpolant inside the row space is the one with $v =$ [[0]], which is $\hat w$, so gradient descent converges to the minimum-norm solution.
+With $\gamma = (1, 1)$, the first output is $3/3.5355 \approx$ [[0.8485|tol=0.001]]. The output's root mean square is exactly [[1]].
 :::
 ::::
 
-This **implicit regularization** is one reason overparameterized models generalize: the training algorithm, not just the model class, decides which of the many perfect fits you get.
+## 4. Residual connections
 
-## 5. Why the peak sits at p = n
-
-Isolate the variance by taking a target with no signal, $y = \epsilon$, and inputs with independent standard Gaussian features. Then the fitted weights are pure noise amplification, and for isotropic inputs the excess test error equals $\mathbb{E}\|\hat w\|^2$. Random-matrix results for Gaussian designs give it exactly:
+A **residual block** computes $h_{l+1} = h_l + F_l(h_l)$. Its Jacobian is $I + J_{F_l}$, so the gradient reaching layer 0 is
 
 $$
-\mathbb{E}\|\hat w\|^2 = \begin{cases} \sigma^2 \dfrac{p}{n - p - 1}, & p < n - 1 \text{ (least squares)},\\[2mm] \sigma^2 \dfrac{n}{p - n - 1}, & p > n + 1 \text{ (minimum norm)}. \end{cases}
+\frac{\partial L}{\partial h_0} = \frac{\partial L}{\partial h_L} \prod_{l} (I + J_{F_l}),
 $$
 
-::::derivation{id=d3 title="Reading the variance formula"}
+and expanding the product gives one term that is the identity: a path along which the gradient arrives unchanged, however many layers there are. In a plain stack every path is a product of $L$ Jacobians, which shrinks or grows geometrically.
+
+The forward pass pays for it. If each branch output has zero mean, is uncorrelated with $h_l$, and has second moment $\alpha^2 \mathbb E[h_l^2]$, then $\mathbb E[h_{l+1}^2] = (1 + \alpha^2)\,\mathbb E[h_l^2]$, and the stream grows geometrically with depth.
+
+::::derivation{id=d3 title="Growth of the residual stream"}
 :::step
-With $n = 20$ points and noise $\sigma^2 = 1$, a model with $p = 10$ features has variance $10/(20 - 10 - 1) \approx$ [[1.111]].
+With $\alpha = 1$, the root mean square after 20 layers has grown by $2^{10} =$ [[1024]].
 :::
 :::step
-At $p = 18$ it has $18/1 = 18$. Beyond the threshold, at $p = 60$, it is $20/(60 - 20 - 1) \approx$ [[0.5128]].
-:::
-:::step
-Both expressions blow up as $p \to n$. The reason is conditioning (M14): the variance is $\sigma^2\operatorname{tr}\big((X^\top X)^{-1}\big)$ or $\sigma^2\operatorname{tr}\big((XX^\top)^{-1}\big)$, a sum of $1/s_j^2$, and the smallest singular value of an $n \times p$ Gaussian matrix is about $|\sqrt{p} - \sqrt{n}|$. At $p = n = 400$ that approximation gives [[0]], and the noise is divided by it.
+Scaling every branch by $\alpha = 1/\sqrt L$ gives $(1 + 1/L)^{L/2}$, which tends to $\sqrt e \approx$ [[1.6487|tol=0.001]] as $L$ grows: bounded at any depth.
 :::
 ::::
 
-With signal present, the bias falls as $p$ grows (more features capture more of the target), and the variance follows the curve above. The sum is the double-descent curve of the widget: a U on the left, a spike at $p = n$, and a second descent on the right that can end below the bottom of the U when the signal is spread over many directions. Ridge regularization caps $1/s_j^2$ at $1/\lambda$ and removes the spike.
+One caution, which exercise 5 measures: a branch that ends in a ReLU has a positive mean, so its outputs are correlated across layers and the stream grows faster than the formula. Real residual branches end in a linear layer, whose output has zero mean, and then the formula holds.
 
-:::widget{name=BiasVarianceCurve n=20 noise=0.3 loglambda=-9}
-:::
+## 5. Pre-norm and post-norm
 
-Move the ridge slider: by $\lambda \approx 10^{-1}$ the peak is gone and the curve is monotone. Optimal regularization never has a double-descent peak; the peak is the signature of fitting noise exactly with too few directions to spread it over.
+There are two ways to combine normalization with a residual connection:
 
-## 6. Estimating risk honestly
+- **Post-norm** (the original transformer): $h_{l+1} = \operatorname{LN}(h_l + F(h_l))$. The stream is renormalized after every block, so even the skip path passes through $L$ normalizations, each with its own Jacobian. Gradients at initialization are uneven across depth, and large early updates can push the network into a bad region; post-norm transformers need learning-rate warmup (Xiong et al., 2020).
+- **Pre-norm** (GPT-2 onward): $h_{l+1} = h_l + F(\operatorname{LN}(h_l))$. Only the branch input is normalized, so the skip path is a clean sum from any layer to the output. The stream's scale grows slowly with depth, so a final layer norm is applied before the output layer.
 
-**Hold-out.** Split once into training and test. Simple and unbiased if the test set is touched once at the end; noisy if the test set is small (M25's standard error applies: an accuracy measured on 100 examples is uncertain by about $\pm 5$ points).
-
-**k-fold cross-validation.** Split the data into $k$ folds; train on $k - 1$, evaluate on the held-out fold, rotate, and average. Every point is used for evaluation exactly once. Use it to choose hyperparameters, then refit on all training data and report a separate test score.
-
-::::derivation{id=d4 title="Cross-validation bookkeeping"}
+::::derivation{id=d4 title="The pre-norm stream"}
 :::step
-With $n = 200$ training points and $k = 5$ folds, each model is trained on [[160]] points.
+Each of 30 pre-norm blocks adds an update of root mean square 1, uncorrelated with the stream, to a stream that starts with root mean square 1. The final root mean square is about $\sqrt{31} \approx$ [[5.568|tol=0.01]].
 :::
 :::step
-Evaluating 8 candidate degrees with 5-fold CV requires [[40]] model fits, plus one final refit.
-:::
-:::step
-To estimate the risk of the whole procedure (selection included), wrap it in an outer loop: **nested** cross-validation. With 5 outer folds, each running the 40-fit inner search plus a refit, that is $5 \times 41 =$ [[205]] fits.
+In post-norm, the stream after every block has root mean square [[1]] (with $\gamma = 1$, $\beta = 0$), whatever the depth.
 :::
 ::::
 
-**The two classic leaks.** Any step that looks at labels must happen inside the cross-validation loop: feature selection, standardization statistics, target encoding, choosing a threshold. Doing it on the full data first makes the cross-validated score optimistic, sometimes absurdly so. And any score used to make a choice is no longer an unbiased estimate: the maximum of many noisy test scores overstates the winner. Movement 5 builds both failures from pure noise.
-
-:::edge{to=L16 text="Benchmark contamination: test data that leaked into a pretraining corpus inflate scores the same way."}
+:::edge{to=L09 text="Every transformer block is a pre-norm residual block, twice: x + attention(LN(x)), then x + MLP(LN(x))."}
 :::
 
-:::edge{to=L15 text="Scaling laws model test loss as an irreducible floor plus terms that shrink with data and parameters."}
+:::edge{to=L08 text="The layer norm forward and backward become one fused GPU kernel."}
+:::
+
+:::edge{from=L05 text="variance-preserving initialization, Adam and warmup"}
 :::
 
 ## Summary
 
-| Idea | Formula or rule | Consequence |
+| Layer | Normalizes over | Train and eval differ | Batch of one |
+| --- | --- | --- | --- |
+| Batch norm | the batch, per feature | yes (running statistics) | fails |
+| Layer norm | the features, per example | no | works |
+| RMSNorm | the features, no centering | no | works |
+
+| Block | Formula | Skip path |
 | --- | --- | --- |
-| Decomposition | noise $+$ bias$^2$ $+$ variance | the classical U |
-| Ridge capacity | $\mathrm{df}(\lambda) = \sum s_j^2/(s_j^2 + \lambda)$ | regularization as a dial |
-| Minimum norm | $X^\top(XX^\top)^{-1}y$, reached by GD from zero | implicit regularization |
-| Variance at the threshold | $\sigma^2 p/(n-p-1)$, $\sigma^2 n/(p-n-1)$ | the double-descent spike |
-| Honest evaluation | everything that sees labels goes inside the CV loop | no leaks |
+| Plain | $F(h)$ | none |
+| Residual | $h + F(h)$ | identity, but the stream grows |
+| Post-norm | $\operatorname{LN}(h + F(h))$ | through every norm; needs warmup |
+| Pre-norm | $h + F(\operatorname{LN}(h))$ | identity; final norm before the output |

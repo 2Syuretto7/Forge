@@ -1,38 +1,35 @@
 id: L20
-hours: 9
-capstone: "A LoRA fine-tune of a pretrained character model on instruction tasks that reaches a target accuracy on unseen inputs while its base loss stays within a stated margin, compared with full fine-tuning"
-teaser: "Teach a pretrained model new tasks: mask the prompt, train low-rank adapters, distill from a teacher, and measure what the model forgets."
+hours: 12
+capstone: "One notebook that cleans a crawl, pretrains a byte-level GPT, fine-tunes it with LoRA, improves it with RL on an exact-match reward, evaluates every stage with intervals and serves it, with a manifest and a final report"
+teaser: "Put it all together: a design document that defends every choice, then one pipeline from a raw crawl to a served model, measured at every stage."
 movements:
-  - {file: m0-recall.md,     mode: theory,   minutes: 20}
-  - {file: m1-puzzle.md,     mode: theory,   minutes: 35}
-  - {file: m2-derivation.md, mode: theory,   minutes: 165}
-  - {file: m3-build.md,      mode: practice, minutes: 130}
-  - {file: m4-scale.md,      mode: practice, minutes: 55}
-  - {file: m5-break.md,      mode: both,     minutes: 45}
-  - {file: m6-feynman.md,    mode: theory,   minutes: 25}
-  - {file: m7-capstone.md,   mode: practice, minutes: 65}
-hooks:
-  - {to: L21, text: "Reinforcement learning starts from the fine-tuned model."}
-  - {to: L22, text: "A distilled student makes a fast draft model for speculative decoding."}
-  - {to: L24, text: "The final capstone fine-tunes the model it pretrained."}
+  - {file: m0-recall.md,     mode: theory,   minutes: 30}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 230}
+  - {file: m3-build.md,      mode: practice, minutes: 170}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 50}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 40}
+  - {file: m7-capstone.md,   mode: practice, minutes: 100}
+hooks: []
 reuses:
-  - {from: M14, concept: "the SVD and the best low-rank approximation"}
-  - {from: L13, concept: "the weight matrices of a transformer block"}
-  - {from: L19, concept: "a pretrained model and its base evaluation"}
+  - {from: L11, concept: "sizing a model from a budget"}
+  - {from: L15, concept: "a pretraining run that survives failures"}
+  - {from: L16, concept: "LoRA fine-tuning and forgetting"}
+  - {from: L17, concept: "RL with a verifiable reward"}
+  - {from: L18, concept: "a continuous-batching server"}
+  - {from: L19, concept: "intervals over items and paired comparisons"}
 annotations:
-  - {target: M14, movement: m2-derivation, anchor: "Low-rank approximation: Eckart-Young", text: "L20 uses this theorem to explain why LoRA's low-rank updates are enough to fine-tune large models."}
-  - {target: L19, movement: m2-derivation, anchor: "6. Evaluation you can trust", text: "L20 reruns this evaluation after fine-tuning to measure how much the model forgot."}
+  - {target: L11, movement: m2-derivation, anchor: "7. When data runs out, and when it is not all equal", text: "L20 sizes its model on a corpus of a million bytes, where data runs out long before compute, and trains a larger model for many epochs."}
 concepts:
-  - q: "Why is the prompt masked out of the fine-tuning loss?"
-    a: "The model's job is the response; training on prompt tokens spends the gradient on reproducing inputs and teaches the model to generate prompts."
-  - q: "What does LoRA train?"
-    a: "A low-rank update (alpha / r) B A added to each frozen weight, with B starting at zero; it trains r (d_in + d_out) parameters per matrix and can be merged into the weight afterwards."
-  - q: "Why is a low-rank update usually enough for fine-tuning?"
-    a: "Fine-tuning updates have quickly decaying singular values, so by Eckart-Young a truncated SVD of low rank captures most of the update."
-  - q: "What is catastrophic forgetting, and how is it limited?"
-    a: "The loss on the pretraining distribution rises as fine-tuning moves the weights; small learning rates, replaying pretraining data, a penalty toward the pretrained weights and training fewer parameters limit it."
-  - q: "Why does distillation use a temperature, and why the T squared factor?"
-    a: "Softening both distributions exposes the teacher's small probabilities on wrong answers; the gradient of the softened KL scales as 1/T, so T squared keeps its size independent of T."
-  - q: "How do you pack several examples into one sequence correctly?"
-    a: "Use an attention mask that only lets positions attend within their own example, and restart the position ids at each example."
-katas: [e01, e03, e07]
+  - q: "When does the Chinchilla ratio of about 20 tokens per parameter not apply?"
+    a: "When data, not compute, is the limit: with a small corpus a larger model trained for many epochs with regularization and validation-based stopping does better."
+  - q: "What does a design document contain?"
+    a: "Each decision with the main alternative, the evidence for the choice (a measurement, a calculation or a reference), and the result that would change it."
+  - q: "Why fix evaluation sets before training?"
+    a: "So that no training stage can see them; any overlap inflates scores exactly where it occurs."
+  - q: "What is train/serve skew?"
+    a: "Any difference between how inputs are processed in training and in serving, such as a different tokenizer or text normalization, which silently degrades the served model."
+  - q: "Why keep a manifest of digests?"
+    a: "So every reported number can be traced to the exact data and configuration that produced it, and a stale input is detected."
+katas: [e04, e06, e09]

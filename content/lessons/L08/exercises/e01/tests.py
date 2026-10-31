@@ -1,50 +1,30 @@
-import random
+import numpy as np
 import sub
 
-DIAMOND = {"x": [], "a": ["x"], "b": ["x"], "c": ["a", "b"], "L": ["c"], "w": []}
+rng = np.random.default_rng(1)
 
 
-def _valid(parents, order):
-    pos = {n: i for i, n in enumerate(order)}
-    return sorted(order) == sorted(parents) and all(pos[p] < pos[n] for n in parents for p in parents[n])
+def test_matches_softmax():
+    x = rng.normal(size=37) * 5
+    p, m, l = sub.online_softmax(x, block=4)
+    ref = np.exp(x - x.max())
+    assert np.allclose(p, ref / ref.sum()) and m == x.max()
+    assert np.isclose(l, np.exp(x - x.max()).sum())
 
 
-def test_diamond():
-    order = sub.topo_order(DIAMOND)
-    assert _valid(DIAMOND, order), order
+def test_two_blocks_from_derivation():
+    _, m, l = sub.online_softmax(np.array([1.0, 3.0, 2.0, 5.0]), block=2)
+    assert m == 5 and abs(l - 1.203438) < 1e-6
 
 
-def test_random_dags():
-    rnd = random.Random(0)
-    for _ in range(30):
-        n = rnd.randint(2, 25)
-        names = [f"n{i}" for i in range(n)]
-        rnd.shuffle(names)
-        parents = {names[i]: [names[j] for j in range(i) if rnd.random() < 0.3] for i in range(n)}
-        keys = list(parents)
-        rnd.shuffle(keys)
-        parents = {k: parents[k] for k in keys}
-        assert _valid(parents, sub.topo_order(parents))
-
-
-def test_cycle_raises():
-    cyc = {"a": ["c"], "b": ["a"], "c": ["b"], "d": []}
-    try:
-        sub.topo_order(cyc)
-    except ValueError:
-        return
-    raise AssertionError("no ValueError for a cycle")
-
-
-def test_self_loop_raises():
-    try:
-        sub.topo_order({"a": ["a"]})
-    except ValueError:
-        return
-    raise AssertionError("no ValueError for a self-loop")
-
-
-def test_ancestors():
-    assert sub.ancestors(DIAMOND, "L") == {"x", "a", "b", "c", "L"}
-    assert sub.ancestors(DIAMOND, "a") == {"x", "a"}
-    assert sub.ancestors(DIAMOND, "w") == {"w"}
+def test_large_values_and_merge():
+    x = np.array([1000.0, 1001.0, 999.0, 1002.0, 998.0])
+    p, _, _ = sub.online_softmax(x, block=2)
+    assert np.all(np.isfinite(p)) and np.isclose(p.sum(), 1)
+    a, b = x[:2], x[2:]
+    _, ma, la = sub.online_softmax(a)
+    _, mb, lb = sub.online_softmax(b)
+    m1, l1 = sub.merge(ma, la, mb, lb)
+    m2, l2 = sub.merge(mb, lb, ma, la)
+    _, m, l = sub.online_softmax(x)
+    assert m1 == m2 == m and np.isclose(l1, l) and np.isclose(l2, l)

@@ -1,8 +1,17 @@
-# Capstone: teach a pretrained model two tasks without making it forget
+# Capstone: from a raw crawl to a served model
 
-The notebook pretrains a small byte-level GPT on Tiny Shakespeare for a few minutes: it knows spelling and the shape of the plays, and follows no instructions. You teach it two tasks from instruction examples, writing a word in capitals (`UPPER: crown` gives `CROWN`) and spelling it backwards (`REVERSE: crown` gives `nworc`). You write the example encoding with its loss mask, the masked loss, the LoRA layer and its merge. The same batches then train LoRA adapters on every linear layer and, for comparison, every weight of the model, both with pretraining text replayed alongside the instructions. Each is scored on 300 words it never saw, with bootstrap intervals, and on how much its loss on held-out Shakespeare rose.
+One notebook runs the pipeline your design document planned, on one T4 in roughly 10 to 20 minutes:
 
-The autograder checks the encoding, the masked loss and the LoRA layer on small cases, that the adapters train under 15% of the parameters and merge into the weights exactly, that LoRA reaches **80%** mean exact-match accuracy on the unseen words while forgetting at most **0.05** nats per byte, and the report.
+1. **Clean** the noisy crawl of L12 (boilerplate, exact and near duplicates, junk, leaked validation text).
+2. **Pretrain** a byte-level GPT on what survives, with mixed precision, the best checkpoint kept by validation loss, and checkpoints on Google Drive so a disconnected session resumes.
+3. **Fine-tune** it with LoRA to write words in capitals and backwards, and merge the adapters.
+4. **Improve** reversal with RL against an exact verifier, with a KL penalty to the fine-tuned model.
+5. **Evaluate** every stage on test words fixed before training, greedy and sampled, with bootstrap intervals, and compare RL with fine-tuning item by item.
+6. **Serve** the final model with the key-value cache and continuous batching, checking every answer against full recomputation.
+
+The tools of L12 to L19 are provided, solved. You write the decisions and the glue: the plan within the compute budget, the order of the cleaning steps, the evaluation of a stage, the reward, the manifest that ties every stage's output to its input and configuration, and a final report of at least 200 words.
+
+The autograder checks the budget, that no leaked or junk document survives cleaning, the manifest chain, the evaluation's shape, that the pretrained model reaches a validation loss below **1.9** nats per byte, that fine-tuning reaches **80%** greedy accuracy on capitals without raising the validation loss by 0.1, that RL raises sampled reversal accuracy with a paired interval above zero, that serving matches recomputation with a 95th-percentile inter-token latency under **50 ms**, and the report.
 
 :::exercise{ref=capstone}
 :::
@@ -12,7 +21,4 @@ The autograder checks the encoding, the masked loss and the LoRA layer on small 
 
 ## When you finish
 
-You have adapted a model to new tasks while keeping what it knew. L21 starts from a fine-tuned model and improves it further with a reward instead of examples.
-
-:::edge{to=L21 text="Improving a fine-tuned model with a reward."}
-:::
+You have taken a model through every stage, from raw text to answers served on demand, and you can defend each decision with a number. That is the whole path of this curriculum. Revisit the map: every node you have finished is a tool you have used.

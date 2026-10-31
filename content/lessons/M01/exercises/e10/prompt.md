@@ -2,7 +2,7 @@
 
 Turn the training-cost rule into a planner.
 
-- `tokens_for(n_params, tokens_per_param=20)` returns the number of training tokens for a model trained at a fixed number of tokens per parameter (20 is a common compute-efficient choice; L15 derives why).
+- `tokens_for(n_params, tokens_per_param=20)` returns the number of training tokens for a model trained at a fixed number of tokens per parameter (20 is a common compute-efficient choice; L11 derives why).
 - `gpu_hours(n_params, n_tokens, flops_per_s, utilization=0.4)` returns $6ND$ divided by the sustained rate `flops_per_s * utilization`, converted from seconds to hours.
 - `wall_clock_days(n_gpu_hours, n_gpus)` returns the days the run takes on `n_gpus` GPUs working in parallel.
 - `run_cost(n_gpu_hours, price_per_hour)` returns the cost in dollars.

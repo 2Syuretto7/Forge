@@ -1,13 +1,9 @@
-# The best low-rank update
+# Train on the response only
 
-LoRA restricts the update to rank $r$. By the Eckart-Young theorem (M14's SVD), the best rank-$r$ approximation of a matrix in Frobenius norm is its truncated SVD, and the error is set by the discarded singular values.
-
-1. `best_rank_r(M, r)`: the truncated SVD.
-2. `relative_error(M, r)`: $\sqrt{\sum_{i > r} \sigma_i^2 / \sum_i \sigma_i^2}$.
-3. `rank_for(M, tol)`: the smallest rank whose relative error is at most `tol`.
+Instruction data is a prompt followed by a response, and only the response should be learned (L16). Implement `masked_cross_entropy(logits, targets, mask)`: the mean cross-entropy over positions where `mask` is 1, and its gradient with respect to the logits.
 
 ## Hints
 
-1. `np.linalg.svd(M, full_matrices=False)` returns $U$, the singular values and $V^\top$.
-2. `(U[:, :r] * S[:r]) @ Vt[:r]` keeps the top $r$ components.
-3. Fine-tuning updates of large models are often close to low rank, which is why small $r$ works.
+1. Subtract each row's maximum before exponentiating.
+2. The gradient at a counted position is $(p - \text{onehot}(t))/n$ with $n$ the number of counted positions; elsewhere it is zero.
+3. Divide by the number of response tokens, not the sequence length, so short and long responses weigh the same per token.

@@ -1,15 +1,25 @@
 import numpy as np
 
 
-def ridge(X, y, lam):
-    d = X.shape[1]
-    return np.linalg.solve(X.T @ X + lam * np.eye(d), X.T @ y)
+def rates(A):
+    """Speed limits of gradient descent on a quadratic with symmetric positive definite Hessian A."""
+    lam = np.linalg.eigvalsh(A)
+    mu, L = lam[0], lam[-1]
+    kappa = L / mu
+    return {
+        "kappa": kappa,
+        "lr_max": 2.0 / L,
+        "lr_opt": 2.0 / (mu + L),
+        "rho_opt": (kappa - 1.0) / (kappa + 1.0),
+    }
 
 
-def map_objective(w, X, y, sigma2, tau2):
-    r = y - X @ w
-    return float(r @ r / (2 * sigma2) + w @ w / (2 * tau2))
+def contraction(A, lr):
+    """Worst-case factor by which one step multiplies the error: max_i |1 - lr * lambda_i|."""
+    return float(np.max(np.abs(1.0 - lr * np.linalg.eigvalsh(A))))
 
 
-def effective_condition(X, lam):
-    return float(np.linalg.cond(X.T @ X + lam * np.eye(X.shape[1])))
+def steps_needed(A, eps):
+    """Steps at the optimal fixed rate until the worst-case error shrinks by eps."""
+    rho = rates(A)["rho_opt"]
+    return int(np.ceil(np.log(eps) / np.log(rho)))

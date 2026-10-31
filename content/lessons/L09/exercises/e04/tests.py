@@ -1,31 +1,30 @@
 import numpy as np
 import sub
 
-
-def test_ema_debias():
-    assert np.allclose(sub.ema([3.0] * 10, 0.9, debias=True), 3.0)
-    raw = sub.ema([3.0] * 10, 0.9)
-    assert abs(raw[0] - 0.3) < 1e-12 and abs(raw[9] - 3 * (1 - 0.9 ** 10)) < 1e-12
-
-
-def test_gains():
-    assert abs(sub.momentum_gain(0.9, 0.0) - 10) < 1e-9
-    assert abs(sub.momentum_gain(0.9, np.pi) - 1 / 1.9) < 1e-9
-    assert abs(sub.ema_gain(0.9, 0.0) - 1) < 1e-9
+rng = np.random.default_rng(4)
+n, d, h = 6, 8, 2
+X = rng.normal(size=(n, d))
+W = [rng.normal(size=(d, d)) * 0.3 for _ in range(4)]
 
 
-def test_gain_matches_simulation():
-    t = np.arange(1, 601)
-    for omega in [np.pi / 6, np.pi / 2, 2 * np.pi / 3]:
-        g = np.cos(omega * t)
-        out = sub.ema(g, 0.8)
-        tail = slice(400, 600)
-        basis = np.column_stack([np.cos(omega * t[tail]), np.sin(omega * t[tail])])
-        coef, *_ = np.linalg.lstsq(basis, out[tail], rcond=None)
-        amp = np.hypot(*coef)
-        assert abs(amp - sub.ema_gain(0.8, omega)) < 1e-3 * amp, omega
+def test_split_merge():
+    Y = sub.split_heads(X, 4)
+    assert Y.shape == (4, 6, 2) and np.allclose(Y[1], X[:, 2:4])
+    assert np.allclose(sub.merge_heads(Y), X)
 
 
-def test_low_pass():
-    gains = [sub.momentum_gain(0.95, w) for w in np.linspace(0, np.pi, 9)]
-    assert all(a > b for a, b in zip(gains, gains[1:]))
+def test_against_per_head_loop():
+    Y, cache = sub.mha_forward(X, *W, h)
+    outs = []
+    for i in range(h):
+        cols = slice(i * d // h, (i + 1) * d // h)
+        O, _ = sub.attention((X @ W[0])[:, cols], (X @ W[1])[:, cols], (X @ W[2])[:, cols])
+        outs.append(O)
+    assert np.allclose(Y, np.hstack(outs) @ W[3])
+    assert cache[4].shape == (h, n, n)
+
+
+def test_one_head():
+    Y, _ = sub.mha_forward(X, *W, 1)
+    O, _ = sub.attention(X @ W[0], X @ W[1], X @ W[2])
+    assert np.allclose(Y, O @ W[3])

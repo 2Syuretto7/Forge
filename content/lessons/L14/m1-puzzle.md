@@ -1,34 +1,32 @@
-# Puzzle: what is a token?
+# Puzzle: eight GPUs, one model
 
-Your L13 model read one character at a time: 65 possible symbols, and a context of 128 characters, about two lines of a play. A word-level model would see much further back with the same context length, but its vocabulary would be every word in the language, and any word it never saw in training would be unreadable.
+You have eight GPUs with 80 GB each and a 7-billion-parameter model that needs 112 GB of model states.
 
 ::::predict{id=p1 kind=choice answer=c}
-Which tokenization does GPT-style training use?
+Plain data parallelism copies the whole model to every GPU and averages gradients. Does it fit?
 
-- Characters, because every string is covered.
-- Whole words, with a special token for unknown words.
-- Pieces learned from data: frequent sequences of bytes become single tokens, and anything else falls back to individual bytes.
-- A fixed list of English syllables.
+- Yes: eight GPUs have 640 GB between them.
+- Yes, if the batch is small enough.
+- No: every GPU still holds all 112 GB of model states.
+- No, because gradients cannot be averaged across GPUs.
 
 :::reveal
-Byte-pair encoding starts from the 256 possible bytes and learns merges of frequent adjacent pairs: " the" becomes one token, a rare name stays several. Every string is a sequence of UTF-8 bytes, so nothing is ever unknown. The vocabulary size is a dial between characters (small vocabulary, long sequences) and words (huge vocabulary, short sequences).
+Data parallelism splits the **batch**, not the model: every GPU keeps a full copy of weights, gradients and optimizer states. To use the pooled memory you must shard the model states (ZeRO), split the layers' matrices (tensor parallelism) or split the layers themselves (pipeline parallelism). The widget below adds up the memory per GPU for any combination.
 :::
 ::::
 
-Step through the merges in the widget, and switch word splitting off to see merges that cross spaces.
-
-:::widget{name=TokenizerStepper}
+:::widget{name=ParallelismPlanner model=b6_7 dp=3}
 :::
 
 ::::predict{id=p2 kind=choice answer=b}
-A model with a BPE vocabulary of 512 reports a validation loss of 2.4 nats per token, and a character-level model reports 1.6 nats per character on the same text. Which is better?
+Averaging 1 GB of gradients across 8 GPUs with a ring all-reduce, how much does each GPU send?
 
-- The character model: 1.6 is less than 2.4.
-- You cannot tell until you know how many characters a token covers on average.
-- The BPE model, because tokens are better than characters.
-- They are equal, because both use cross-entropy.
+- 8 GB: one copy to every other GPU.
+- 1.75 GB.
+- 0.125 GB: its eighth of the data.
+- 1 GB.
 
 :::reveal
-The losses are per token and per character, different units. If a BPE token covers 1.9 characters on average, 2.4 nats per token is $2.4/1.9 \approx 1.26$ nats per character, better than 1.6. Divide by the characters per token, then by $\ln 2$, to get bits per character, the unit that compares models with different tokenizers.
+A ring all-reduce is a reduce-scatter followed by an all-gather. Each moves $(P-1)/P$ of the data through every GPU, so each sends $2 \cdot 7/8 = 1.75$ GB, and that amount barely changes as you add GPUs. The cost of averaging gradients is set by the model size and the link bandwidth, not by the number of GPUs.
 :::
 ::::

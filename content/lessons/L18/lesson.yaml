@@ -1,38 +1,37 @@
 id: L18
-hours: 12
-capstone: "A written parallelism plan for a 13-billion-parameter model on 64 GPUs with its memory verified, and a working CPU simulation of data parallelism, ZeRO, tensor parallelism and checkpointing"
-teaser: "Account for every byte of a training run, derive what collectives cost, and split a model across GPUs with data, ZeRO, tensor and pipeline parallelism."
+hours: 10
+capstone: "A continuous-batching inference server with a key-value cache and int8 weights that serves a workload of arriving requests within stated latency and throughput targets on a T4"
+teaser: "Serve a language model fast: why decoding is memory-bound, the key-value cache, continuous batching and paged memory, weight quantization, and speculative decoding that leaves the output distribution unchanged."
 movements:
-  - {file: m0-recall.md,     mode: theory,   minutes: 25}
-  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
-  - {file: m2-derivation.md, mode: theory,   minutes: 230}
-  - {file: m3-build.md,      mode: practice, minutes: 180}
-  - {file: m4-scale.md,      mode: practice, minutes: 70}
-  - {file: m5-break.md,      mode: both,     minutes: 50}
+  - {file: m0-recall.md,     mode: theory,   minutes: 20}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 35}
+  - {file: m2-derivation.md, mode: theory,   minutes: 190}
+  - {file: m3-build.md,      mode: practice, minutes: 140}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 45}
   - {file: m6-feynman.md,    mode: theory,   minutes: 25}
-  - {file: m7-capstone.md,   mode: practice, minutes: 100}
+  - {file: m7-capstone.md,   mode: practice, minutes: 85}
 hooks:
-  - {to: L19, text: "The pretraining run uses data parallelism with checkpointed, resumable state."}
+  - {to: L20, text: "The final capstone serves its own model."}
 reuses:
-  - {from: L08, concept: "tensors saved for backward"}
-  - {from: L11, concept: "bandwidth, the roofline and overlapping work"}
-  - {from: L15, concept: "compute-optimal model sizes"}
-  - {from: L17, concept: "bytes per parameter in mixed precision"}
+  - {from: L08, concept: "kernels bound by the bytes they move"}
+  - {from: L09, concept: "attention over keys and values"}
+  - {from: L13, concept: "fewer bits per number"}
+  - {from: L16, concept: "a distilled student"}
 annotations:
-  - {target: L08, movement: m2-derivation, anchor: "5. What has to be saved", text: "L18 counts these saved tensors for a whole transformer, and trades them for recomputation with activation checkpointing."}
-  - {target: L17, movement: m2-derivation, anchor: "4. Mixed-precision training", text: "L18 turns these bytes into the 16 bytes per parameter that ZeRO shards across GPUs."}
-  - {target: L11, movement: m2-derivation, anchor: "6. Launch overhead, synchronization and transfers", text: "L18 applies the same latency and bandwidth reasoning to communication between GPUs."}
+  - {target: L09, movement: m2-derivation, anchor: "3. The causal mask", text: "L18 exploits the causal mask: earlier keys and values never change, so a generator caches them and computes only the new token."}
+  - {target: L13, movement: m2-derivation, anchor: "1. IEEE formats", text: "L18 stores weights as 8-bit integers with a scale per row, halving the bytes every decode step reads."}
 concepts:
-  - q: "How many bytes per parameter does mixed-precision Adam training need for model states?"
-    a: "About 16: 2 for 16-bit weights, 2 for 16-bit gradients, and 12 for fp32 master weights, momentum and variance."
-  - q: "What does each GPU send in a ring all-reduce of n bytes over P GPUs?"
-    a: "2 (P - 1) / P times n bytes: a reduce-scatter and an all-gather, each moving (P - 1) / P of the data, almost independent of P."
-  - q: "What do ZeRO stages 1, 2 and 3 shard?"
-    a: "Stage 1 the optimizer states, stage 2 also the gradients, stage 3 also the weights, each over the data-parallel ranks."
-  - q: "How does Megatron-style tensor parallelism split an MLP?"
-    a: "The first layer by columns and the second by rows, so each GPU computes a slice of the hidden units and a partial output, and one all-reduce sums the outputs."
-  - q: "What is the pipeline bubble?"
-    a: "The idle fraction (p - 1) / (m + p - 1) of a pipeline with p stages and m micro-batches, while the pipeline fills and drains."
-  - q: "What does activation checkpointing trade?"
-    a: "Memory for compute: it keeps only some activations and recomputes the rest during backward, at the cost of about one extra forward pass."
-katas: [e02, e05, e08]
+  - q: "Why is decoding memory-bound?"
+    a: "Each decode step reads every weight once but does only about two operations per weight per sequence, an arithmetic intensity far below the GPU's ridge point unless many sequences share the step."
+  - q: "How large is the key-value cache per token?"
+    a: "Two times the number of layers times the number of key-value heads times the head dimension times the bytes per number."
+  - q: "What does continuous batching change?"
+    a: "It schedules at every decode step, so finished sequences leave at once and waiting requests take their slots instead of waiting for the whole batch to finish."
+  - q: "What does paged attention fix?"
+    a: "It allocates each sequence's cache in fixed-size pages as it grows, so memory is not reserved for tokens never generated and shared prefixes can share pages."
+  - q: "Why does weight-only quantization speed up decoding?"
+    a: "Decode time is mostly spent reading weights, so storing them in 8 or 4 bits cuts the bytes per step almost proportionally, if a kernel dequantizes as it loads."
+  - q: "Why does speculative decoding preserve the output distribution?"
+    a: "Each draft token is accepted with probability min(1, p/q) and a rejection resamples from the normalized residual max(0, p - q), which together give exactly p."
+katas: [e02, e03, e09]

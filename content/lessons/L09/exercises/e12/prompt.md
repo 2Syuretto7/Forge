@@ -1,13 +1,14 @@
-# Break it: Adam without bias correction
+# Break it: a mask that leaks the future
 
-Your single-array `Adam` from exercise 5 is provided.
+Your softmax is provided.
 
-1. `uncorrected_factor(t, b1=0.9, b2=0.999)`: by how much step $t$ grows when the bias correction is removed, $(1 - \beta_1^t)/\sqrt{1 - \beta_2^t}$, for a scalar or an array of steps.
-2. `peak(b1=0.9, b2=0.999, tmax=10000)`: the step in $1, \dots, t_{\max}$ where that factor is largest, and its value.
-3. `measured_factor(t, b1=0.9, b2=0.999, g=1.0)`: run Adam with and without correction (use `eps=0`) on the constant gradient `g` for `t` steps, and return the ratio of the sizes of their `t`-th steps.
+1. `leaks_future(attn_fn, X, eps=1e-3)`: `attn_fn` maps an `(n, d)` sequence to an `(n, d)` output. For each position $t \ge 1$, add `eps` to row $t$ of a copy of `X` and check whether any output row before $t$ changes by more than `1e-12`. Return `True` as soon as one does.
+2. `off_by_one_mask(n)`: the bug, a mask that hides key $j$ from query $i$ only when $j > i + 1$.
+
+The tests build attention with the correct mask and with yours, and check that only the buggy one leaks.
 
 ## Hints
 
-1. With a constant gradient, $m_t = (1 - \beta_1^t) g$ and $v_t = (1 - \beta_2^t) g^2$ exactly, so the corrected step is always $\eta$.
-2. `np.argmax` over an array of factors for `t = 1..tmax` finds the peak.
-3. The step size is the absolute change of `x` in that step.
+1. Compute the unperturbed output once.
+2. Compare `out[:t]` only: changes at $t$ and later are allowed.
+3. `np.triu(..., k=2)` leaves the first superdiagonal unmasked.

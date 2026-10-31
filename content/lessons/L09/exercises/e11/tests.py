@@ -1,40 +1,13 @@
-import numpy as np
 import sub
 
-X, y = sub.make_digits(2000, 0)
+
+def test_scaled_is_stable_in_d():
+    small, big = sub.saturation(16, True), sub.saturation(512, True)
+    assert small[0] < 0.4 and big[0] < 0.4
+    assert abs(small[1] - big[1]) < 0.02
 
 
-class _Nan:
-    def step(self, params, grads, lr=None):
-        for k in params:
-            params[k][...] = np.nan
-
-
-class _Blowup:
-    def step(self, params, grads, lr=None):
-        params["b3"][0] = 1e4
-
-
-def test_sgd_sweep():
-    lrs = [1e-3, 1e-1, 1.0, 10 ** 0.5]
-    losses = sub.sweep(lambda lr: sub.SGD(lr), lrs, X, y)
-    assert len(losses) == 4 and losses[0] > 2.0
-    assert 0.3 <= sub.best_lr(lrs, losses) <= 1.5
-    assert losses[-1] > 2.0
-    assert min(losses) < 0.2
-
-
-def test_adam_sweep():
-    lrs = [1e-4, 1e-2, 10 ** -0.5]
-    losses = sub.sweep(lambda lr: sub.Adam(lr), lrs, X, y)
-    assert 3e-3 <= sub.best_lr(lrs, losses) <= 3e-2
-    assert losses[0] > 1.5 and losses[-1] > 1.0
-
-
-def test_failed_runs_are_inf():
-    losses = sub.sweep(lambda lr: _Nan() if lr == 1 else _Blowup(), [1, 2], X, y, steps=3)
-    assert losses == [float("inf"), float("inf")]
-
-
-def test_best_lr():
-    assert sub.best_lr([0.1, 0.2, 0.3], [1.0, 0.5, float("inf")]) == 0.2
+def test_unscaled_saturates():
+    m512, g512 = sub.saturation(512, False)
+    assert m512 > 0.9
+    assert g512 < sub.saturation(512, True)[1] / 5

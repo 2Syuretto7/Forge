@@ -1,15 +1,15 @@
-# Recall bridge: cross-entropy and the transformer
+# Recall bridge: saved tensors, bytes and bandwidth
 
-From M27: the cross-entropy of a model on data is the average number of nats (or bits) it needs per symbol, it is never below the data's entropy, and $e^{\text{loss}}$ is the perplexity. From L13: a decoder-only transformer maps a sequence of token ids to next-token logits at every position. This lesson supplies the two missing pieces: where the tokens come from, and how to turn the logits back into text. Reviews due from M27 and L13 appear above.
+From L04: backward needs tensors saved during the forward pass. From L13: mixed-precision training keeps 16-bit weights and gradients next to fp32 master weights and Adam's two moments. From L07: moving bytes costs time, and overlapping transfers with compute hides it. From L11: the compute-optimal model for a large budget has billions of parameters. Put together, a model worth training does not fit on one GPU. Reviews due from L04, L07, L11 and L13 appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step
-A model that assigns probability $1/65$ to every one of 65 characters has a cross-entropy of $\ln 65 \approx$ [[4.174|tol=0.002]] nats per character.
+In mixed precision with Adam, each parameter costs $2 + 2 + 12 =$ [[16]] bytes of model state.
 :::
 :::step
-In bits, that is $\log_2 65 \approx$ [[6.022|tol=0.002]].
+A 7-billion-parameter model therefore needs [[112]] GB before any activations.
 :::
 :::step
-A loss of 1 nat corresponds to a perplexity of $e \approx$ [[2.718|tol=0.002]].
+The 16-bit weights of a 70-billion-parameter model alone take [[140]] GB.
 :::
 ::::

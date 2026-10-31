@@ -1,15 +1,12 @@
-# A LoRA layer
+# The schedule and the step count
 
-LoRA keeps a pretrained weight $W_0$ ($d_\text{out} \times d_\text{in}$) frozen and learns a low-rank update: $A$ ($r \times d_\text{in}$) and $B$ ($d_\text{out} \times r$), scaled by $\alpha/r$:
-$$
-y = x W_0^\top + \frac{\alpha}{r}\,(x A^\top) B^\top.
-$$
+The pretraining stage (L15) runs a fixed number of steps chosen from the token budget, with a schedule that depends only on the step.
 
-1. `lora_forward(x, W0, A, B, alpha)`.
-2. `lora_backward(dy, x, W0, A, B, alpha)`: the gradients with respect to $A$, $B$ and $x$.
+1. `lr_at(step, peak, warmup, total, floor=0.1)`: linear warmup to `peak` over `warmup` steps, then cosine decay to `floor * peak` at step `total`.
+2. `steps_for_tokens(tokens, batch, ctx)`: the steps needed to see `tokens` tokens.
 
 ## Hints
 
-1. With $h = x A^\top$ and $s = \alpha/r$: $\partial B = s\, dy^\top h$ and $\partial A = s\,(dy\, B)^\top x$.
-2. $\partial x$ has a frozen path and an adapter path: $dy\, W_0 + s\,(dy\, B) A$.
-3. LoRA starts with $B = 0$, so the adapted model begins exactly at the pretrained one.
+1. After warmup, the progress is $(s - w)/(T - w)$, from 0 to 1.
+2. The cosine factor $\tfrac12(1 + \cos \pi x)$ goes from 1 to 0.
+3. A schedule that is a pure function of the step resumes correctly after a restart.

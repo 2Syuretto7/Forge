@@ -1,17 +1,22 @@
-import numpy as np
+import hashlib
 
 
-def naive_moments(x):
-    """Mean and variance from one pass of sums, E[x^2] - E[x]^2, accumulated in the array's dtype."""
+def normalize(doc):
+    """Lowercase and collapse whitespace runs to single spaces."""
     raise NotImplementedError
 
 
-def welford(x):
-    """Mean and variance in one pass with Welford's update, in the array's dtype."""
+def exact_dedup(docs):
+    """Indices of the first occurrence of each document, comparing SHA-1 digests of the normalized
+    text."""
     raise NotImplementedError
 
 
-def layernorm_backward_recompute(dy, x, gamma, eps=1e-5):
-    """Fused layer-norm backward that recomputes mean and 1/std from x instead of storing them.
-    Return (dx, dgamma, dbeta)."""
+def boilerplate_lines(docs, min_docs):
+    """The set of stripped, non-empty lines that occur in at least min_docs different documents."""
+    raise NotImplementedError
+
+
+def strip_lines(doc, lines):
+    """doc without the lines whose stripped text is in `lines`."""
     raise NotImplementedError

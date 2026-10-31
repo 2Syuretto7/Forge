@@ -120,9 +120,9 @@ And $e^{i\alpha} e^{i\beta} = e^{i(\alpha + \beta)}$ says, in coordinates, exact
 :::edge{from=M06 text="the exponential of M06, now with an imaginary exponent: it turns instead of grows."}
 :::
 
-Every complex number is $z = re^{i\theta}$: a length and an angle. Multiplying multiplies lengths and adds angles. Real exponentials stretch, imaginary ones turn, and a general complex exponential $e^{(a + i\omega)t}$ does both, spiralling: that single fact underlies oscillations, waves, the Fourier transform and, in L13, rotary position embeddings.
+Every complex number is $z = re^{i\theta}$: a length and an angle. Multiplying multiplies lengths and adds angles. Real exponentials stretch, imaginary ones turn, and a general complex exponential $e^{(a + i\omega)t}$ does both, spiralling: that single fact underlies oscillations, waves, the Fourier transform and, in L09, rotary position embeddings.
 
-:::edge{to=L13 text="rotary position embeddings turn each pair of coordinates of a query and a key by an angle proportional to the token's position, so their dot product depends only on how far apart the tokens are."}
+:::edge{to=L09 text="rotary position embeddings turn each pair of coordinates of a query and a key by an angle proportional to the token's position, so their dot product depends only on how far apart the tokens are."}
 :::
 
 ## Summary

@@ -1,38 +1,42 @@
 id: L09
-hours: 9
-capstone: "An optimizer bake-off on the L07 digit task, tuned on a validation split, with a recipe that reaches at least 92 percent test accuracy"
-teaser: "Derive why gradient descent crawls in narrow valleys, then build momentum, Adam, AdamW, schedules and initialization from scratch and race them."
+hours: 11
+capstone: "Train a two-layer transformer on character-level Shakespeare (public domain) to a validation loss below 1.70 nats per character"
+teaser: "Derive attention as a soft lookup, build multi-head attention and its backward pass by hand, then train a small transformer on Shakespeare."
 movements:
-  - {file: m0-recall.md,     mode: theory,   minutes: 25}
-  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
-  - {file: m2-derivation.md, mode: theory,   minutes: 170}
-  - {file: m3-build.md,      mode: practice, minutes: 130}
-  - {file: m4-scale.md,      mode: practice, minutes: 80}
-  - {file: m5-break.md,      mode: both,     minutes: 45}
-  - {file: m6-feynman.md,    mode: theory,   minutes: 20}
-  - {file: m7-capstone.md,   mode: practice, minutes: 30}
+  - {file: m0-recall.md,     mode: theory,   minutes: 30}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 45}
+  - {file: m2-derivation.md, mode: theory,   minutes: 200}
+  - {file: m3-build.md,      mode: practice, minutes: 170}
+  - {file: m4-scale.md,      mode: practice, minutes: 60}
+  - {file: m5-break.md,      mode: both,     minutes: 50}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 30}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
 hooks:
-  - {to: L10, text: "Initialization keeps activations at unit scale only at the start; normalization layers keep them there during training."}
-  - {to: L15, text: "Scaling-law fits assume a tuned learning rate and schedule for every model size; L15 asks how they change with scale."}
-  - {to: L19, text: "Warmup, decay and the learning-rate peak return when a large run spikes and has to be rewound."}
+  - {to: L08, text: "The softmax over the score matrix becomes one fused kernel: FlashAttention."}
+  - {to: L10, text: "Add a tokenizer, a data pipeline and sampling, and this model becomes a GPT."}
+  - {to: L16, text: "Fine-tuning methods such as LoRA adapt exactly these projection matrices."}
+  - {to: L18, text: "At inference the keys and values of past tokens are cached instead of recomputed."}
+  - {to: L19, text: "Individual attention heads implement recognizable algorithms, such as copying the token after a match."}
 reuses:
-  - {from: M28, concept: "eigendecomposition of symmetric matrices and the condition number"}
-  - {from: L07, concept: "the MLP, its backward pass and the minibatch SGD loop"}
-  - {from: L08, concept: "parameters and gradients exposed by an autograd engine"}
+  - {from: M10, concept: "dot products as similarity and matrix products"}
+  - {from: L01, concept: "the softmax and its Jacobian"}
+  - {from: L03, concept: "backpropagation through matrix products"}
+  - {from: L06, concept: "pre-norm residual blocks"}
+  - {from: L07, concept: "arithmetic intensity and the roofline"}
 annotations:
-  - {target: L07, movement: m2-derivation, anchor: "Training: minibatch stochastic gradient descent", text: "L09 replaces this fixed step with momentum, Adam and schedules, and shows that the largest curvature limits the step size."}
-  - {target: L05, movement: m2-derivation, anchor: "Optimization in practice", text: "Standardizing lowers the condition number of the Hessian, which L09 shows sets the convergence rate of gradient descent."}
+  - {target: L01, movement: m2-derivation, anchor: "Softmax regression for many classes", text: "The same softmax turns attention scores into weights over positions in L09."}
+  - {target: L06, movement: m2-derivation, anchor: "Pre-norm and post-norm", text: "Every transformer block in L09 is this pre-norm residual block, with attention as one branch and an MLP as the other."}
 concepts:
-  - q: "What is the largest stable learning rate for gradient descent on a quadratic with Hessian eigenvalues between mu and L?"
-    a: "2/L. Each eigen-direction is multiplied by (1 - eta lambda) per step, which must stay inside (-1, 1) for the largest eigenvalue."
-  - q: "How many steps does gradient descent need on a quadratic with condition number kappa, compared with heavy-ball momentum?"
-    a: "About kappa/2 times ln(1/epsilon) for gradient descent, about sqrt(kappa)/2 times ln(1/epsilon) for optimally tuned momentum."
-  - q: "Why does Adam need bias correction?"
-    a: "Its moving averages start at zero, so early on they underestimate the gradient moments by factors 1 - beta^t; with beta2 close to 1 the second moment is underestimated far more, so uncorrected early steps are several times too large."
-  - q: "What is the difference between L2 regularization and decoupled weight decay in Adam?"
-    a: "L2 adds lambda theta to the gradient, which Adam then divides by sqrt(v), so weights with large gradients decay less; AdamW shrinks the weights directly by eta lambda theta, at the same rate for every weight."
-  - q: "Where does He initialization come from?"
-    a: "Keeping the second moment of activations constant through a ReLU layer: Var(z) = n_in s^2 E[x^2] and ReLU halves the second moment, so s^2 = 2/n_in."
-  - q: "Why warm up the learning rate?"
-    a: "Early in training the curvature is high and Adam's second-moment estimates are based on few gradients, so large steps are unstable; ramping the rate up over the first steps avoids early divergence."
-katas: [e02, e05, e06]
+  - q: "What does an attention layer compute for one query?"
+    a: "A weighted average of value vectors, with weights given by the softmax of the query's dot products with every key."
+  - q: "Why are attention scores divided by the square root of the head dimension?"
+    a: "With unit-variance entries a dot product of length d has variance d; dividing by sqrt(d) keeps the scores at unit scale, so the softmax does not saturate and its gradient does not vanish."
+  - q: "How does a causal mask work, and why does it allow training on every position at once?"
+    a: "Scores for keys after the query are set to minus infinity before the softmax, so each position attends only to itself and the past; every position's next-token prediction is then a valid training example in a single forward pass."
+  - q: "Why does a transformer need positional information?"
+    a: "Attention without positions is permutation-equivariant: shuffling the inputs shuffles the outputs the same way, so the model cannot tell word order."
+  - q: "What property makes rotary position embeddings useful?"
+    a: "Rotating queries and keys by angles proportional to their positions makes their dot product depend only on the difference of the positions."
+  - q: "About how many parameters does one transformer block with model width d have?"
+    a: "About 12 d^2: 4 d^2 in the attention projections and 8 d^2 in the MLP with hidden width 4d."
+katas: [e01, e02, e07]

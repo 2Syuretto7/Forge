@@ -1,20 +1,19 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(13)
-X = rng.uniform(-2, 2, size=(500, 2))
-y = (np.sum(X ** 2, axis=1) < 1.6).astype(float)
+
+def test_adamw_independent_of_scale():
+    target = sub.predicted_adamw(0.01, 0.1, 1000)
+    assert abs(target - 0.999 ** 1000) < 1e-12
+    for s in [10.0, 1.0, 0.1, 0.01]:
+        assert abs(sub.simulate("adamw", s) - target) < 0.02, s
 
 
-def test_poly_features():
-    F = sub.poly2(np.array([[2.0, 3.0]]))
-    assert np.allclose(F, [[1, 2, 3, 4, 6, 9]])
+def test_l2_depends_on_scale():
+    assert sub.simulate("adam_l2", 10.0) > 0.85
+    assert abs(sub.simulate("adam_l2", 0.01)) < 0.01
 
 
-def test_quadratic_features_separate_a_circle():
-    lin_tr = np.column_stack([np.ones(400), X[:400]])
-    lin_te = np.column_stack([np.ones(100), X[400:]])
-    acc_lin = sub.fit_and_score(lin_tr, y[:400], lin_te, y[400:])
-    acc_quad = sub.fit_and_score(sub.poly2(X[:400]), y[:400], sub.poly2(X[400:]), y[400:])
-    assert acc_lin < 0.75, acc_lin
-    assert acc_quad > 0.9, acc_quad
+def test_l2_prediction_for_large_gradients():
+    for s in [10.0, 30.0]:
+        assert abs(sub.simulate("adam_l2", s) - sub.predicted_l2_noisy(s, 0.01, 0.1, 1000)) < 0.03, s

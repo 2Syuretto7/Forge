@@ -1,15 +1,10 @@
-# Hoffmann's fitting objective
+# Detecting a spike
 
-Hoffmann et al. fit $L(N, D) = E + A N^{-\alpha} + B D^{-\beta}$ by minimizing, over all runs, the Huber loss of the error in $\log L$. Writing $A = e^a$, $B = e^b$, $E = e^e$, the predicted log loss is a log-sum-exp:
-$$
-\log \hat L = \operatorname{LSE}(a - \alpha \log N,\; b - \beta \log D,\; e).
-$$
-
-1. `huber(r, delta)`: elementwise $\tfrac12 r^2$ for $|r| \le \delta$ and $\delta(|r| - \tfrac12\delta)$ beyond, and its derivative.
-2. `hoffmann_objective(theta, N, D, L, delta=1e-3)` with $\theta = (a, b, e, \alpha, \beta)$: return $\sum_i \operatorname{huber}(\log \hat L_i - \log L_i, \delta)$ and its gradient with respect to $\theta$.
+1. `detect_spikes(losses, window, k)`: the 1-based steps whose loss exceeds the mean of the previous `window` losses by more than $k$ of their standard deviations. A non-finite loss always counts; no step is flagged before a full window exists.
+2. `rollback_point(flagged_step, checkpoint_every)`: the step of the checkpoint to restore. The loss at step $s$ is computed before update $s$, so update $s - 1$ may already be damaged: use the last checkpoint saved before it.
 
 ## Hints
 
-1. The derivative of LSE with respect to each argument is the softmax weight of that argument.
-2. Subtract the largest of the three terms before exponentiating.
-3. The gradient with respect to $\alpha$ is $-\sum_i h'(r_i)\, p_{i,1} \log N_i$, where $p_{i,1}$ is the weight of the first term.
+1. `np.isfinite` catches NaN and infinity, which compare false with everything.
+2. A trailing window adapts to the falling loss; a fixed threshold would fire early in training and never late.
+3. The rollback step is $\lfloor (s - 2)/c \rfloor \cdot c$.

@@ -2,21 +2,32 @@ import numpy as np
 import sub
 
 rng = np.random.default_rng(2)
-x_tr = rng.uniform(-1, 1, 25)
-y_tr = np.sin(np.pi * x_tr) + 0.3 * rng.normal(size=25)
-x_te = rng.uniform(-1, 1, 2000)
-y_te = np.sin(np.pi * x_te) + 0.3 * rng.normal(size=2000)
-degrees = list(range(0, 21))
 
 
-def test_training_error_never_increases():
-    tr, _ = sub.curves(x_tr, y_tr, x_te, y_te, degrees)
-    assert np.all(np.diff(tr) <= 1e-9)
+def test_train_mode_uses_batch_stats():
+    bn = sub.BatchNorm(3)
+    x = rng.normal(size=(8, 3)) * 2 + 5
+    y = bn.forward(x)
+    assert np.allclose(y.mean(axis=0), 0, atol=1e-10) and np.allclose(y.std(axis=0), 1, atol=1e-4)
+    assert np.allclose(bn.running_mean, 0.1 * x.mean(axis=0))
+    assert np.allclose(bn.running_var, 0.9 + 0.1 * x.var(axis=0) * 8 / 7)
 
 
-def test_test_error_is_u_shaped():
-    _, te = sub.curves(x_tr, y_tr, x_te, y_te, degrees)
-    d = sub.best_degree(degrees, te)
-    assert 3 <= d <= 9, d
-    assert te[0] > 2 * te[d] and te[-1] > 2 * te[d]
-    assert te[d] > 0.09 * 0.9, "no model beats the noise floor"
+def test_running_stats_converge():
+    bn = sub.BatchNorm(2)
+    for _ in range(300):
+        bn.forward(rng.normal(size=(32, 2)) * np.array([1.0, 3.0]) + np.array([-2.0, 4.0]))
+    assert np.allclose(bn.running_mean, [-2, 4], atol=0.15)
+    assert np.allclose(bn.running_var, [1, 9], rtol=0.15)
+
+
+def test_eval_mode():
+    bn = sub.BatchNorm(2)
+    bn.running_mean = np.array([1.0, -1.0])
+    bn.running_var = np.array([4.0, 0.25])
+    bn.training = False
+    x = np.array([[3.0, -1.5], [1.0, 0.0]])
+    y = bn.forward(x)
+    assert np.allclose(y, (x - bn.running_mean) / np.sqrt(bn.running_var + 1e-5))
+    assert np.allclose(bn.running_mean, [1, -1])
+    assert np.allclose(bn.forward(x[:1]), y[:1])

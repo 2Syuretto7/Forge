@@ -94,7 +94,7 @@ To shrink it by $10^6$ takes $\lceil\ln 10^{-6}/\ln(99/101)\rceil =$ [[691|tol=1
 :::
 ::::
 
-:::edge{to=L09 text="the step-size limit 2/L and the condition number in network training."}
+:::edge{to=L05 text="the step-size limit 2/L and the condition number in network training."}
 :::
 
 :::edge{to=M29 text="momentum and Nesterov change the dependence on kappa to sqrt(kappa)."}
@@ -102,7 +102,7 @@ To shrink it by $10^6$ takes $\lceil\ln 10^{-6}/\ln(99/101)\rceil =$ [[691|tol=1
 
 ## 5. Convex negative log-likelihoods
 
-An **exponential family** has densities $p(x \mid \theta) = h(x)\exp\big(\theta^\top T(x) - A(\theta)\big)$: Bernoulli, categorical, Gaussian, Poisson and exponential all fit. The log-partition $A(\theta)$ has gradient $\mathbb{E}_\theta[T(X)]$ and Hessian $\operatorname{Cov}_\theta[T(X)] \succeq 0$, so it is convex, and the negative log-likelihood of data, $nA(\theta) - \theta^\top\sum_i T(x_i)$, is convex in $\theta$. Logistic regression and softmax regression are of this form with $\theta$ linear in the weights, which is why they have a single global optimum and why their losses in L05 never trap gradient descent.
+An **exponential family** has densities $p(x \mid \theta) = h(x)\exp\big(\theta^\top T(x) - A(\theta)\big)$: Bernoulli, categorical, Gaussian, Poisson and exponential all fit. The log-partition $A(\theta)$ has gradient $\mathbb{E}_\theta[T(X)]$ and Hessian $\operatorname{Cov}_\theta[T(X)] \succeq 0$, so it is convex, and the negative log-likelihood of data, $nA(\theta) - \theta^\top\sum_i T(x_i)$, is convex in $\theta$. Logistic regression and softmax regression are of this form with $\theta$ linear in the weights, which is why they have a single global optimum and why their losses in L01 never trap gradient descent.
 
 :::edge{from=M25 text="negative log-likelihoods of exponential families are convex."}
 :::

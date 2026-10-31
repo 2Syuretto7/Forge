@@ -1,14 +1,14 @@
-# Mixing domains
+# Forgetting
 
-A pretraining set mixes domains (web, books, code, papers) of very different sizes. Sampling weights decide how many tokens each contributes and how often its data repeats.
+Fine-tuning on a new task moves the weights away from what the pretraining taught. A simple guard pulls them back: add $\tfrac{\lambda}{2}\|w - w_\text{pre}\|^2$ to the fine-tuning loss.
 
-1. `domain_epochs(weights, sizes, total_tokens)`: the number of passes over each domain.
-2. `temperature_weights(sizes, tau)`: weights proportional to $\text{size}^{1/\tau}$; $\tau = 1$ samples by size and larger $\tau$ moves toward uniform, upsampling small domains.
-3. `mixture_objective(z, c, beta, T)`: with $p = \operatorname{softmax}(z)$, domain $j$'s excess loss after $p_j T$ tokens is $c_j (p_j T)^{-\beta}$. Return the total and its gradient with respect to $z$.
-4. `optimal_mixture(c, beta)`: the weights minimizing $\sum_j c_j p_j^{-\beta}$ subject to $\sum_j p_j = 1$.
+1. `logistic_loss_grad(w, X, y)`: the mean logistic loss and its gradient.
+2. `finetune(w_pre, X, y, lam, steps=500, lr=0.5)`: gradient descent from `w_pre` on the new task with the pull.
+
+The tests pretrain on task A, fine-tune on a conflicting task B, and measure the loss on both.
 
 ## Hints
 
-1. The gradient with respect to $p_j$ is $-\beta L_j / p_j$; through the softmax, $\partial/\partial z = p \odot (g - p^\top g)$.
-2. A Lagrange multiplier gives $\beta c_j p_j^{-\beta - 1} = \lambda$, so $p_j \propto c_j^{1/(1+\beta)}$.
-3. Domains with more to learn get more weight, but less than proportionally.
+1. The pull adds $\lambda (w - w_\text{pre})$ to the gradient.
+2. $\lambda = 0$ learns B fully and forgets A; a large $\lambda$ remembers A and barely learns B.
+3. The same trade-off is why fine-tuned language models are checked on their base evaluations, not only on the new task.

@@ -1,11 +1,23 @@
+import numpy as np
 import sub
 
+rng = np.random.default_rng(1)
+nw = 60
+prop = rng.integers(0, 2, nw)
+emb = rng.normal(size=(nw, 16))
+emb[:, 0] += 2 * (prop * 2 - 1)
+ids = rng.integers(0, nw, 800)
+A = emb[ids] + 0.5 * rng.normal(size=(800, 16))
+y = prop[ids].astype(float)
 
-def test_schedule():
-    assert sub.lr_at(1, 1e-3, 100, 1000) == 1e-5
-    assert sub.lr_at(100, 1e-3, 100, 1000) == 1e-3
-    assert abs(sub.lr_at(1000, 1e-3, 100, 1000) - 1e-4) < 1e-15
-    assert abs(sub.lr_at(5000, 1e-3, 100, 1000) - 1e-4) < 1e-15
-    mid = sub.lr_at(550, 1e-3, 100, 1000)
-    assert abs(mid - 1e-3 * (0.1 + 0.9 * 0.5)) < 1e-15
-    assert all(sub.lr_at(t + 1, 1e-3, 100, 1000) <= sub.lr_at(t, 1e-3, 100, 1000) for t in range(100, 1200))
+
+def test_control_labels_are_per_type():
+    c = sub.control_labels(ids, 0)
+    for w in np.unique(ids):
+        assert len(set(c[ids == w])) == 1
+    assert 0.2 < c.mean() < 0.8
+
+
+def test_selectivity():
+    c = sub.control_labels(ids, 0)
+    assert sub.selectivity(A[:600], y[:600], A[600:], y[600:], c[:600], c[600:]) > 0.15

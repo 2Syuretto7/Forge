@@ -1,11 +1,11 @@
-# Explain it plainly: why deep networks need residuals and normalization
+# Explain it plainly: from text to a language model and back
 
-Explain to a programmer who has trained a three-layer network why simply stacking 30 layers fails, and what residual connections and normalization layers each do about it.
+Explain to a programmer how a GPT turns text into numbers for training, what it is trained to do, and how it turns its outputs back into text.
 
 - Write 150 to 400 words.
-- Use a concrete picture, such as a message passed along a line of 30 people.
-- Explain what goes wrong in the forward pass and in the backward pass.
-- Mention one trade-off or failure of the fixes.
+- Use the example of a short sentence being tokenized.
+- Explain byte-pair encoding, the next-token objective, and one sampling control.
+- Mention why the loss per token is not enough to compare two models.
 
-:::feynman{id=f1 prompt="Explain why a plain 30-layer network trains badly, and what residual connections and normalization layers each contribute to making it trainable." key_points="In a plain deep stack the signal and the gradient are multiplied by many layer Jacobians, so they shrink or grow geometrically with depth|A residual connection adds the input back, so the backward pass always has an identity path that carries the gradient unchanged|Normalization rescales activations to a fixed scale during training, not only at initialization|Pre-norm keeps the skip path clean while post-norm normalizes it at every layer and needs warmup|A concrete trade-off such as batch norm depending on the batch, or the residual stream growing without normalization"}
+:::feynman{id=f1 prompt="Explain how a GPT turns text into tokens for training, what objective it is trained on, and how it generates text, including byte-pair encoding and at least one sampling control." key_points="Byte-pair encoding starts from bytes and merges frequent adjacent pairs into new tokens, so common words become one token and rare text falls back to bytes|The model is trained to predict every next token from the ones before it by minimizing cross-entropy|Generation repeatedly samples a token from the predicted distribution and appends it to the context|Temperature, top-k or top-p reshape the distribution to trade diversity for reliability|Losses per token depend on the tokenizer, so models are compared in bits per character"}
 :::

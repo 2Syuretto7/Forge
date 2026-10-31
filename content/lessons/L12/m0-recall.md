@@ -1,15 +1,15 @@
-# Recall bridge: rooflines, layer norm and attention
+# Recall bridge: tokens, windows and held-out text
 
-From L11: a kernel is limited by the slower of its FLOPs and its bytes, and tiling and fusion cut the bytes. From L10: layer norm normalizes each row with its own mean and variance. From L13: attention computes $\operatorname{softmax}(QK^\top/\sqrt d)\,V$, and its $N \times N$ score matrix is the expensive part. This lesson writes those operations as GPU kernels. Reviews due from those lessons appear above.
+From L10: a corpus becomes one long array of token ids, cut into training windows, with validation text split off by position so it is never seen in training. From L02: a test set only measures generalization if nothing about it leaks into training. This lesson scales both ideas to a web crawl, where the same page appears thousands of times, a third of the text is junk, and benchmark questions are copied onto forums. Reviews due from L10 and L02 appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step
-Unfused, a row softmax reads and writes its data several times; a fused one reads it [[1]] time and writes it once.
+A corpus of 1.2 million characters with 1.88 characters per token holds about [[638298|tol=500]] tokens.
 :::
 :::step
-The scores of one attention head over $N = 1024$ positions form a matrix with [[1048576]] entries.
+If a third of it is exact copies of the rest, the unique text is [[0.8|tol=0.001]] million characters.
 :::
 :::step
-The softmax of $(0, \ln 3)$ is $(0.25, 0.75)$. Shifting both scores by 100 gives the weight [[0.75]] to the second entry.
+If every copied document appears exactly twice, one epoch over the corpus shows each of them to the model [[2]] times, and every other document once.
 :::
 ::::

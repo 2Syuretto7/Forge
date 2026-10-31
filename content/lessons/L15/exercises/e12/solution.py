@@ -1,28 +1,19 @@
-import numpy as np
+import math
 
 
-def sweep_loss(N, lr):
-    """A model of a learning-rate sweep: the best loss for size N is 1.7 + 30 N^-0.25, reached at
-    lr*(N) = 3e-3 (N / 1e6)^-0.5; away from lr* the loss grows with the squared log ratio."""
-    best_lr = 3e-3 * (N / 1e6) ** -0.5
-    return 1.7 + 30 * N ** -0.25 + 0.08 * np.log(lr / best_lr) ** 2
+def expected_lr(step, peak, warmup, total, floor=0.1):
+    """The schedule of exercise 5: linear warmup, then cosine decay to floor * peak."""
+    if step <= warmup:
+        return peak * step / warmup
+    progress = (step - warmup) / max(1, total - warmup)
+    return peak * (floor + (1 - floor) * 0.5 * (1 + math.cos(math.pi * min(1.0, progress))))
 
 
-LRS = 3e-3 * 2.0 ** np.arange(-6, 3)
-SIZES = np.array([1e6, 3e6, 1e7, 3e7, 1e8])
-
-
-def tuned_losses(sizes, lrs):
-    """For each size, the best loss over the learning rates in the sweep, and that rate."""
-    grid = np.array([[sweep_loss(N, lr) for lr in lrs] for N in sizes])
-    return grid.min(axis=1), np.asarray(lrs)[grid.argmin(axis=1)]
-
-
-def fixed_lr_losses(sizes, lr):
-    """The loss of each size trained at one learning rate."""
-    return np.array([sweep_loss(N, lr) for N in sizes])
-
-
-def fitted_exponent(sizes, losses, E):
-    """The exponent a in L - E = k N^-a, by a log-log line."""
-    return -np.polyfit(np.log(sizes), np.log(np.asarray(losses) - E), 1)[0]
+def audit_lr(logged, peak, warmup, total, rtol=1e-6):
+    """logged is a list of (step, lr) pairs from a run's log. Return the first step whose logged
+    rate differs from the schedule by more than rtol (relative), or None."""
+    for step, lr in logged:
+        want = expected_lr(step, peak, warmup, total)
+        if abs(lr - want) > rtol * abs(want):
+            return step
+    return None

@@ -1,117 +1,80 @@
-# Derivation: normalization layers and residual streams
+# Derivation: tokens, likelihood and sampling
 
-## 1. Batch normalization
+## 1. Language modeling is cross-entropy minimization
 
-For a minibatch $X$ of shape $N \times d$, **batch norm** normalizes each feature (column) with the batch's own statistics:
-
+A language model assigns a probability to a sequence by the chain rule:
 $$
-\mu_j = \frac1N \sum_i x_{ij}, \qquad \sigma_j^2 = \frac1N \sum_i (x_{ij} - \mu_j)^2, \qquad \hat x_{ij} = \frac{x_{ij} - \mu_j}{\sqrt{\sigma_j^2 + \epsilon}}, \qquad y_{ij} = \gamma_j \hat x_{ij} + \beta_j.
+p(x_1, \dots, x_n) = \prod_{t=1}^{n} p(x_t \mid x_{<t}).
 $$
-
-The learned $\gamma$ and $\beta$ let the layer undo the normalization if that helps. At evaluation time there may be one example, so batch norm keeps **running averages** of $\mu$ and $\sigma^2$ during training and uses those instead. The output of an example in training mode therefore depends on the other examples in its batch.
-
-## 2. Its backward pass
-
-Write $r = 1/\sqrt{\sigma^2 + \epsilon}$ and $g = \partial L/\partial \hat x = \gamma \odot \partial L/\partial y$, per feature. Every $x_i$ affects $\hat x_i$ directly, and every $\hat x_k$ through $\mu$ and $\sigma^2$. Collecting the three paths and using $\sum_i \hat x_i = 0$ and $\sum_i \hat x_i^2 = N$ (up to $\epsilon$):
-
+Training minimizes the average negative log-likelihood of the training tokens, $-\tfrac1n \sum_t \ln p(x_t \mid x_{<t})$: the cross-entropy between the data and the model (M27). The causal transformer (L09) computes all $n$ conditionals in one pass. The loss is reported in **nats per token**; $e^{\text{loss}}$ is the **perplexity**; and to compare tokenizers, convert to **bits per character**:
 $$
-\frac{\partial L}{\partial x_i} = \frac{r}{N}\left(N g_i - \sum_k g_k - \hat x_i \sum_k g_k \hat x_k\right).
+\text{bits per character} = \frac{\text{nats per token}}{\text{characters per token} \cdot \ln 2}.
 $$
 
-The two subtracted terms remove the components of $g$ along the directions the normalization cannot see: a constant shift of the batch and a rescaling of it.
-
-::::derivation{id=d1 title="What batch norm's gradient removes"}
+::::derivation{id=d1 title="Units"}
 :::step
-Over a batch of $N = 4$, the normalized values of one feature sum to [[0]] and their squares sum to [[4]].
+A loss of 1.5 nats per token with 2 characters per token is $1.5/(2 \ln 2) \approx$ [[1.082|tol=0.002]] bits per character.
 :::
 :::step
-If the upstream gradient is the same for every example, $g = (1, 1, 1, 1)$, the formula gives $\partial L/\partial x_i =$ [[0]] for every $i$: shifting the whole batch does not change the output.
-:::
-:::step
-If $g = 3\hat x$, the three terms are $3N\hat x_i$, $0$ and $\hat x_i \cdot 3N$, so the gradient is again [[0]]: scaling the batch does not change the output either.
+Its perplexity per token is $e^{1.5} \approx$ [[4.48|tol=0.01]].
 :::
 ::::
 
-## 3. Layer norm and RMSNorm
+:::edge{from=M27 text="cross-entropy, bits and perplexity"}
+:::
 
-**Layer norm** applies the same formulas to each example (row) over its $d$ features, with per-feature $\gamma, \beta$. No batch statistics are involved, so training and evaluation agree and a batch of one works. Its backward pass is the batch-norm formula with sums over features instead of over the batch, which is why transformers, with variable-length sequences and small per-device batches, use it.
+## 2. Byte-pair encoding
 
-**RMSNorm** drops the centering: $y = \gamma \odot x / \operatorname{rms}(x)$ with $\operatorname{rms}(x) = \sqrt{\tfrac1d\sum_j x_j^2 + \epsilon}$. With $r = \operatorname{rms}(x)$ and $g = \gamma \odot \partial L/\partial y$,
+Start from the UTF-8 bytes of the training text, with a vocabulary of the 256 byte values. Repeatedly count every adjacent pair of tokens, pick the most frequent, give it a new id, and replace its occurrences (left to right, without overlaps). Each merge adds one token. To encode new text, take its bytes and apply the learned merges, earliest first. To decode, look up each id's byte string and decode the concatenation as UTF-8.
 
-$$
-\frac{\partial L}{\partial x_j} = \frac{g_j}{r} - \frac{x_j}{d\, r^3}\sum_k g_k x_k.
-$$
-
-It is cheaper (one reduction instead of two) and works as well in practice; LLaMA-style models use it.
-
-::::derivation{id=d2 title="RMSNorm by hand"}
+::::derivation{id=d2 title="One merge"}
 :::step
-For $x = (3, 4)$, $d = 2$ and $\epsilon$ negligible, $\operatorname{rms}(x) = \sqrt{12.5} \approx$ [[3.5355|tol=0.001]].
+In the string "aaabdaaabac", the pair "aa" occurs [[4]] times, counting overlaps.
 :::
 :::step
-With $\gamma = (1, 1)$, the first output is $3/3.5355 \approx$ [[0.8485|tol=0.001]]. The output's root mean square is exactly [[1]].
+Replacing it left to right without overlaps by a new symbol Z gives "ZabdZabac", of length [[9]].
+:::
+:::step
+A vocabulary of 50,257 tokens embedded in $d = 768$ dimensions takes $50257 \cdot 768 =$ [[38597376]] parameters.
 :::
 ::::
 
-## 4. Residual connections
+**Pre-tokenization.** Counting pairs across the whole text lets merges cross word boundaries ("e t" from "the tree"), wasting vocabulary on accidents. GPT-2 first splits the text with a regular expression into chunks (words with their leading space, numbers, punctuation, whitespace) and merges only within chunks. Counting each distinct chunk once, weighted by its frequency, also makes training fast.
 
-A **residual block** computes $h_{l+1} = h_l + F_l(h_l)$. Its Jacobian is $I + J_{F_l}$, so the gradient reaching layer 0 is
+**The vocabulary-size trade-off.** A larger vocabulary means fewer tokens per text (a longer effective context, fewer steps per epoch) but a larger embedding and output layer, and rarer tokens whose embeddings see few updates.
 
-$$
-\frac{\partial L}{\partial h_0} = \frac{\partial L}{\partial h_L} \prod_{l} (I + J_{F_l}),
-$$
+## 3. From text to training windows
 
-and expanding the product gives one term that is the identity: a path along which the gradient arrives unchanged, however many layers there are. In a plain stack every path is a product of $L$ Jacobians, which shrinks or grows geometrically.
+Encode the corpus once into a long array of ids. Split it by position into training and validation parts (never interleaved, so validation text is truly unseen). A training example is a window $x = \text{ids}[s : s + T]$ with targets $y = \text{ids}[s + 1 : s + T + 1]$: every position predicts the next token, so one window gives $T$ predictions.
 
-The forward pass pays for it. If each branch output has zero mean, is uncorrelated with $h_l$, and has second moment $\alpha^2 \mathbb E[h_l^2]$, then $\mathbb E[h_{l+1}^2] = (1 + \alpha^2)\,\mathbb E[h_l^2]$, and the stream grows geometrically with depth.
+## 4. Weight tying
 
-::::derivation{id=d3 title="Growth of the residual stream"}
+The input embedding $E$ ($V \times d$) and the output layer both relate token ids to $d$-dimensional vectors. **Tying** them, logits $= hE^\top$, saves $Vd$ parameters and often trains better. The gradient of $E$ is the sum of two contributions: from the output scores, $G^\top h$, and from the rows that were looked up as inputs.
+
+:::edge{from=L09 text="the decoder-only transformer"}
+:::
+
+## 5. Sampling
+
+At generation time the model gives logits $z$ for the next token. **Temperature** $T$ samples from $\operatorname{softmax}(z/T)$: $T < 1$ sharpens the distribution, $T > 1$ flattens it, and $T \to 0$ becomes greedy argmax. **Top-k** keeps only the $k$ most likely tokens. **Top-p** (nucleus) keeps the smallest set of most likely tokens whose total probability is at least $p$, so the number kept adapts to how confident the model is.
+
+::::derivation{id=d3 title="Temperature and nucleus"}
 :::step
-With $\alpha = 1$, the root mean square after 20 layers has grown by $2^{10} =$ [[1024]].
+For logits $(2, 1, 0)$ at $T = 1$, the first token's probability is $e^2/(e^2 + e + 1) \approx$ [[0.665|tol=0.002]].
 :::
 :::step
-Scaling every branch by $\alpha = 1/\sqrt L$ gives $(1 + 1/L)^{L/2}$, which tends to $\sqrt e \approx$ [[1.6487|tol=0.001]] as $L$ grows: bounded at any depth.
+At $T = 0.5$ the logits become $(4, 2, 0)$ and that probability rises to about [[0.867|tol=0.002]].
+:::
+:::step
+At $T = 1$ the probabilities are about $(0.665, 0.245, 0.090)$. Top-p with $p = 0.9$ keeps [[2]] tokens.
 :::
 ::::
 
-One caution, which exercise 5 measures: a branch that ends in a ReLU has a positive mean, so its outputs are correlated across layers and the stream grows faster than the formula. Real residual branches end in a linear layer, whose output has zero mean, and then the formula holds.
-
-## 5. Pre-norm and post-norm
-
-There are two ways to combine normalization with a residual connection:
-
-- **Post-norm** (the original transformer): $h_{l+1} = \operatorname{LN}(h_l + F(h_l))$. The stream is renormalized after every block, so even the skip path passes through $L$ normalizations, each with its own Jacobian. Gradients at initialization are uneven across depth, and large early updates can push the network into a bad region; post-norm transformers need learning-rate warmup (Xiong et al., 2020).
-- **Pre-norm** (GPT-2 onward): $h_{l+1} = h_l + F(\operatorname{LN}(h_l))$. Only the branch input is normalized, so the skip path is a clean sum from any layer to the output. The stream's scale grows slowly with depth, so a final layer norm is applied before the output layer.
-
-::::derivation{id=d4 title="The pre-norm stream"}
-:::step
-Each of 30 pre-norm blocks adds an update of root mean square 1, uncorrelated with the stream, to a stream that starts with root mean square 1. The final root mean square is about $\sqrt{31} \approx$ [[5.568|tol=0.01]].
-:::
-:::step
-In post-norm, the stream after every block has root mean square [[1]] (with $\gamma = 1$, $\beta = 0$), whatever the depth.
-:::
-::::
-
-:::edge{to=L13 text="Every transformer block is a pre-norm residual block, twice: x + attention(LN(x)), then x + MLP(LN(x))."}
+:::edge{to=L11 text="Scaling laws fit this validation loss against size, data and compute."}
 :::
 
-:::edge{to=L12 text="The layer norm forward and backward become one fused GPU kernel."}
+:::edge{to=L12 text="Tokenizing and windowing billions of tokens: data pipelines."}
 :::
 
-:::edge{from=L09 text="variance-preserving initialization, Adam and warmup"}
+:::edge{from=L13 text="training in reduced precision"}
 :::
-
-## Summary
-
-| Layer | Normalizes over | Train and eval differ | Batch of one |
-| --- | --- | --- | --- |
-| Batch norm | the batch, per feature | yes (running statistics) | fails |
-| Layer norm | the features, per example | no | works |
-| RMSNorm | the features, no centering | no | works |
-
-| Block | Formula | Skip path |
-| --- | --- | --- |
-| Plain | $F(h)$ | none |
-| Residual | $h + F(h)$ | identity, but the stream grows |
-| Post-norm | $\operatorname{LN}(h + F(h))$ | through every norm; needs warmup |
-| Pre-norm | $h + F(\operatorname{LN}(h))$ | identity; final norm before the output |

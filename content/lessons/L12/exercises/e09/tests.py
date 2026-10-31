@@ -1,13 +1,27 @@
+import numpy as np
 import sub
 
-
-def test_bytes():
-    assert sub.flash_smem_bytes(64, 64, 64) == 57344
-    assert sub.flash_smem_bytes(16, 32, 8, bytes_per=4) == (16 * 8 + 2 * 32 * 8) * 4 + 4 * (16 * 8 + 16 * 32)
+rng = np.random.default_rng(9)
+VOCAB = [f"w{i}" for i in range(500)]
 
 
-def test_best_blocks():
-    assert sub.best_blocks(64, 64 * 1024) == 64
-    assert sub.best_blocks(128, 64 * 1024) == 32
-    assert sub.best_blocks(64, 228 * 1024) == 128
-    assert sub.best_blocks(512, 1024) is None
+def doc(n=60):
+    return " ".join(rng.choice(VOCAB, n))
+
+
+evals = [doc() for _ in range(5)]
+train = [doc() for _ in range(20)]
+leak = " ".join(train[3].split()[:20]) + " " + evals[2].upper().replace(" ", ", ", 3) + " " + " ".join(train[4].split()[:10])
+train.append(leak)
+
+
+def test_ngrams():
+    assert sub.words_of("The, cat (sat).") == ["the", "cat", "sat"]
+    assert sub.ngrams(["a", "b", "c"], 2) == {("a", "b"), ("b", "c")}
+    assert sub.ngrams(["a"], 2) == set()
+
+
+def test_decontaminate():
+    keep = sub.decontaminate(train, evals)
+    assert keep == list(range(20))
+    assert len(sub.build_index(evals)) == 5 * 48

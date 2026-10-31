@@ -3,7 +3,7 @@ import { Frame, Slider, gauss, num, rng, type WidgetProps, fmt } from './common'
 import { LinePlot } from './plot';
 import { ridge } from './linalg';
 
-// Linear random-features regression (the model derived in L06):
+// Linear random-features regression (the model derived in L02):
 // inputs x in R^D with variances lambda_j = j^-1.5, target y = beta^T x + noise,
 // features phi = W x with random Gaussian W (p rows), fit by ridge / min-norm
 // least squares. Test error is the exact excess risk (beta - W^T w)^T Sigma (beta - W^T w).

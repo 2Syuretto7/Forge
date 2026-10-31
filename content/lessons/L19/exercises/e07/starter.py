@@ -1,12 +1,8 @@
 import numpy as np
 
 
-def mean_with_ci(values, n_boot=2000, seed=0, level=0.95):
-    """The mean of per-example losses and a percentile bootstrap interval for it."""
-    raise NotImplementedError
-
-
-def paired_difference(a, b, n_boot=2000, seed=0, level=0.95):
-    """Two checkpoints scored on the same examples: the mean of a - b and a bootstrap interval that
-    resamples examples (keeping each pair together)."""
+def sae_loss(params, X, l1):
+    """A sparse autoencoder on activations X (n, d) with m latents: z = relu((X - b_d) W_e^T + b_e),
+    X_hat = z W_d + b_d, loss = mean over rows of |X - X_hat|^2 + l1 * sum(z). params = (W_e (m, d),
+    b_e (m,), W_d (m, d), b_d (d,)). Return (loss, gradients in the same order)."""
     raise NotImplementedError

@@ -1,31 +1,36 @@
-# Puzzle: the faster you go, the slower you get
+# Puzzle: which earlier word does "was" need?
 
-Take the narrow valley $f(x, y) = \tfrac12 (x^2 + 100 y^2)$ and run gradient descent from $(1, 1)$. A small learning rate crawls along $x$. You raise it, and progress along $x$ speeds up, until suddenly the iterates explode.
+Read the sentence "the cat sat on the mat because the cat was tired". To predict what follows "was", a model must know that its subject is "cat", which is six words back, and the distance changes from sentence to sentence. A fixed-size window or a fixed weighting by distance cannot do this; the model needs to **look up** the relevant earlier word by its content.
 
-::::predict{id=p1 kind=numeric answer=0.02 tol=0.002}
-What is the largest learning rate for which gradient descent on this valley does not diverge?
+::::predict{id=p1 kind=choice answer=c}
+A lookup over earlier positions needs to be differentiable, so it can be trained by gradient descent. Which mechanism is both content-based and differentiable?
+
+- Pick the single earlier position whose vector is most similar to the current one (an argmax).
+- Average all earlier positions equally.
+- Score every earlier position by the dot product of a query with its key, softmax the scores, and average the positions' values with those weights.
+- Use the position exactly six steps back.
 
 :::reveal
-The gradient is $(x, 100 y)$, so one step multiplies $x$ by $1 - \eta$ and $y$ by $1 - 100\eta$. The $y$ coordinate stays bounded only if $|1 - 100\eta| < 1$, that is $\eta < 2/100 = 0.02$. The steep direction sets the speed limit, and at that limit the shallow direction shrinks by only 2 percent per step: more than 100 steps per factor of 10.
+The softmax-weighted average is a soft version of the argmax: when one score dominates, it returns almost exactly that position's value, and it has a gradient everywhere. This is attention. The query says what the current position is looking for, each key says what a position offers, and each value is what it hands over if chosen.
 :::
 ::::
 
-That is the whole problem of optimization in one picture: the step size must suit the steepest direction, so it is too small for the flattest one. A real network's loss has millions of directions whose curvatures span many orders of magnitude.
+In the widget, choose the previous-token head (every query matches the key of the position before it) and the same-word head, and switch the causal mask on and off.
+
+:::widget{name=AttentionHeatmap pattern=previous d=16}
+:::
+
+Now switch back to random projections and increase the head dimension with "Divide logits by sqrt(d)" turned off.
 
 ::::predict{id=p2 kind=choice answer=b}
-Momentum adds a fraction $\beta$ of the previous step to each new step. What does it do in this valley?
+Queries and keys have independent entries of variance 1. Without dividing by $\sqrt d$, what happens to the attention weights as the head dimension grows from 16 to 512?
 
-- It multiplies every step by $1/(1 - \beta)$, which is the same as a larger learning rate.
-- It cancels the back-and-forth steps across the narrow direction and accumulates speed along the long direction.
-- Nothing useful: the zig-zag gets worse because old steps point the wrong way.
-- It makes the iteration diverge for any learning rate.
+- Nothing: the softmax normalizes the scores.
+- They become nearly one-hot: each row puts almost all its weight on one key.
+- They become uniform.
+- They become negative.
 
 :::reveal
-Across the valley the gradient flips sign every step, so successive contributions cancel in the running sum; along the valley it keeps the same sign, so contributions add up to $1/(1 - \beta)$ times one step. Momentum is a low-pass filter on the gradient sequence, and the derivation makes this exact. A larger learning rate cannot do the same thing, because it amplifies both directions.
+A dot product of $d$ unit-variance terms has standard deviation $\sqrt d$, so at $d = 512$ the scores differ by tens, and the softmax of such scores is nearly one-hot. A one-hot softmax has almost zero gradient, so the model stops learning which keys to attend to. Dividing by $\sqrt d$ restores unit-scale scores whatever $d$ is.
 :::
 ::::
-
-:::widget{name=LossLandscape surface=quadratic kappa=50 loglr=-1.8 beta=0.9}
-:::
-
-In the widget, raise the learning rate until plain SGD starts to zig-zag and then diverge, and compare the momentum and Adam trajectories at the same setting. Then switch to the Rosenbrock valley, whose curvature changes along the way.

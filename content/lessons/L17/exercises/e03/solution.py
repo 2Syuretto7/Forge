@@ -1,14 +1,26 @@
 import numpy as np
 
 
-def ulp(x, exp_bits=5, man_bits=10):
-    """Spacing between representable numbers at |x| (subnormal spacing below the normal range)."""
-    bias = 2 ** (exp_bits - 1) - 1
-    a = abs(x)
-    e = max(np.floor(np.log2(a)) if a > 0 else 1 - bias, 1 - bias)
-    return 2.0 ** (e - man_bits)
+def softmax(z):
+    e = np.exp(z - np.max(z, axis=-1, keepdims=True))
+    return e / e.sum(axis=-1, keepdims=True)
 
 
-def largest_exact_integer(man_bits):
-    """Every integer up to 2^(man_bits + 1) is exactly representable; the next one is not."""
-    return 2 ** (man_bits + 1)
+def train_bandit(means, steps, lr, seed, batch=16):
+    """REINFORCE on a bandit whose arm a pays means[a] plus N(0, 1) noise. Each step samples `batch`
+    arms from softmax(theta), uses the batch's mean reward as the baseline, and ascends the
+    average of (r - baseline) * (onehot(a) - p). Return the final probabilities."""
+    rng = np.random.default_rng(seed)
+    theta = np.zeros(len(means))
+    for _ in range(steps):
+        p = softmax(theta)
+        acts = rng.choice(len(means), size=batch, p=p)
+        r = np.asarray(means)[acts] + rng.normal(size=batch)
+        b = r.mean()
+        g = np.zeros_like(theta)
+        for a, ri in zip(acts, r):
+            s = -p.copy()
+            s[a] += 1
+            g += (ri - b) * s
+        theta += lr * g / batch
+    return softmax(theta)

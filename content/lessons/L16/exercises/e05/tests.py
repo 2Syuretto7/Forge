@@ -1,23 +1,20 @@
+import numpy as np
 import sub
 
-FOOT = "Subscribe to our newsletter"
-docs = [
-    f"Story one.\n{FOOT}",
-    f"story   ONE.\n{FOOT}",
-    f"Story two.\n{FOOT}\n{FOOT}",
-    "Story three.",
-    f"Story four.\n{FOOT}",
-]
+rng = np.random.default_rng(3)
+M = rng.normal(size=(8, 3)) @ rng.normal(size=(3, 10)) + 0.01 * rng.normal(size=(8, 10))
 
 
-def test_exact_dedup():
-    assert sub.normalize("  A\n b ") == "a b"
-    assert sub.exact_dedup(docs) == [0, 2, 3, 4]
+def test_eckart_young():
+    for r in [1, 2, 3]:
+        best = sub.best_rank_r(M, r)
+        assert np.linalg.matrix_rank(best) == r
+        err = np.linalg.norm(M - best) / np.linalg.norm(M)
+        assert abs(err - sub.relative_error(M, r)) < 1e-12
+        other = rng.normal(size=(8, r)) @ rng.normal(size=(r, 10))
+        assert np.linalg.norm(M - other) > np.linalg.norm(M - best)
 
 
-def test_boilerplate():
-    lines = sub.boilerplate_lines(docs, 3)
-    assert lines == {FOOT}
-    assert sub.boilerplate_lines(docs, 6) == set()
-    assert sub.strip_lines(docs[2], lines) == "Story two."
-    assert sub.strip_lines("a\n\nb", {"b"}) == "a\n"
+def test_rank_for():
+    assert sub.rank_for(M, 0.01) == 3
+    assert sub.rank_for(M, 0.0) == 8

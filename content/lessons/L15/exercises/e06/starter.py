@@ -1,16 +1,36 @@
+import copy
 import numpy as np
 
-
-def law(N, D, E, A, B, alpha, beta):
-    """The parametric loss L(N, D) = E + A N^-alpha + B D^-beta."""
-    return E + A * N ** -alpha + B * D ** -beta
+TRUE_W = np.array([1.0, -2.0, 0.5])
 
 
-def optimal_allocation(C, E, A, B, alpha, beta):
-    """The compute-optimal (N, D, loss) for a budget of C = 6 N D FLOPs."""
+def batch(rng, n=16):
+    """A regression batch drawn from the trainer's generator."""
+    X = rng.normal(size=(n, 3))
+    return X, X @ TRUE_W + 0.1 * rng.normal(size=n)
+
+
+def loss_grad(w, X, y):
+    """0.5 * mean((X w - y)^2) and its gradient."""
     raise NotImplementedError
 
 
-def dloss_dlogN(N, C, E, A, B, alpha, beta):
-    """The derivative of L(N, C / 6N) with respect to log N at a fixed budget C."""
+def new_state(seed):
+    """Everything a run carries: weights, Adam moments and step, and the data generator."""
+    raise NotImplementedError
+
+
+def train_steps(state, n, lr=0.05):
+    """Run n Adam steps on fresh batches from state["rng"], updating state in place."""
+    raise NotImplementedError
+
+
+def save(state):
+    """A checkpoint that shares nothing with the live state: copies of the arrays, the step and the
+    generator's bit_generator.state."""
+    raise NotImplementedError
+
+
+def load(ckpt):
+    """A live state from a checkpoint."""
     raise NotImplementedError

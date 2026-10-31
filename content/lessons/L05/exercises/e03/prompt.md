@@ -1,13 +1,12 @@
-# Gradient descent for linear regression
+# Heavy-ball momentum
 
-Minimize $L(w) = \tfrac1n\|Xw - y\|^2$ iteratively.
+1. `heavy_ball(grad, x0, lr, beta, steps)` runs $v \leftarrow \beta v + \nabla f(x)$, $x \leftarrow x - \eta v$ from $v = 0$ and returns all iterates, shape `(steps + 1, d)`.
+2. `tuned_heavy_ball(A)` returns the optimal `(lr, beta)` for a quadratic with Hessian $A$: $\eta = 4/(\sqrt L + \sqrt\mu)^2$ and $\beta = \left(\frac{\sqrt\kappa - 1}{\sqrt\kappa + 1}\right)^2$.
 
-- `mse(w, X, y)` and `mse_grad(w, X, y)` $= \tfrac2n X^\top(Xw - y)$.
-- `gd(X, y, lr, steps)`: from $w = 0$; return `(w, losses)` with the loss recorded before each step.
-- `max_stable_lr(X)`: $2/\lambda_{\max}$ of the Hessian $\tfrac2n X^\top X$.
+The tests race tuned momentum against gradient descent at its optimal rate on a valley with condition number 100. Plain `gd` is provided.
 
 ## Hints
 
-1. The Hessian's top eigenvalue: `np.linalg.eigvalsh(2 / n * X.T @ X).max()`.
-2. Learning rates just below `max_stable_lr` converge; just above diverge.
-3. Use the same gradient-check pattern as in M15 and M18.
+1. With `beta = 0` your function must reproduce `gd` exactly.
+2. Update the velocity before the position, and evaluate the gradient at the current position.
+3. Copy the position into the list at every step, or every entry will point to the same array.

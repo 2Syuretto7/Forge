@@ -1,23 +1,19 @@
 import sub
 
-T4 = sub.T4
+
+def test_flops_per_token():
+    assert sub.train_flops_per_token(1e6, 4, 128, 192) == 6e6 + 12 * 4 * 128 * 192
+    N = 12 * 4 * 192 ** 2
+    f = sub.train_flops_per_token(N, 4, 128, 192)
+    assert abs((f - 6 * N) / f - sub.attention_share(128, 192)) < 1e-12
 
 
-def test_ridge():
-    assert abs(sub.ridge(T4["fp16"], T4["bw"]) - 203.125) < 1e-9
-    assert abs(sub.ridge(T4["fp32"], T4["bw"]) - 25.3125) < 1e-9
+def test_attention_share_values():
+    assert abs(sub.attention_share(128, 192) - 128 / 1280) < 1e-12
+    assert sub.attention_share(2048, 768) > sub.attention_share(2048, 12288)
+    assert abs(sub.attention_share(6, 1) - 0.5) < 1e-12
 
 
-def test_time_and_bound():
-    n = 1 << 26
-    t = sub.roofline_time(n, 6 * n, T4["fp16"], T4["bw"])
-    assert abs(t - 6 * n / 320e9) < 1e-15
-    assert sub.bound(n, 6 * n, T4["fp16"], T4["bw"]) == "memory"
-    f, b = 2 * 4096 ** 3, 3 * 4096 ** 2 * 2
-    assert sub.bound(f, b, T4["fp16"], T4["bw"]) == "compute"
-    assert abs(sub.roofline_time(f, b, T4["fp16"], T4["bw"]) - f / 65e12) < 1e-15
-
-
-def test_efficiency():
-    f, b = 2 * 4096 ** 3, 3 * 4096 ** 2 * 2
-    assert abs(sub.efficiency(f, b, 2 * f / 65e12, T4["fp16"], T4["bw"]) - 0.5) < 1e-12
+def test_budget_and_mfu():
+    assert abs(sub.tokens_for_budget(6e18, 1e9) - 1e9) < 1e-3
+    assert abs(sub.mfu(1e5, 6e8, 65e12) - 6e13 / 65e12) < 1e-12

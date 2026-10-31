@@ -1,21 +1,16 @@
-# Capstone: your engine against PyTorch
+# Capstone: FlashAttention in Triton
 
-The capstone runs in Colab, where PyTorch is installed. You will paste your engine into the notebook, train the same two-layer network on the spiral with your engine and with PyTorch from identical initial weights, and show that the two loss curves agree to within $10^{-6}$ (both in float64). Along the way you will walk a real PyTorch `grad_fn` graph and write a custom `torch.autograd.Function` that passes PyTorch's own `gradcheck`.
-
-This notebook does not need a GPU; a CPU runtime is fine.
+The notebook takes you from a vector-add kernel to a fused softmax, a tiled matrix multiplication, a fused layer norm and the forward pass of FlashAttention. Your FlashAttention must match unfused attention within $10^{-2}$ in fp16 and run faster than it at sequence length 2048 on a T4. Without a GPU the kernels run in Triton's interpreter, slowly but exactly, which is the easiest way to debug them.
 
 :::exercise{ref=capstone}
 :::
 
-:::colab{notebook=L08 runtime=cpu}
+:::colab{notebook=L08}
 :::
 
 ## When you finish
 
-Your engine and PyTorch differ in speed, not in kind. PyTorch's tensors live on GPUs, its backward rules are C++ and CUDA kernels, and its graph records thousands of operations per step. L11 asks what each of those operations costs on a GPU, and why launching many small ones is slow.
+You have written the kernel at the center of modern transformers. L18 adds what inference needs on top: keys and values cached from earlier steps, stored in pages, and attention over them for many requests at once.
 
-:::edge{to=L11 text="What each recorded operation costs on a GPU."}
-:::
-
-:::edge{to=L09 text="Optimizers that consume your engine's gradients."}
+:::edge{to=L18 text="Inference: cached keys and values and paged attention."}
 :::

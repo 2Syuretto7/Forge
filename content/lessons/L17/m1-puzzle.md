@@ -1,29 +1,32 @@
-# Puzzle: an update that disappears
+# Puzzle: what should the model be rewarded for?
 
-A weight equals 1.0. Each training step adds 0.001 to it. After 1000 steps it should be 2.0.
+You have a model that answers questions, and a reward model trained on people's preferences between pairs of answers. You let a reinforcement-learning algorithm push the model toward answers the reward model scores highly.
 
-::::predict{id=p1 kind=choice answer=a}
-The weight is stored in bf16 (7 mantissa bits) and each update is rounded to the nearest bf16 value. What is it after 1000 steps?
+::::predict{id=p1 kind=choice answer=c}
+You optimize hard, with no constraint on how far the model may move. What usually happens to the true quality of its answers, as judged by people?
 
-- Still 1.0.
-- About 2.0.
-- About 1.5.
-- Infinity.
+- It keeps rising with the reward model's score.
+- It stays where it was: reward models are unbiased.
+- It rises at first, then falls, while the reward model's score keeps rising.
+- It falls immediately.
 
 :::reveal
-Near 1.0, consecutive bf16 numbers are $2^{-7} \approx 0.0078$ apart. Adding 0.001 gives $1.001$, whose nearest bf16 neighbour is 1.0: the update rounds away, every time. This is why mixed-precision training keeps a full-precision master copy of the weights, or uses stochastic rounding.
+A reward model is a proxy, accurate on answers like those it was trained on and wrong on unusual ones. A strong optimizer finds the unusual answers it overrates: flattery, length, confident nonsense. Gao et al. (2023) measured exactly this rise-then-fall. RLHF therefore maximizes the reward **minus** a penalty on the KL divergence from the starting model, which keeps the policy where the reward model can be trusted. Move the penalty in the widget.
 :::
 ::::
 
-::::predict{id=p2 kind=numeric answer=65504 tol=1}
-What is the largest finite fp16 number?
+:::widget{name=RewardKLTradeoff}
+:::
+
+::::predict{id=p2 kind=choice answer=a}
+In the widget, switch to optimizing the true reward. As the KL weight falls, true quality:
+
+- Keeps rising, toward the best response's value.
+- Rises, then falls.
+- Falls.
+- Stays constant.
 
 :::reveal
-$(2 - 2^{-10}) \cdot 2^{15} = 65504$. Activations, attention scores or a loss multiplied by a scale factor can exceed it and become infinite. bf16 reaches about $3.4 \times 10^{38}$, like fp32, because it keeps fp32's 8 exponent bits.
+With the true reward there is nothing to exploit: the optimum concentrates on the best response, and quality rises monotonically as the policy is allowed to move. The penalty matters most when the reward is imperfect, which in practice it always is, unless it can be checked exactly, as with math answers or unit tests (section 8).
 :::
 ::::
-
-Explore the formats in the widget: choose a value, and compare how each format stores it.
-
-:::widget{name=FloatFormats value=0.1}
-:::

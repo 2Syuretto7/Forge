@@ -1,13 +1,12 @@
-# Pipeline schedules
+# What the error does to the outputs
 
-Pipeline parallelism gives each of $p$ stages a contiguous block of layers and streams $m$ micro-batches through them.
+What matters is not the error in each weight but the error in the layer's outputs on real inputs: $\frac{1}{n}\|X W^\top - X \hat W^\top\|^2$ over calibration inputs $X$. Methods like GPTQ round the weights to minimize this.
 
-1. `gpipe_order(p, m)`: every stage runs all $m$ forward passes, then all backward passes in reverse order.
-2. `one_f_one_b_order(p, m)`: stage $s$ runs $\min(p - s - 1, m)$ warm-up forwards, then alternates one forward and one backward while forwards remain, then the remaining backwards.
-3. `simulate(orders, tf=1.0, tb=2.0)`: forward $j$ on stage $s$ waits for forward $j$ on stage $s - 1$; backward $j$ on stage $s$ waits for backward $j$ on stage $s + 1$ (the last stage, for its own forward $j$). Each stage runs its list in order, one op at a time. Return the finishing time and the largest number of micro-batches any stage holds between its forward and its backward.
+1. `output_error(W_hat, W, X)`: that error and its gradient with respect to $\hat W$.
+2. `group_quantize(W, bits, group)`: symmetric quantization with one scale per `group` consecutive weights in each row (4-bit with groups of 128 is a common choice).
 
 ## Hints
 
-1. Sweep the stages repeatedly, starting each stage's next op as soon as its dependency has finished; raise an error if no stage can move.
-2. Both schedules take $(m + p - 1)(t_f + t_b)$: the bubble is $(p-1)/(m + p - 1)$ of the time.
-3. GPipe holds all $m$ micro-batches' activations at once; 1F1B holds at most $p$.
+1. With $D = X (W - \hat W)^\top$: the gradient is $-2 D^\top X / n$.
+2. The levels of a $b$-bit symmetric code run from $-(2^{b-1} - 1)$ to $2^{b-1} - 1$.
+3. Smaller groups mean more scales to store and smaller errors.

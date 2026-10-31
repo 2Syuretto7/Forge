@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def ce_with_z_loss(logits, y, z_coef):
-    """Mean softmax cross-entropy of logits (n, V) against integer labels y, plus
-    z_coef * mean(logsumexp(logits)^2). Return (loss, gradient with respect to logits)."""
+def paired_bootstrap(a, b, n_boot=2000, seed=0, level=0.95):
+    """Two models' per-item correctness on the same items: the mean difference a - b and a
+    bootstrap interval that resamples items (keeping each pair). Return (diff, low, high)."""
     raise NotImplementedError

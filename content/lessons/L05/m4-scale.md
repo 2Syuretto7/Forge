@@ -1,33 +1,23 @@
-# Scale and measure: solvers, features and calibration
+# Scale and measure: optimizers on the L03 network
 
-This movement compares solvers by how many iterations they need, shows how feature engineering lets a linear model draw curved boundaries, and checks calibration on a model that is right about its data.
+The quadratic told us what to expect; now test it on a real network. The exercises in this movement use the L03 digit task and its 64-64-32-10 ReLU network, with the forward and backward pass provided.
 
-## Newton's method versus gradient descent
-
-The logistic loss is smooth and convex, and its Hessian is cheap for small $d$. Newton's method uses it to take steps $w \leftarrow w - H^{-1}\nabla L$, which converges quadratically near the optimum: the number of correct digits roughly doubles per iteration.
-
-:::exercise{ref=e12}
+:::exercise{ref=e08}
 :::
 
-::::predict{id=p4 kind=choice answer=a}
-For a problem with $d = 10^6$ features (say, a bag of words), why is Newton's method rarely used?
+:::exercise{ref=e09}
+:::
 
-- Each step needs the $d \times d$ Hessian: $10^{12}$ entries to store and about $10^{18}$ operations to factor.
-- Newton's method does not converge for convex problems.
-- The logistic loss has no Hessian.
-- It converges to a worse solution than gradient descent.
+:::exercise{ref=e10}
+:::
+
+::::predict{id=p4 kind=sketch answer="1,0.95,0.85,0.52,0.19,0.06,0.03,0.99" tol=0.2 xlabel="log10 learning rate: -3, -2.5, -2, -1.5, -1, -0.5, 0, 0.5" ylabel="final training loss (scaled)"}
+Sketch the final training loss after 300 steps of SGD as a function of the learning rate, from $10^{-3}$ to $10^{0.5}$ in half-decade steps.
 
 :::reveal
-Newton's method is superb when $d$ is small and hopeless when $d$ is large: forming and solving with a $d \times d$ matrix costs $O(nd^2 + d^3)$. Large models use first-order methods (L09), sometimes with cheap diagonal or low-rank curvature estimates; Adam's per-parameter scaling is one of them.
+A slope down to a cliff. At $10^{-3}$ the loss barely moves from its starting value near $\ln 10 \approx 2.3$; it falls steadily as the rate grows and is lowest at a rate of 1 (about 0.06). At $10^{0.5} \approx 3.2$ it is back at 2.3: the first large steps push the second layer's ReLUs into the region where they never fire, and the network can only output the class frequencies. The best rate sits just below the failure point, which is why practical sweeps start high and back off.
 :::
 ::::
 
-## Curved boundaries from linear models
-
-:::exercise{ref=e13}
+:::exercise{ref=e11}
 :::
-
-:::widget{name=DecisionBoundary separable=false lr=0.5 l2=0.01}
-:::
-
-With overlapping classes the loss has a finite minimum and the boundary settles. Try raising the L2 strength: the probabilities near the boundary flatten toward $0.5$ and the weight norm shrinks.

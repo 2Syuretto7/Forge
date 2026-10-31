@@ -1,23 +1,17 @@
 import sub
 
-TEXT = "the cafe and the café; the theatre, the theme. " * 6
+NAN = float("nan")
 
 
-def test_roundtrip_edge_cases():
-    merges = sub.train_bpe(TEXT, 320)
-    for s in ["", " ", "\n\n", "  the  ", "café", "café", "東京で", "tab\there"]:
-        assert sub.roundtrips(s, merges), repr(s)
+def test_simulator():
+    assert sub.run_collectives([["a", "b"], ["a", "b"]]) == ("ok", 2)
+    assert sub.run_collectives([["a", "b"], ["a", "c"]]) == ("mismatch", 1, ["b", "c"])
+    assert sub.run_collectives([["a"], ["a", "b"], ["a", "b"]]) == ("hang", 1, [1, 2])
 
 
-def test_normalization_changes_bytes_and_tokens():
-    nfc, nfd = sub.normalization_forms("café")
-    assert nfc != nfd and len(nfc) == 4 and len(nfd) == 5
-    merges = sub.train_bpe(TEXT, 320)
-    a, b = sub.token_counts([nfc, nfd], merges)
-    assert a != b
-
-
-def test_leading_space_matters():
-    merges = sub.train_bpe(TEXT, 320)
-    with_space, without = sub.token_counts([" the", "the"], merges)
-    assert with_space <= without
+def test_nan_on_one_rank():
+    losses = [[1.0, 0.9, 0.8], [1.0, NAN, 0.8], [1.0, 0.9, 0.8]]
+    bad = sub.run_collectives(sub.training_trace(losses, consensus=False))
+    assert bad[0] == "hang"
+    good = sub.run_collectives(sub.training_trace(losses, consensus=True))
+    assert good == ("ok", 3 + 2)

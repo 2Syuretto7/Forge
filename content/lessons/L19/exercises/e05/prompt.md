@@ -1,9 +1,12 @@
-# A schedule that survives a restart
+# Is the probe finding the property?
 
-Implement `lr_at(step, peak, warmup, total, floor=0.1)`: linear warmup from `peak / warmup` at step 1 to `peak` at step `warmup`, then cosine decay to `floor * peak` at step `total` (and constant after). The rate must depend on nothing but the step, so a resumed run, which only knows its step, continues the same schedule.
+A probe that reaches 95% may be reading the property, or memorizing word identities that happen to correlate with it. Hewitt and Liang's **control task** gives every word type a random but consistent label: a probe that does as well on the control has learned word identities, not the property. `train_probe` and `probe_accuracy` are provided.
+
+1. `control_labels(word_ids, seed=0)`: a random 0/1 label per word type, consistent across occurrences.
+2. `selectivity(A_tr, y_tr, A_te, y_te, c_tr, c_te)`: held-out accuracy on the real labels minus held-out accuracy on the control labels.
 
 ## Hints
 
-1. Progress after warmup is $(t - w)/(T - w)$; the cosine factor is $\tfrac12(1 + \cos \pi p)$.
-2. Clamp the progress at 1 so a run that continues past `total` stays at the floor.
-3. A scheduler object that counts its own calls loses its count on restart unless it too is checkpointed: exercise 12 is that bug.
+1. Build a table from each distinct word id to a random label.
+2. High selectivity means the representation encodes the property more readily than arbitrary word identities.
+3. Report probe accuracy together with selectivity.

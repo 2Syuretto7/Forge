@@ -136,7 +136,7 @@ The hill $e^{-x^2}$ bends at most $M = 2$ (at its top). On $[-3, 3]$ with $n$ pi
 :::
 ::::
 
-:::edge{to=L07 text="a sum of shifted ReLUs is exactly a neural network with one hidden layer; in L07 training chooses the corners and the slopes instead of you."}
+:::edge{to=L03 text="a sum of shifted ReLUs is exactly a neural network with one hidden layer; in L03 training chooses the corners and the slopes instead of you."}
 :::
 
 The same picture explains why bigger networks fit better, and also why a curve with a sharp feature needs many pieces near it: the error bound depends on how hard the curve bends, and a curve that bends without limit (like $\sqrt{x}$ at 0) breaks the $h^2$ law, as you will find in Movement 5.

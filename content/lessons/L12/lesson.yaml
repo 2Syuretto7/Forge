@@ -1,36 +1,36 @@
 id: L12
-hours: 11
-capstone: "A Triton FlashAttention forward kernel that matches a reference within 1e-2 in fp16 and runs faster than unfused attention at sequence length 2048"
-teaser: "Write GPU kernels in Triton: coalesced loads, tiles, fusion, and the online softmax that lets FlashAttention keep attention on chip."
+hours: 8
+capstone: "A pipeline that deduplicates, filters and decontaminates a noisy crawl, and the held-out loss it buys at equal compute"
+teaser: "Find duplicates without comparing every pair, filter junk, mix domains, catch leaked benchmarks and build a data loader that resumes exactly."
 movements:
-  - {file: m0-recall.md,     mode: theory,   minutes: 25}
-  - {file: m1-puzzle.md,     mode: theory,   minutes: 45}
-  - {file: m2-derivation.md, mode: theory,   minutes: 200}
-  - {file: m3-build.md,      mode: practice, minutes: 160}
-  - {file: m4-scale.md,      mode: practice, minutes: 70}
-  - {file: m5-break.md,      mode: both,     minutes: 50}
+  - {file: m0-recall.md,     mode: theory,   minutes: 20}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 35}
+  - {file: m2-derivation.md, mode: theory,   minutes: 150}
+  - {file: m3-build.md,      mode: practice, minutes: 115}
+  - {file: m4-scale.md,      mode: practice, minutes: 50}
+  - {file: m5-break.md,      mode: both,     minutes: 40}
   - {file: m6-feynman.md,    mode: theory,   minutes: 25}
-  - {file: m7-capstone.md,   mode: practice, minutes: 85}
+  - {file: m7-capstone.md,   mode: practice, minutes: 45}
 hooks:
-  - {to: L22, text: "Inference kernels build on the same ideas: attention over a cached, paged set of keys and values."}
+  - {to: L11, text: "Cleaner data moves the whole scaling curve down."}
+  - {to: L15, text: "The pretraining run reads its data through a resumable pipeline like this one."}
 reuses:
-  - {from: L10, concept: "the layer norm forward and backward passes"}
-  - {from: L11, concept: "the roofline, tiling and kernel fusion"}
-  - {from: L13, concept: "scaled dot-product attention and its backward pass"}
+  - {from: L10, concept: "tokenizing a corpus into training windows"}
+  - {from: L02, concept: "held-out data and leakage"}
 annotations:
-  - {target: L11, movement: m2-derivation, anchor: "Tiling: how a matmul actually reaches high intensity", text: "L12 writes this tiled kernel in Triton, and fuses attention the same way."}
-  - {target: L13, movement: m2-derivation, anchor: "Attention on the roofline", text: "L12 removes this bottleneck: FlashAttention keeps the score matrix on chip with an online softmax."}
+  - {target: L10, movement: m2-derivation, anchor: "3. From text to training windows", text: "L12 builds the pipeline that feeds these windows at scale: deduplication, filtering, mixtures and resumable loading."}
+  - {target: L02, movement: m2-derivation, anchor: "6. Estimating risk honestly", text: "L12 meets test-set leakage at web scale: benchmark text inside the crawl, found by n-gram overlap."}
 concepts:
-  - q: "How does the online softmax compute a softmax in one pass over blocks?"
-    a: "It keeps a running maximum m and a running sum l of exp(x - m); when a new block raises the maximum, the old sum is multiplied by exp(m_old - m_new) before the block's terms are added."
-  - q: "Why does FlashAttention use less memory than standard attention?"
-    a: "It never stores the N by N score or probability matrix: it streams keys and values through on-chip memory with an online softmax, and keeps only one log-sum-exp per query for the backward pass."
-  - q: "What is memory coalescing?"
-    a: "When the 32 threads of a warp access consecutive addresses, the hardware serves them with a few wide transactions; scattered or strided accesses need many transactions and waste bandwidth."
-  - q: "Why are softmax and normalization kernels computed in fp32 even for fp16 tensors?"
-    a: "exp overflows fp16 above about 11, and sums of many fp16 values lose precision, so kernels load fp16, compute and accumulate in fp32, and store fp16."
-  - q: "Why does a Triton kernel need masks on its loads and stores?"
-    a: "Blocks have power-of-two sizes that rarely divide the data exactly; without a mask the last block reads and writes past the end of the tensor."
-  - q: "What does kernel fusion save in a row softmax?"
-    a: "The unfused version writes the exponentials to memory and reads them back several times; the fused kernel reads each row once and writes the result once, about a third of the traffic."
-katas: [e01, e03, e04]
+  - q: "Why does MinHash estimate Jaccard similarity?"
+    a: "For a random hash, the minimum over the union of two sets is equally likely to be any element, and the two minima agree exactly when it lies in the intersection, which has probability |A and B| / |A or B|."
+  - q: "What does banding a MinHash signature achieve?"
+    a: "Two documents become candidates if any band of r rows matches, with probability 1 - (1 - s^r)^b: an S-curve, so only likely near-duplicates are compared."
+  - q: "What is train-test contamination, and how is it detected?"
+    a: "Evaluation text present in the training data; it is found by n-gram overlap, such as shared 13-word sequences, and removed or reported separately."
+  - q: "How is a data loader made exactly resumable?"
+    a: "Derive every shuffle from the seed and epoch so the state is a position, and save any stateful part, such as a shuffle buffer and its generator, in the checkpoint."
+  - q: "How many epochs does a domain get under mixture weights?"
+    a: "A domain sampled with weight p in a run of T tokens is repeated p T / size times."
+  - q: "What is the risk of filtering with a quality classifier?"
+    a: "It learns what its reference text looks like, so it can remove good text in other styles or dialects and narrow the training distribution."
+katas: [e02, e03, e09]

@@ -1,18 +1,7 @@
-STOP_WORDS = {"the", "be", "to", "of", "and", "that", "have", "with"}
+import numpy as np
 
 
-def quality_signals(doc):
-    """Signals used by the Gopher quality rules, over whitespace-separated words and non-empty
-    lines: n_words, mean_word_len, symbol_ratio (the larger of the counts of "#" and of "..." per
-    word), bullet_lines (fraction starting with a bullet: "-", "*" or a bullet character after
-    leading spaces), ellipsis_lines (fraction ending with "..."), alpha_words (fraction of words
-    with a letter) and stop_words (how many STOP_WORDS occur, case-insensitive, punctuation
-    stripped)."""
-    raise NotImplementedError
-
-
-def passes(doc, min_words=50, max_words=100000):
-    """Gopher's rules: word count in [min_words, max_words], mean word length in [3, 10], symbol
-    ratio at most 0.1, at most 90% bullet lines and 30% ellipsis lines, at least 80% of words with
-    a letter, and at least two of the stop words."""
+def fit_lora(target, r, alpha, steps=3000, lr=0.05, seed=0):
+    """Fit (alpha / r) B A to the target update by gradient descent on 0.5 |(alpha / r) B A - target|^2,
+    starting from B = 0 and A with entries N(0, 1/r) as LoRA does. Return (A, B, final loss)."""
     raise NotImplementedError

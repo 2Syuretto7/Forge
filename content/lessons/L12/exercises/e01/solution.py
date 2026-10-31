@@ -1,20 +1,10 @@
-import numpy as np
+def shingles(text, k=5):
+    """The set of character k-grams of text, lowercased and with whitespace runs collapsed to a
+    single space. A text shorter than k is its own single shingle."""
+    t = " ".join(text.lower().split())
+    return {t[i:i + k] for i in range(len(t) - k + 1)} if len(t) >= k else {t}
 
 
-def online_softmax(x, block=4):
-    """Softmax of a vector in one pass over blocks of `block` entries, keeping a running maximum m
-    and a running sum l of exp(x - m); the sum is rescaled whenever the maximum grows. The final
-    pass only divides. Return (p, m, l)."""
-    m, l = -np.inf, 0.0
-    for s in range(0, len(x), block):
-        b = x[s:s + block]
-        m_new = max(m, float(b.max()))
-        l = l * np.exp(m - m_new) + float(np.exp(b - m_new).sum())
-        m = m_new
-    return np.exp(x - m) / l, m, l
-
-
-def merge(m1, l1, m2, l2):
-    """Combine the (max, sum) summaries of two disjoint parts of a vector."""
-    m = max(m1, m2)
-    return m, l1 * np.exp(m1 - m) + l2 * np.exp(m2 - m)
+def jaccard(a, b):
+    """|a and b| / |a or b| for two sets; 1.0 if both are empty."""
+    return len(a & b) / len(a | b) if (a or b) else 1.0

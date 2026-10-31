@@ -1,16 +1,13 @@
 import sub
 
 
-def test_bytes():
-    assert sub.score_bytes(8, 12, 2048) == 805_306_368
-    assert sub.score_bytes(1, 1, 10, bytes_per=4) == 400
+def test_amdahl():
+    assert abs(sub.amdahl_speedup([0.5, 0.5], [2, 2]) - 2) < 1e-12
+    assert abs(sub.amdahl_speedup([0.7, 0.3], [1e9, 2]) - 1 / 0.15) < 1e-6
 
 
-def test_intensity():
-    assert abs(sub.scores_intensity(2048, 64) - 2 * 2048 * 2048 * 64 / (2 * (2 * 2048 * 64 + 2048 ** 2))) < 1e-9
-    assert 63 < sub.scores_intensity(10 ** 6, 64) < 64
-
-
-def test_max_ctx():
-    n = sub.max_ctx_for_memory(16e9, 8, 12)
-    assert sub.score_bytes(8, 12, n) <= 16e9 < sub.score_bytes(8, 12, n + 1)
+def test_t4():
+    mm, mem = sub.t4_part_speedups()
+    assert abs(mm - 65 / 8.1) < 1e-12 and mem == 2.0
+    s = sub.amdahl_speedup([0.7, 0.3], [mm, mem])
+    assert 4.0 < s < 4.3

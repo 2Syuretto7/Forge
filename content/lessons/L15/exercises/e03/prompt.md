@@ -1,12 +1,13 @@
-# Fitting a power law
+# Attention logits and QK-layernorm
 
-A power law $y = k x^{-a}$ is a straight line in log-log coordinates: $\log y = \log k - a \log x$.
+When queries and keys grow during training, attention logits $q \cdot k / \sqrt{d}$ grow with them, the softmax collapses onto one key, and training stalls or diverges. Normalizing $q$ and $k$ with a layer norm before the product bounds the logits.
 
-1. `log_mse(theta, x, y)` with $\theta = (\log k, a)$: return the mean squared error between $\log k - a \log x$ and $\log y$, and its gradient with respect to $\theta$.
-2. `fit_power_law(x, y)`: the least-squares fit, returning $(k, a)$.
+1. `layer_norm(x, eps=1e-5)` over the last axis (no gain or bias), returning $y$ and a cache.
+2. `layer_norm_backward(dy, cache)`: the gradient with respect to $x$.
+3. `max_attention_logit(q, k, qk_norm)`: the largest $|q_i \cdot k_j|/\sqrt{d}$, with the rows of $q$ and $k$ layer-normalized first when `qk_norm`.
 
 ## Hints
 
-1. With residuals $r_i = \log k - a \log x_i - \log y_i$, the gradient is $\bigl(2\,\overline{r},\; -2\,\overline{r \log x}\bigr)$.
-2. `np.polyfit(np.log(x), np.log(y), 1)` returns the slope and the intercept.
-3. The least-squares fit is where the gradient of `log_mse` vanishes.
+1. With $\hat x = (x - \mu)\,r$, $r = 1/\sqrt{\sigma^2 + \epsilon}$: $\partial x = r\,(\partial \hat x - \overline{\partial \hat x} - \hat x\, \overline{\partial \hat x \odot \hat x})$, the means taken over the last axis.
+2. A normalized row has norm about $\sqrt{d}$, so by Cauchy-Schwarz $|q \cdot k|/\sqrt d \le \sqrt d$.
+3. With a learned gain the bound scales with the gain, which grows far more slowly than raw activations.

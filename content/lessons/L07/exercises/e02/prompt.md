@@ -1,12 +1,14 @@
-# Activation layers
+# The roofline as code
 
-Implement ReLU and tanh as layers with a forward pass that returns a cache and a backward pass that maps the output gradient to the input gradient.
+1. `ridge(peak, bw)`: the intensity where the two roofs meet.
+2. `roofline_time(flops, nbytes, peak, bw)`: the lower bound $\max(F/P, B/\text{BW})$ on a kernel's runtime.
+3. `bound(flops, nbytes, peak, bw)`: `"memory"` if the kernel's intensity is below the ridge point, else `"compute"`.
+4. `efficiency(flops, nbytes, measured_seconds, peak, bw)`: the roofline bound divided by a measured time, the fraction of the achievable speed a kernel reached.
 
-- `relu_forward(Z)` returns `(Y, cache)`; `relu_backward(dY, cache)` returns `dZ`, using the convention that the derivative at exactly 0 is 0.
-- `tanh_forward(Z)` returns `(Y, cache)`; `tanh_backward(dY, cache)` returns `dZ`, computed from the saved output.
+`T4` holds the datasheet numbers.
 
 ## Hints
 
-1. ReLU mask: `Z > 0`.
-2. For tanh, cache the output `Y` and use $1 - Y^2$.
-3. The ReLU gradient check avoids inputs within $10^{-3}$ of zero, where the derivative jumps.
+1. Every function is one line.
+2. A kernel exactly at the ridge point is limited by both roofs equally; call it compute-bound.
+3. An efficiency above 1 means a measurement or a count is wrong.

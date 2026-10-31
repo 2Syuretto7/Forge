@@ -1,15 +1,12 @@
-# Least squares as maximum likelihood
+# Gradient descent on a quadratic
 
-Fit $y = Xw + \epsilon$ with Gaussian noise (Section 1). `X` is `(n, d)` and already contains a column of ones if you want an intercept.
+1. `quad_fg(A, b, x)` returns the value and gradient of $f(x) = \tfrac12 x^\top A x - b^\top x$ for a symmetric matrix $A$.
+2. `gd(grad, x0, lr, steps)` runs gradient descent $x \leftarrow x - \eta\, \nabla f(x)$ from `x0`, where `grad` is a function returning the gradient, and returns every iterate as an array of shape `(steps + 1, d)`, starting with `x0`.
 
-- `ols(X, y)`: the least-squares weights, via `np.linalg.lstsq`.
-- `gaussian_nll(w, sigma, X, y)`: the average negative log-likelihood $\tfrac12\log(2\pi\sigma^2) + \tfrac{1}{2\sigma^2}\cdot\text{mean}((y - Xw)^2)$.
-- `noise_mle(X, y, w)`: the MLE of $\sigma^2$ given `w`, the mean squared residual.
-
-The tests confirm that `ols` minimizes `gaussian_nll` for every fixed `sigma` and that the variance MLE maximizes the likelihood.
+The minimizer of $f$ solves $Ax = b$; the tests check that your iteration finds it.
 
 ## Hints
 
-1. `np.linalg.lstsq(X, y, rcond=None)[0]`.
-2. Write the residual once: `r = y - X @ w`.
-3. The variance MLE divides by $n$.
+1. The gradient of $\tfrac12 x^\top A x$ is $Ax$ when $A$ is symmetric.
+2. Copy `x0` into a float array before iterating, so the caller's array is never modified.
+3. Collect the iterates in a list and convert with `np.array` at the end.

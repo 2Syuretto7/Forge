@@ -1,23 +1,14 @@
-import warnings
 import numpy as np
 import sub
 
-rng = np.random.default_rng(11)
-Q = rng.normal(size=(8, 64)) * 80
-K = rng.normal(size=(8, 64)) * 80
+ref = np.array([0.12, 0.18, 0.2, 0.15, 0.15, 0.1, 0.06, 0.04])
+proxy = np.array([0.8, 0.9, 0.4, 0.3, -0.5, -0.2, 1.6, -1.0])
+truth = np.array([1.0, 0.8, 0.4, -0.5, -0.6, -0.3, -0.8, -1.0])
 
 
-def test_fp16_scores_overflow():
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        s = sub.scores(Q, K, np.float16)
-    assert s.dtype == np.float16 and not np.all(np.isfinite(s))
-    assert np.all(np.isfinite(sub.scaled_first(Q, K, np.float16)))
-
-
-def test_grad_stable_lse():
-    x = np.array([1000.0, 999.0, 1001.5, 990.0])
-    v, g = sub.stable_lse(x)
-    assert np.isfinite(v) and np.isclose(g.sum(), 1.0)
-    num = np.array([(sub.stable_lse(x + e)[0] - sub.stable_lse(x - e)[0]) / 2e-6 for e in np.eye(4) * 1e-6])
-    assert np.allclose(g, num, atol=1e-6)
+def test_overoptimization():
+    rows = sub.tradeoff(ref, proxy, truth, [10, 1, 0.3, 0.1, 0.02])
+    kls, prox, tru = zip(*rows)
+    assert all(a < b for a, b in zip(kls, kls[1:])) and all(a < b for a, b in zip(prox, prox[1:]))
+    best = int(np.argmax(tru))
+    assert 0 < best < 4 and tru[-1] < tru[best] - 0.5

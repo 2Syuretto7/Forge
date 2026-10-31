@@ -1,10 +1,12 @@
-# The online softmax
+# Shingles and Jaccard similarity
 
-1. `online_softmax(x, block=4)`: one pass over `x` in blocks, keeping the running maximum `m` (starting at $-\infty$) and the running sum `l` of $e^{x_j - m}$ (starting at 0), rescaling `l` by $e^{m_{\text{old}} - m_{\text{new}}}$ whenever the maximum grows. Return `(p, m, l)` with `p = exp(x - m) / l`.
-2. `merge(m1, l1, m2, l2)`: combine the summaries of two disjoint parts of a vector into the summary of the whole.
+Near-duplicate detection compares documents as sets of short overlapping pieces.
+
+1. `shingles(text, k=5)`: the set of character $k$-grams of `text` after lowercasing and collapsing every run of whitespace to a single space. A text shorter than $k$ is its own single shingle.
+2. `jaccard(a, b)`: $|a \cap b| / |a \cup b|$, and 1.0 when both sets are empty.
 
 ## Hints
 
-1. `np.exp(-np.inf - finite)` is 0, so the first block needs no special case.
-2. Update `m` only after rescaling `l`.
-3. The merged summary must not depend on the order of the two parts.
+1. `" ".join(text.lower().split())` normalizes case and whitespace in one line.
+2. A set comprehension over `range(len(t) - k + 1)` collects the $k$-grams.
+3. Two copies of a page that differ only in spacing or capitalization have Jaccard similarity 1.

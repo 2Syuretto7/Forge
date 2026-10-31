@@ -13,7 +13,7 @@ movements:
   - {file: m7-capstone.md,   mode: practice, minutes: 60}
 hooks:
   - {to: M33, text: "Mixed-precision factorizations and iterative refinement trade the precision of each step against the condition number of the problem."}
-  - {to: L17, text: "Machine epsilon sets the limits of bf16 and fp8 training: what a step can change, and why master weights stay in float32."}
+  - {to: L13, text: "Machine epsilon sets the limits of bf16 and fp8 training: what a step can change, and why master weights stay in float32."}
   - {to: M11, text: "Partial pivoting keeps the growth of entries during elimination small, which is what makes Gaussian elimination backward stable."}
   - {to: M19, text: "Finite differences lose digits to cancellation at small steps; automatic differentiation and the complex step do not subtract."}
   - {to: M24, text: "Summing millions of Monte Carlo samples needs pairwise or compensated summation to keep the error below the statistical error."}

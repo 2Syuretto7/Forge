@@ -1,11 +1,11 @@
-# The z-loss
+# Comparing two models fairly
 
-The softmax is unchanged when a constant is added to every logit, so nothing stops the logits from drifting to huge values, where low-precision arithmetic breaks down. PaLM added a small penalty on $\log Z = \operatorname{logsumexp}(z)$, the **z-loss** $10^{-4} (\log Z)^2$, which keeps $\log Z$ near zero.
+Two models answered the same items. Their separate intervals overlap more than the evidence warrants: items vary in difficulty, and both models find the same items hard. Compare them item by item.
 
-Implement `ce_with_z_loss(logits, y, z_coef)`: the mean cross-entropy plus `z_coef` times the mean of $(\log Z)^2$, and the gradient with respect to the logits.
+Implement `paired_bootstrap(a, b, n_boot=2000, seed=0, level=0.95)`: the mean of $a - b$ over items and a bootstrap interval that resamples items, keeping each pair together.
 
 ## Hints
 
-1. Compute $\log Z$ stably: subtract the row maximum before exponentiating.
-2. The cross-entropy gradient is $(p - \text{onehot}(y))/n$; the z-loss adds $2\,c\,\log Z \cdot p / n$, since $\partial \log Z/\partial z = p$.
-3. With $c = 0$ the result must be plain cross-entropy.
+1. Compute the per-item differences first, then bootstrap their mean.
+2. An interval that excludes 0 means the difference is unlikely to be sampling noise.
+3. The tests build two models that share most of their mistakes.

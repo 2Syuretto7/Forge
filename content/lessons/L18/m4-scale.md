@@ -1,28 +1,17 @@
-# Scale it: pipelines, checkpointing and real plans
-
-## Pipelines
-
-::::predict{id=p3 kind=numeric answer=0.4286 tol=0.01}
-A model is split into 4 pipeline stages and each step streams 4 micro-batches. What fraction of the step is the bubble?
-
-:::reveal
-$(p - 1)/(m + p - 1) = 3/7 \approx 0.43$: almost half the time idle. With 32 micro-batches it falls to $3/35 \approx 0.09$, which is why pipelines need many micro-batches per step, and why the global batch limits how deep a pipeline can usefully be.
-:::
-::::
+# Scale it: better rounding, drafts and latency targets
 
 :::exercise{ref=e08}
 :::
 
-## Recomputation
+::::predict{id=p3 kind=numeric answer=3.36 tol=0.05}
+A draft model's tokens are accepted 80% of the time, and it proposes 4 tokens per target pass. How many tokens does each target pass produce on average?
+
+:::reveal
+$(1 - 0.8^5)/(1 - 0.8) \approx 3.36$: the accepted prefix of the draft plus one token from the target (a correction or a bonus token). Raising acceptance to 0.9 gives 4.1. A draft distilled from the target, or one sharing its tokenizer and training data, accepts more often.
+:::
+::::
 
 :::exercise{ref=e09}
-:::
-
-## Planning
-
-Try your plans in the planner: a 13B model on 64 GPUs, then a 175B model.
-
-:::widget{name=ParallelismPlanner model=b13 dp=6}
 :::
 
 :::exercise{ref=e10}

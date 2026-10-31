@@ -1,17 +1,15 @@
-# Locality-sensitive hashing: the S-curve
+# A LoRA layer
 
-Split each signature of $b \cdot r$ values into $b$ **bands** of $r$ rows and put two documents in the same bucket if any band matches exactly. Two documents with Jaccard similarity $s$ agree on one band with probability $s^r$, so they become **candidates** with probability
+LoRA keeps a pretrained weight $W_0$ ($d_\text{out} \times d_\text{in}$) frozen and learns a low-rank update: $A$ ($r \times d_\text{in}$) and $B$ ($d_\text{out} \times r$), scaled by $\alpha/r$:
 $$
-P(s) = 1 - (1 - s^r)^b.
+y = x W_0^\top + \frac{\alpha}{r}\,(x A^\top) B^\top.
 $$
 
-1. `candidate_probability(s, bands, rows)`.
-2. `dprob_ds(s, bands, rows)`: its derivative with respect to $s$.
-3. `threshold(bands, rows)`: $(1/b)^{1/r}$, the approximate similarity where the curve rises steeply.
-4. `choose_bands(num_perm, target)`: among the factorizations $b \cdot r$ = `num_perm`, the one whose threshold is closest to `target`.
+1. `lora_forward(x, W0, A, B, alpha)`.
+2. `lora_backward(dy, x, W0, A, B, alpha)`: the gradients with respect to $A$, $B$ and $x$.
 
 ## Hints
 
-1. By the chain rule, $P'(s) = b\,r\,s^{r-1}(1 - s^r)^{b-1}$.
-2. More rows per band make the curve steeper and move it right; more bands move it left.
-3. At the threshold, $s^r = 1/b$, so $P = 1 - (1 - 1/b)^b \approx 1 - 1/e$ for large $b$.
+1. With $h = x A^\top$ and $s = \alpha/r$: $\partial B = s\, dy^\top h$ and $\partial A = s\,(dy\, B)^\top x$.
+2. $\partial x$ has a frozen path and an adapter path: $dy\, W_0 + s\,(dy\, B) A$.
+3. LoRA starts with $B = 0$, so the adapted model begins exactly at the pretrained one.

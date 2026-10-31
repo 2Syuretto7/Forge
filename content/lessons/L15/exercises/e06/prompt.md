@@ -1,12 +1,16 @@
-# The compute-optimal allocation
+# Exact resume
 
-`law` is provided.
+A run's state is more than its weights: Adam's moments and step count, and the random generator that draws the data. `batch(rng)` draws a regression batch.
 
-1. `optimal_allocation(C, E, A, B, alpha, beta)`: the model size $N^*$ and token count $D^* = C/6N^*$ minimizing $L(N, D)$ subject to $6ND = C$, and the loss there, from the closed form you derived.
-2. `dloss_dlogN(N, C, E, A, B, alpha, beta)`: the derivative of $L(N, C/6N)$ with respect to $\log N$ at fixed $C$.
+1. `loss_grad(w, X, y)`: $\tfrac12 \operatorname{mean}((Xw - y)^2)$ and its gradient.
+2. `new_state(seed)` and `train_steps(state, n, lr=0.05)`: Adam steps on fresh batches from the state's generator.
+3. `save(state)`: a checkpoint sharing nothing with the live state, including `rng.bit_generator.state`.
+4. `load(ckpt)`: a live state from it.
+
+Training 100 steps straight must give **bitwise** the same weights as training 40, saving, training a few more steps (which are then discarded), loading, and training 60.
 
 ## Hints
 
-1. $N^* = G\,(C/6)^{\beta/(\alpha+\beta)}$ with $G = \bigl(\alpha A / (\beta B)\bigr)^{1/(\alpha+\beta)}$.
-2. Increasing $\log N$ by $\epsilon$ multiplies $N$ by $e^\epsilon$ and divides $D$ by it, so $\frac{d}{d \log N} = -\alpha A N^{-\alpha} + \beta B D^{-\beta}$.
-3. At the optimum the two terms balance: $\alpha A N^{-\alpha} = \beta B D^{-\beta}$.
+1. Copy arrays (`.copy()`) and the generator state (`copy.deepcopy`), or later steps will change the checkpoint.
+2. Restoring the step count matters: Adam's bias correction uses it.
+3. A run that restores everything but the data generator still "works", but it trains on different batches after every restart and cannot be reproduced.

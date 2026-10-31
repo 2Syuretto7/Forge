@@ -1,22 +1,30 @@
-# Per-SM limits of NVIDIA Turing GPUs (compute capability 7.5), the T4's architecture.
-TURING = {"max_threads": 1024, "max_warps": 32, "max_blocks": 16, "registers": 65536, "smem": 65536, "warp": 32}
+import numpy as np
 
 
-def peak_flops(sms, cores_per_sm, clock_hz, flops_per_core_cycle=2):
-    """Each core retires one fused multiply-add (2 FLOPs) per cycle."""
-    return sms * cores_per_sm * clock_hz * flops_per_core_cycle
+def huber(r, delta):
+    """Elementwise Huber loss and its derivative: r^2 / 2 for |r| <= delta, linear beyond."""
+    a = np.abs(r)
+    value = np.where(a <= delta, 0.5 * r * r, delta * (a - 0.5 * delta))
+    return value, np.where(a <= delta, r, delta * np.sign(r))
 
 
-def blocks_per_sm(threads_per_block, regs_per_thread, smem_per_block, lim=TURING):
-    """Resident blocks per SM: the tightest of the thread, warp, block, register and shared-memory limits."""
-    warps = -(-threads_per_block // lim["warp"])
-    limits = [lim["max_blocks"], lim["max_warps"] // warps, lim["registers"] // (regs_per_thread * warps * lim["warp"])]
-    if smem_per_block:
-        limits.append(lim["smem"] // smem_per_block)
-    return min(limits)
-
-
-def occupancy(threads_per_block, regs_per_thread, smem_per_block, lim=TURING):
-    """Active warps per SM as a fraction of the maximum."""
-    warps = -(-threads_per_block // lim["warp"])
-    return blocks_per_sm(threads_per_block, regs_per_thread, smem_per_block, lim) * warps / lim["max_warps"]
+def hoffmann_objective(theta, N, D, L, delta=1e-3):
+    """theta = (a, b, e, alpha, beta), with A = exp(a), B = exp(b), E = exp(e). The predicted log
+    loss is LSE(a - alpha log N, b - beta log D, e); return the sum over runs of
+    huber(predicted - log L, delta) and its gradient with respect to theta."""
+    a, b, e, alpha, beta = theta
+    lN, lD = np.log(N), np.log(D)
+    z = np.stack([a - alpha * lN, b - beta * lD, np.full(lN.shape, e)])
+    m = z.max(axis=0)
+    w = np.exp(z - m)
+    s = w.sum(axis=0)
+    p = w / s
+    h, dh = huber(m + np.log(s) - np.log(L), delta)
+    grad = np.array([
+        np.sum(dh * p[0]),
+        np.sum(dh * p[1]),
+        np.sum(dh * p[2]),
+        -np.sum(dh * p[0] * lN),
+        -np.sum(dh * p[1] * lD),
+    ])
+    return h.sum(), grad

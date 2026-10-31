@@ -2,36 +2,28 @@ import numpy as np
 import sub
 
 rng = np.random.default_rng(10)
+Z = rng.normal(size=(5, 23)) * 3
+Y = rng.integers(0, 23, size=5)
 
 
-def _loss(sizes, B, seed=0):
-    m = sub.MLP(sizes, seed)
-    X = rng.normal(size=(B, sizes[0]))
-    y = rng.integers(0, sizes[-1], size=B)
-    return sub.cross_entropy_fused(m(sub.Tensor(X)), y)
+def _ref(Z):
+    m = Z.max(axis=1, keepdims=True)
+    lse = (m + np.log(np.exp(Z - m).sum(axis=1, keepdims=True)))[:, 0]
+    return float(np.mean(lse - Z[np.arange(5), Y]))
 
 
-def test_graph_nodes():
-    a = sub.Tensor(np.ones(3))
-    b = a * a
-    c = (b + a).sum()
-    nodes = sub.graph_nodes(c)
-    assert len(nodes) == 4 and len({id(n) for n in nodes}) == 4
-    assert any(n is a for n in nodes)
+def test_loss():
+    loss, _ = sub.fused_cross_entropy(Z, Y)
+    assert abs(loss - _ref(Z)) < 1e-12
+    big, _ = sub.fused_cross_entropy(Z * 100, Y)
+    assert np.isfinite(big) and abs(big - _ref(Z * 100)) < 1e-9
 
 
-def test_saved_bytes_matches_formula():
-    for sizes, B in [([4, 8, 3], 5), ([6, 16, 16, 4], 7), ([3, 2], 11)]:
-        assert sub.saved_bytes(_loss(sizes, B)) == sub.mlp_saved_bytes_formula(sizes, B), sizes
-
-
-def test_formula_by_hand():
-    assert sub.mlp_saved_bytes_formula([512, 512, 512, 10], 1) == 8 * (3 * 512 + 512 * 512 * 2 + 512 * 10 + 2 * 512 + 10)
-
-
-def test_activations_scale_with_batch():
-    sizes = [32, 64, 64, 10]
-    a = sub.mlp_saved_bytes_formula(sizes, 100)
-    b = sub.mlp_saved_bytes_formula(sizes, 200)
-    weights = 8 * sum(i * o for i, o in zip(sizes, sizes[1:]))
-    assert b - a == a - weights
+def test_grad_fused_cross_entropy():
+    _, d = sub.fused_cross_entropy(Z, Y)
+    num = np.zeros_like(Z)
+    for idx in np.ndindex(Z.shape):
+        E = np.zeros_like(Z)
+        E[idx] = 1e-6
+        num[idx] = (_ref(Z + E) - _ref(Z - E)) / 2e-6
+    assert np.allclose(d, num, atol=1e-8)

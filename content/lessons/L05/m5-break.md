@@ -1,29 +1,32 @@
-# Break it: unscaled features and separable data
+# Break it: too fast, uncorrected, and decayed the wrong way
 
-## Unscaled features
+## A learning rate that is too high
 
-Section 5 predicted that badly scaled features make gradient descent crawl. The next exercise measures it: same data, same model, with and without standardization.
+Gradient descent diverges once $\eta$ passes $2/\lambda_{\max}$, and a neural network is no different: its loss either explodes to infinity or, with ReLUs, kills most units on the first big step and stalls. In the `LossLandscape` widget, set the learning rate just above the stability limit and watch the steep direction grow. Exercise 2 measured that limit; exercise 11 found the network's.
 
-:::exercise{ref=e10}
-:::
+::::predict{id=p5 kind=choice answer=a}
+You train with Adam and remove the bias correction, keeping $\beta_1 = 0.9$ and $\beta_2 = 0.999$. What happens to the first hundred steps?
 
-## Separable data
-
-When a hyperplane separates the training classes perfectly, unregularized logistic regression has no minimizer. The weights grow forever, predicted probabilities on the training data race toward exactly 0 and 1, and the model becomes arbitrarily overconfident on test points near the boundary.
-
-::::predict{id=p5 kind=sketch answer="0,0.33,0.5,0.6,0.67,0.72,0.77" xlabel="training step (log scale, 1 to 1e6)" ylabel="weight norm (scaled)"}
-On separable data, sketch the weight norm of gradient descent against the number of steps on a log scale, at $10^0, 10^1, \dots, 10^6$ steps.
+- They are about 3 to 6.5 times larger than intended.
+- They are about 10 times smaller, because $m$ starts at zero.
+- They are unchanged, because the two biases cancel.
+- Only the first step is affected.
 
 :::reveal
-After an initial transient the norm grows like $\log t$: a straight line on a log-scale axis, rising forever with no plateau. With an L2 penalty the curve instead flattens at a finite value. The exact slope depends on the margin; only the shape matters here.
+Without correction, the step is $\hat m/\sqrt{\hat v}$ times $(1 - \beta_1^t)/\sqrt{1 - \beta_2^t}$. At $t = 1$ that factor is $0.1/\sqrt{0.001} \approx 3.16$; it peaks near $6.6$ around step 12, and is still above 3 at step 100, because $\beta_2^t$ takes about a thousand steps to fade. The bias in $v$ is the stronger one, and it makes early steps too large, exactly when training is most fragile.
 :::
 ::::
 
-:::exercise{ref=e11}
+:::exercise{ref=e12}
+:::
+
+## Weight decay inside Adam
+
+:::exercise{ref=e13}
 :::
 
 ## What to take away
 
-- Always standardize features for gradient-based training, with statistics from the training split only.
-- Always regularize logistic and softmax regression a little; an L2 penalty is cheap insurance against separable data and duplicated features.
-- Watch the weight norm: steady growth with falling training loss and flat validation loss is the signature of overconfidence.
+- The largest stable learning rate is set by the steepest direction; find it, then back off.
+- Keep Adam's bias correction, or compensate with a long warmup.
+- Use decoupled weight decay (AdamW) with adaptive optimizers; L2 inside Adam decays each weight at a rate set by its gradient history.

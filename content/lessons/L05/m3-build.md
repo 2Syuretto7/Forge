@@ -1,8 +1,6 @@
-# Build: three models, three solvers
+# Build: the optimizers from scratch
 
-Nine exercises take you from the closed-form least-squares solution to a full softmax classifier with honest evaluation. Three of them check gradients against finite differences.
-
-## Linear regression
+## Gradient descent and its speed limit
 
 :::exercise{ref=e01}
 :::
@@ -10,35 +8,36 @@ Nine exercises take you from the closed-form least-squares solution to a full so
 :::exercise{ref=e02}
 :::
 
+## Momentum
+
 :::exercise{ref=e03}
 :::
-
-## Logistic regression
 
 :::exercise{ref=e04}
 :::
 
+## Adam
+
 :::exercise{ref=e05}
 :::
 
-::::predict{id=p3 kind=numeric answer=0 tol=0.05}
-You fit logistic regression with an intercept to a dataset where 30 percent of the labels are 1, using features that carry no information at all. After training to convergence, what is the average of the predicted probabilities minus 0.3?
+::::predict{id=p3 kind=choice answer=c}
+You run Adam on a loss and then on the same loss multiplied by 1000. How do the two trajectories compare (ignoring $\epsilon$)?
+
+- The second moves 1000 times faster.
+- The second moves about 32 times faster, the square root of 1000.
+- They are identical.
+- The second diverges.
 
 :::reveal
-At the optimum the gradient with respect to the intercept is zero, and that gradient is the mean of $\sigma(a_i) - y_i$. So the predicted probabilities average exactly to the observed rate of 1s, $0.3$, and the difference is $0$. This "mean matching" holds for any logistic regression with an intercept, informative features or not.
+Scaling every gradient by $c$ scales $\hat m$ by $c$ and $\sqrt{\hat v}$ by $c$, so their ratio, and therefore every step, is unchanged. Plain SGD would move 1000 times faster and almost certainly diverge.
 :::
 ::::
 
-## Softmax regression and the pipeline around it
+## Schedules and initialization
 
 :::exercise{ref=e06}
 :::
 
 :::exercise{ref=e07}
-:::
-
-:::exercise{ref=e08}
-:::
-
-:::exercise{ref=e09}
 :::

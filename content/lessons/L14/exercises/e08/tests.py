@@ -1,27 +1,16 @@
-import numpy as np
 import sub
 
-L = np.array([2.0, 1.0, 0.0, -1.0])
+
+def test_orders():
+    assert sub.gpipe_order(2, 2)[0] == [("F", 0), ("F", 1), ("B", 1), ("B", 0)]
+    o = sub.one_f_one_b_order(3, 4)
+    assert o[0] == [("F", 0), ("F", 1), ("F", 2), ("B", 0), ("F", 3), ("B", 1), ("B", 2), ("B", 3)]
+    assert o[2] == [("F", 0), ("B", 0), ("F", 1), ("B", 1), ("F", 2), ("B", 2), ("F", 3), ("B", 3)]
 
 
-def test_temperature():
-    assert np.isclose(sub.softmax_t(np.array([2.0, 1.0, 0.0]))[0], 0.6652, atol=1e-4)
-    assert np.isclose(sub.softmax_t(np.array([2.0, 1.0, 0.0]), 0.5)[0], 0.8668, atol=1e-4)
-    assert sub.softmax_t(L, 1e-3)[0] > 0.999
-
-
-def test_filters():
-    k = sub.top_k_filter(L, 2)
-    assert np.isfinite(k).tolist() == [True, True, False, False]
-    probs = sub.softmax_t(L)
-    p = sub.top_p_filter(L, 0.9)
-    kept = np.isfinite(p).sum()
-    assert probs[:kept - 1].sum() < 0.9 <= probs[:kept].sum()
-    assert np.isfinite(sub.top_p_filter(L, 0.5)).sum() == 1
-
-
-def test_sample():
-    rng = np.random.default_rng(0)
-    draws = [sub.sample(L, rng, T=1.0, k=2) for _ in range(300)]
-    assert set(draws) <= {0, 1} and 0.6 < np.mean(np.array(draws) == 0) < 0.85
-    assert all(sub.sample(L, rng, T=1e-4) == 0 for _ in range(20))
+def test_time_and_memory():
+    for p, m in [(4, 8), (4, 4), (2, 6), (8, 32)]:
+        tg, mg = sub.simulate(sub.gpipe_order(p, m))
+        t1, m1 = sub.simulate(sub.one_f_one_b_order(p, m))
+        assert tg == t1 == (m + p - 1) * 3.0
+        assert mg == m and m1 == min(p, m)

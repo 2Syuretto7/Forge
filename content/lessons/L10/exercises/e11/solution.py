@@ -1,57 +1,88 @@
-import numpy as np
+def to_bytes(text):
+    """The UTF-8 bytes of text, as a list of integers 0..255."""
+    return list(text.encode("utf-8"))
 
 
-def batchnorm_forward(x, gamma, beta, eps=1e-5):
-    """Normalize each feature (column) over the batch, then scale and shift. Return (y, cache)."""
-    mu = x.mean(axis=0)
-    var = x.var(axis=0)
-    r = 1.0 / np.sqrt(var + eps)
-    xh = (x - mu) * r
-    return gamma * xh + beta, (xh, r, gamma)
+def from_bytes(ids):
+    """Decode a list of byte values back to text, replacing invalid sequences."""
+    return bytes(ids).decode("utf-8", errors="replace")
 
 
-def batchnorm_backward(dy, cache):
-    """Return (dx, dgamma, dbeta)."""
-    xh, r, gamma = cache
-    n = dy.shape[0]
-    dgamma = (dy * xh).sum(axis=0)
-    dbeta = dy.sum(axis=0)
-    dxh = dy * gamma
-    dx = r / n * (n * dxh - dxh.sum(axis=0) - xh * (dxh * xh).sum(axis=0))
-    return dx, dgamma, dbeta
+def count_pairs(ids, counts=None):
+    """Counts of adjacent pairs, in order of first occurrence."""
+    counts = {} if counts is None else counts
+    for a, b in zip(ids, ids[1:]):
+        counts[(a, b)] = counts.get((a, b), 0) + 1
+    return counts
 
 
-def layernorm_forward(x, gamma, beta, eps=1e-5):
-    """Normalize each example (row) over its features, then scale and shift. Return (y, cache)."""
-    mu = x.mean(axis=1, keepdims=True)
-    var = x.var(axis=1, keepdims=True)
-    r = 1.0 / np.sqrt(var + eps)
-    xh = (x - mu) * r
-    return gamma * xh + beta, (xh, r, gamma)
+def merge(ids, pair, new_id):
+    """Replace every non-overlapping occurrence of pair, scanning left to right, with new_id."""
+    out, i = [], 0
+    while i < len(ids):
+        if i + 1 < len(ids) and ids[i] == pair[0] and ids[i + 1] == pair[1]:
+            out.append(new_id)
+            i += 2
+        else:
+            out.append(ids[i])
+            i += 1
+    return out
 
 
-def layernorm_backward(dy, cache):
-    """Return (dx, dgamma, dbeta)."""
-    xh, r, gamma = cache
-    d = dy.shape[1]
-    dgamma = (dy * xh).sum(axis=0)
-    dbeta = dy.sum(axis=0)
-    dxh = dy * gamma
-    dx = r / d * (d * dxh - dxh.sum(axis=1, keepdims=True) - xh * (dxh * xh).sum(axis=1, keepdims=True))
-    return dx, dgamma, dbeta
+def train_bpe(text, vocab_size):
+    """Byte-level BPE: start from the 256 byte values and repeatedly merge the most frequent adjacent
+    pair (ties: the pair seen first) into a new id 256, 257, ... until vocab_size ids exist or no pair
+    occurs twice. Return the merges as a dict {(a, b): new_id} in the order they were learned."""
+    ids = to_bytes(text)
+    merges = {}
+    for new_id in range(256, vocab_size):
+        counts = count_pairs(ids)
+        if not counts:
+            break
+        best = max(counts, key=counts.get)
+        if counts[best] < 2:
+            break
+        ids = merge(ids, best, new_id)
+        merges[best] = new_id
+    return merges
 
 
-def batch_of_one(x, gamma, beta):
-    """Train-mode batch norm on a batch holding the single row x, and the gradient it passes back
-    for an upstream gradient of ones. Return (y, dx)."""
-    y, cache = batchnorm_forward(x[None, :], gamma, beta)
-    dx, _, _ = batchnorm_backward(np.ones_like(y), cache)
-    return y[0], dx[0]
+def vocab_bytes(merges):
+    """The byte string each id stands for."""
+    vocab = {i: bytes([i]) for i in range(256)}
+    for (a, b), i in merges.items():
+        vocab[i] = vocab[a] + vocab[b]
+    return vocab
 
 
-def layernorm_of_one(x, gamma, beta):
-    """The same single row through layer norm, and its gradient for an upstream gradient that
-    weights the features 1, 2, ..., d. Return (y, dx)."""
-    y, cache = layernorm_forward(x[None, :], gamma, beta)
-    dx, _, _ = layernorm_backward(np.arange(1.0, x.shape[0] + 1)[None, :], cache)
-    return y[0], dx[0]
+def encode(text, merges):
+    """Bytes of text, then repeatedly apply the learned merge with the lowest id present."""
+    ids = to_bytes(text)
+    while len(ids) >= 2:
+        pairs = count_pairs(ids)
+        best = min(pairs, key=lambda p: merges.get(p, float("inf")))
+        if best not in merges:
+            break
+        ids = merge(ids, best, merges[best])
+    return ids
+
+
+def decode(ids, merges):
+    vocab = vocab_bytes(merges)
+    return b"".join(vocab[i] for i in ids).decode("utf-8", errors="replace")
+
+import unicodedata
+
+
+def roundtrips(text, merges):
+    return decode(encode(text, merges), merges) == text
+
+
+def normalization_forms(text):
+    """The NFC (composed) and NFD (decomposed) forms of text."""
+    return unicodedata.normalize("NFC", text), unicodedata.normalize("NFD", text)
+
+
+def token_counts(texts, merges):
+    """Number of tokens for each text."""
+    return [len(encode(t, merges)) for t in texts]

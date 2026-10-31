@@ -1,10 +1,9 @@
-import numpy as np
+def kv_bytes_per_token(layers, kv_heads, head_dim, bytes_per=2):
+    """A key and a value per layer and per key-value head."""
+    raise NotImplementedError
 
 
-def ring_allreduce(xs):
-    """Simulate a ring all-reduce over P ranks, each holding one array in xs. Split every array into
-    P chunks (np.array_split). Reduce-scatter: in step s = 0 .. P-2, every rank r sends its chunk
-    (r - s) mod P to rank r + 1, which adds it to its own. All-gather: in step s, every rank r sends
-    its chunk (r + 1 - s) mod P to rank r + 1, which replaces its own. All sends in a step happen at
-    once. Return (the P resulting arrays, the number of elements each rank sent)."""
+def max_batch(capacity, weight_bytes, layers, kv_heads, head_dim, tokens, bytes_per=2):
+    """The most sequences of `tokens` tokens whose caches fit next to the weights (rounded down,
+    at least 0)."""
     raise NotImplementedError

@@ -1,29 +1,31 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(3)
-X = rng.normal(size=(40, 4)) * np.array([1.0, 2.0, 0.5, 1.5])
-y = X @ rng.normal(size=4) + 0.1 * rng.normal(size=40)
+D = np.diag(np.linspace(1.0, 100.0, 20))
+grad = lambda x: D @ x
+x0 = np.ones(20)
 
 
-def test_grad_matches_finite_differences():
-    w = rng.normal(size=4)
-    g = sub.mse_grad(w, X, y)
-    num = np.zeros(4)
-    for j in range(4):
-        e = np.zeros(4)
-        e[j] = 1e-6
-        num[j] = (sub.mse(w + e, X, y) - sub.mse(w - e, X, y)) / 2e-6
-    assert np.linalg.norm(g - num) / (np.linalg.norm(g) + np.linalg.norm(num)) < 1e-5
+def test_beta_zero_is_gd():
+    assert np.allclose(sub.heavy_ball(grad, x0, 0.01, 0.0, 30), sub.gd(grad, x0, 0.01, 30))
 
 
-def test_gd_converges_below_the_threshold():
-    lr = 0.9 * sub.max_stable_lr(X)
-    w, losses = sub.gd(X, y, lr, 3000)
-    assert np.allclose(w, np.linalg.lstsq(X, y, rcond=None)[0], atol=1e-6)
-    assert len(losses) == 3000 and losses[-1] <= losses[0]
+def test_two_steps():
+    xs = sub.heavy_ball(grad, x0, 0.01, 0.5, 2)
+    v1 = grad(x0)
+    x1 = x0 - 0.01 * v1
+    v2 = 0.5 * v1 + grad(x1)
+    assert np.allclose(xs[1], x1) and np.allclose(xs[2], x1 - 0.01 * v2)
 
 
-def test_gd_diverges_above_the_threshold():
-    _, losses = sub.gd(X, y, 1.1 * sub.max_stable_lr(X), 300)
-    assert losses[-1] > 1e3 * losses[0]
+def test_tuned_values():
+    lr, beta = sub.tuned_heavy_ball(np.diag([1.0, 100.0]))
+    assert abs(lr - 4 / 121) < 1e-12 and abs(beta - (9 / 11) ** 2) < 1e-12
+
+
+def test_faster_than_gd():
+    lr, beta = sub.tuned_heavy_ball(D)
+    hb = np.linalg.norm(sub.heavy_ball(grad, x0, lr, beta, 100)[-1])
+    plain = np.linalg.norm(sub.gd(grad, x0, 2 / 101, 100)[-1])
+    assert hb < 1e-5, hb
+    assert plain > 0.1, plain

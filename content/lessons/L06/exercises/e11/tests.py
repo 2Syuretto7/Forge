@@ -1,19 +1,25 @@
 import numpy as np
 import sub
 
-
-def test_winner_looks_good():
-    best, _ = sub.best_of_m(500, 100, seed=3)
-    assert best >= 0.62, best
-    assert abs(best - sub.expected_max_accuracy(500, 100)) < 0.06
-
-
-def test_winner_is_a_coin_flip_on_fresh_data():
-    accs = [sub.fresh_accuracy(2000, seed=s) for s in range(5)]
-    assert abs(np.mean(accs) - 0.5) < 0.03
+rng = np.random.default_rng(11)
+x = rng.normal(size=6) * 4
+gamma = rng.normal(size=6) + 1
+beta = rng.normal(size=6)
 
 
-def test_more_models_more_optimism():
-    a = np.mean([sub.best_of_m(10, 100, s)[0] for s in range(20)])
-    b = np.mean([sub.best_of_m(1000, 100, s)[0] for s in range(20)])
-    assert b > a + 0.04
+def test_batch_norm_outputs_beta():
+    y, dx = sub.batch_of_one(x, gamma, beta)
+    assert np.allclose(y, beta)
+    y2, _ = sub.batch_of_one(x * 10 - 3, gamma, beta)
+    assert np.allclose(y2, beta)
+
+
+def test_batch_norm_passes_no_gradient():
+    _, dx = sub.batch_of_one(x, gamma, beta)
+    assert np.allclose(dx, 0)
+
+
+def test_layer_norm_still_works():
+    y, dx = sub.layernorm_of_one(x, gamma, beta)
+    assert not np.allclose(y, beta)
+    assert np.abs(dx).max() > 0.01

@@ -1,15 +1,15 @@
-# Recall bridge: VJPs and softmax regression
+# Recall bridge: the operations on the tape
 
-Two earlier lessons carry this one. From M19: reverse mode composes vector-Jacobian products, and a matrix product $Y = XW$ has VJPs $GW^\top$ and $X^\top G$. From L05: softmax regression has gradient $\tfrac1n X^\top(P - Y)$ with respect to its weights. A neural network is softmax regression on top of features that are themselves computed by layers like it, and its gradient is those two facts applied layer by layer. Reviews due from M19 and L05 appear above.
+From L04: an autograd engine records every tensor operation and replays a backward rule for each. On a GPU, each of those operations becomes at least one **kernel**, a function that thousands of GPU threads run in parallel. This lesson is about what such a kernel costs. Reviews due from L04 appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step
-For $Y = XW$ with $X$ of shape $32 \times 10$ and $W$ of shape $10 \times 4$, the gradient $\partial L/\partial W = X^\top G$ has shape $10 \times 4$. The number of entries is [[40]].
+A matrix product of a $64 \times 512$ matrix with a $512 \times 512$ matrix costs $2 \cdot 64 \cdot 512 \cdot 512 =$ [[33554432]] FLOPs (each multiply-add counts as two).
 :::
 :::step
-The softmax cross-entropy gradient with respect to the logits of one example is $p - e_y$. If $p = (0.1, 0.7, 0.2)$ and $y$ is the first class, the first entry of the gradient is [[-0.9]].
+Its backward pass computes two matrix products of the same size, so it costs [[2]] times the forward pass.
 :::
 :::step
-The derivative of $\tanh$ at a point where $\tanh(z) = 0.6$ is $1 - 0.6^2 =$ [[0.64]].
+Adding two vectors of $10^6$ fp32 numbers reads two vectors and writes one, moving $3 \cdot 4 \cdot 10^6 =$ [[12000000]] bytes for $10^6$ FLOPs.
 :::
 ::::

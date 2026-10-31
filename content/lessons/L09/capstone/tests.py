@@ -1,55 +1,45 @@
-import numpy as np
+import unittest
+import torch
 import sub
 
-Xva, yva = sub.make_digits(1000, 2)
-Xte, yte = sub.make_digits(1000, 1)
-KINDS = ["sgd", "momentum", "adam", "adamw"]
-_cache = {}
+
+def test_attention_matches_pytorch():
+    torch.manual_seed(1)
+    m = sub.CausalSelfAttention(32, 4).to(sub.DEVICE)
+    x = torch.randn(2, 10, 32, device=sub.DEVICE)
+    with torch.no_grad():
+        assert torch.allclose(m(x), sub.reference_attention(m, x), atol=1e-5)
 
 
-def _val(recipe):
-    key = repr(sorted(recipe.items()))
-    if key not in _cache:
-        _cache[key] = sub.evaluate(sub.run(recipe, 0), Xva, yva)
-    return _cache[key]
+def test_causality():
+    torch.manual_seed(2)
+    model = sub.GPT(sub.VOCAB, 16, 32, 2, 4).to(sub.DEVICE).eval()
+    idx = torch.randint(sub.VOCAB, (1, 16), device=sub.DEVICE)
+    changed = idx.clone()
+    changed[0, 10:] = (changed[0, 10:] + 1) % sub.VOCAB
+    with torch.no_grad():
+        a, b = model(idx), model(changed)
+    assert torch.allclose(a[0, :10], b[0, :10], atol=1e-6)
+    assert not torch.allclose(a[0, 10:], b[0, 10:])
 
 
-def _check_recipe(r):
-    assert r["optimizer"] in KINDS, r
-    assert 0 < r["steps"] <= 800 and 0 < r["batch"] <= 100, r
-    assert r.get("schedule", "constant") in ("constant", "cosine"), r
+def test_param_formula():
+    for vocab, ctx, d, layers in [(65, 128, 128, 2), (100, 64, 48, 3)]:
+        m = sub.GPT(vocab, ctx, d, layers, 4)
+        assert sum(p.numel() for p in m.parameters()) == sub.param_formula(vocab, ctx, d, layers)
 
 
-def test_recipe_is_valid():
-    _check_recipe(sub.RECIPE)
+def test_training_reduces_loss():
+    first, last = sub.losses[0][1], sub.losses[-1][1]
+    assert last < first - 0.5, sub.losses
 
 
-def test_bakeoff_covers_four_optimizers():
-    assert sorted(sub.BAKEOFF) == sorted(KINDS)
-    for k, entry in sub.BAKEOFF.items():
-        _check_recipe(entry["recipe"])
-        assert entry["recipe"]["optimizer"] == k
+def test_validation_loss_target():
+    if sub.SMALL:
+        raise unittest.SkipTest("the target applies to the full training run")
+    assert sub.val_loss < 1.70, sub.val_loss
 
 
-def test_bakeoff_reproducible():
-    for k, entry in sub.BAKEOFF.items():
-        got = _val(entry["recipe"])
-        assert abs(got - entry["val_acc"]) <= 0.002, (k, got, entry["val_acc"])
-
-
-def test_recipe_best_on_validation():
-    best = max(entry["val_acc"] for entry in sub.BAKEOFF.values())
-    assert _val(sub.RECIPE) >= best - 0.005
-
-
-def test_recipe_test_accuracy():
-    accs = [sub.evaluate(sub.run(sub.RECIPE, seed), Xte, yte) for seed in (0, 1)]
-    assert np.mean(accs) >= 0.92, accs
-
-
-def test_report():
-    text = sub.REPORT.lower()
-    assert len(text.split()) >= 80
-    assert "validation" in text
-    for k in KINDS:
-        assert k in text, k
+def test_sample():
+    assert len(sub.sample_text) == len("ROMEO:\n") + 300
+    assert set(sub.sample_text) <= set(sub.chars)

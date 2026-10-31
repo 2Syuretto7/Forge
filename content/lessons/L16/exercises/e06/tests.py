@@ -1,22 +1,20 @@
+import numpy as np
 import sub
 
-prose = ("It was the best of times, and it was the worst of times; the people of that age had "
-         "little to do with the ones who came before, but they were happy enough with what they had. ") * 3
-spam = "buy cheap watches best price watches online discount watches free shipping " * 8
-table = "\n".join(f"{i} | {i * 3} | {i * 7} | #{i}" for i in range(40))
-bullets = "\n".join(f"- item number {i} of the list and more" for i in range(60))
+rng = np.random.default_rng(4)
+U, _ = np.linalg.qr(rng.normal(size=(16, 16)))
+V, _ = np.linalg.qr(rng.normal(size=(16, 16)))
+target = (U[:, :4] * np.array([1.0, 0.7, 0.5, 0.3])) @ V[:, :4].T
 
 
-def test_signals():
-    s = sub.quality_signals("The cat... #tag\n- one\nand two...")
-    assert s["n_words"] == 7 and s["stop_words"] == 2
-    assert abs(s["symbol_ratio"] - 2 / 7) < 1e-12
-    assert abs(s["bullet_lines"] - 1 / 3) < 1e-12 and abs(s["ellipsis_lines"] - 1 / 3) < 1e-12
+def test_reaches_the_svd_optimum():
+    S = np.linalg.svd(target, compute_uv=False)
+    for r in [1, 2, 4]:
+        A, B, loss = sub.fit_lora(target, r, alpha=r)
+        assert A.shape == (r, 16) and B.shape == (16, r)
+        assert abs(loss - 0.5 * np.sum(S[r:] ** 2)) < 2e-3
 
 
-def test_rules():
-    assert sub.passes(prose)
-    assert not sub.passes(spam)
-    assert not sub.passes(table)
-    assert not sub.passes(bullets)
-    assert not sub.passes("too short, and with the words")
+def test_starts_at_the_base_model():
+    A, B, _ = sub.fit_lora(target, 2, alpha=2, steps=0)
+    assert np.all(B == 0)

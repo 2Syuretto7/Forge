@@ -1,30 +1,18 @@
 import numpy as np
 
 
-def domain_epochs(weights, sizes, total_tokens):
-    """How many times each domain is repeated when total_tokens are sampled with these weights."""
-    return np.asarray(weights) * total_tokens / np.asarray(sizes)
+def logistic_loss_grad(w, X, y):
+    """Mean logistic loss of labels y in {0, 1} and its gradient."""
+    z = X @ w
+    p = 1 / (1 + np.exp(-z))
+    return float(np.mean(np.logaddexp(0, z) - y * z)), X.T @ (p - y) / len(y)
 
 
-def temperature_weights(sizes, tau):
-    """Sampling weights proportional to size ** (1 / tau): tau = 1 samples by size, larger tau
-    flattens toward uniform."""
-    w = np.asarray(sizes, dtype=float) ** (1 / tau)
-    return w / w.sum()
-
-
-def mixture_objective(z, c, beta, T):
-    """Mixture weights p = softmax(z); domain j's excess loss is c_j (p_j T)^-beta. Return the total
-    sum_j c_j (p_j T)^-beta and its gradient with respect to z."""
-    e = np.exp(z - z.max())
-    p = e / e.sum()
-    L = c * (p * T) ** -beta
-    dp = -beta * L / p
-    return L.sum(), p * (dp - p @ dp)
-
-
-def optimal_mixture(c, beta):
-    """The minimizer of sum_j c_j p_j^-beta subject to sum_j p_j = 1: p_j proportional to
-    c_j ** (1 / (1 + beta))."""
-    w = np.asarray(c, dtype=float) ** (1 / (1 + beta))
-    return w / w.sum()
+def finetune(w_pre, X, y, lam, steps=500, lr=0.5):
+    """Gradient descent from the pretrained weights on the new task's loss plus
+    lam / 2 |w - w_pre|^2, which pulls the weights back toward where they started."""
+    w = w_pre.copy()
+    for _ in range(steps):
+        _, g = logistic_loss_grad(w, X, y)
+        w -= lr * (g + lam * (w - w_pre))
+    return w

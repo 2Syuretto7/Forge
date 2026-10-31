@@ -1,11 +1,11 @@
-# Explain it plainly: logistic regression
+# Explain it plainly: why Adam and warmup
 
-Explain to someone who knows what a straight-line fit is how logistic regression turns features into a probability, why its loss is what it is, and how training changes the weights.
+Explain to a programmer who has trained a model with plain SGD why practitioners usually use Adam with warmup and a decaying schedule.
 
 - Write 150 to 400 words.
-- Use a concrete example, such as spam filtering with two word counts.
-- Explain why the loss is the log-likelihood of coin flips and why that is better than squared error on 0/1 labels.
-- Say what the gradient update does in plain terms.
+- Use the picture of a long narrow valley.
+- Explain what momentum, the per-coordinate scaling and the schedule each fix.
+- Mention one thing that can go wrong.
 
-:::feynman{id=f1 prompt="Explain how logistic regression turns features into a probability, why its loss is the negative log-likelihood of Bernoulli outcomes, and what one step of gradient descent does to the weights." key_points="A weighted sum of features gives a score that the sigmoid squashes into a probability between 0 and 1|Each label is treated as a coin flip with that probability, and the loss is minus the log of the probability given to the actual label|The gradient for each example is the feature vector times the prediction error, so wrong confident predictions move the weights most|The decision boundary is where the score is zero, a straight line or hyperplane|Without regularization the weights grow forever on perfectly separable data"}
+:::feynman{id=f1 prompt="Explain why modern training uses Adam with warmup and a decaying learning rate instead of plain SGD, using the picture of a long narrow valley." key_points="The largest curvature limits the stable step size, so plain gradient descent crawls along flat directions|Momentum averages gradients so oscillations cancel and consistent directions accumulate speed|Adam divides each coordinate by a running root mean square of its gradients, making steps independent of gradient scale|Warmup avoids unstable large steps early, and decay shrinks the noise around the minimum later|A concrete failure such as too high a learning rate, missing bias correction or L2 instead of decoupled weight decay"}
 :::

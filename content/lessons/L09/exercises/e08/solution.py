@@ -1,46 +1,93 @@
 import numpy as np
+import math
 
 
-class SGD:
-    """SGD with optional heavy-ball momentum and L2 weight decay on the weights (keys starting with "W")."""
-
-    def __init__(self, lr, momentum=0.0, weight_decay=0.0):
-        self.lr, self.momentum, self.weight_decay = lr, momentum, weight_decay
-        self.v = {}
-
-    def step(self, params, grads, lr=None):
-        lr = self.lr if lr is None else lr
-        for k in params:
-            g = grads[k]
-            if self.weight_decay and k.startswith("W"):
-                g = g + self.weight_decay * params[k]
-            if self.momentum:
-                self.v[k] = self.momentum * self.v.get(k, 0.0) + g
-                g = self.v[k]
-            params[k] -= lr * g
+def softmax_rows(S):
+    """Softmax of every row, stable for large entries; -inf entries get weight 0."""
+    m = S.max(axis=-1, keepdims=True)
+    E = np.exp(S - m)
+    return E / E.sum(axis=-1, keepdims=True)
 
 
-class Adam:
-    """Adam on a dict of arrays. weight_decay applies to the weights only, either decoupled
-    (AdamW) or as an L2 term added to the gradient."""
+def softmax_backward(P, dP):
+    """Given P = softmax_rows(S) and dL/dP, return dL/dS."""
+    return P * (dP - (dP * P).sum(axis=-1, keepdims=True))
 
-    def __init__(self, lr, b1=0.9, b2=0.999, eps=1e-8, weight_decay=0.0, decoupled=True, bias_correction=True):
-        self.lr, self.b1, self.b2, self.eps = lr, b1, b2, eps
-        self.weight_decay, self.decoupled, self.bias_correction = weight_decay, decoupled, bias_correction
-        self.m, self.v, self.t = {}, {}, 0
 
-    def step(self, params, grads, lr=None):
-        lr = self.lr if lr is None else lr
-        self.t += 1
-        c1 = 1.0 - self.b1 ** self.t if self.bias_correction else 1.0
-        c2 = 1.0 - self.b2 ** self.t if self.bias_correction else 1.0
-        for k in params:
-            g = grads[k]
-            wd = self.weight_decay if k.startswith("W") else 0.0
-            if wd and not self.decoupled:
-                g = g + wd * params[k]
-            self.m[k] = self.b1 * self.m.get(k, 0.0) + (1.0 - self.b1) * g
-            self.v[k] = self.b2 * self.v.get(k, 0.0) + (1.0 - self.b2) * g * g
-            if wd and self.decoupled:
-                params[k] -= lr * wd * params[k]
-            params[k] -= lr * (self.m[k] / c1) / (np.sqrt(self.v[k] / c2) + self.eps)
+def causal_mask(n):
+    """Boolean (n, n) array, True where query i may not see key j (j > i)."""
+    return np.triu(np.ones((n, n), dtype=bool), k=1)
+
+
+def attention(Q, K, V, causal=True, scale=True):
+    """Single-head attention for Q, K of shape (n, d) and V of shape (n, dv). Return (O, P)."""
+    S = Q @ K.T
+    if scale:
+        S = S / np.sqrt(Q.shape[-1])
+    if causal:
+        S = np.where(causal_mask(Q.shape[0]), -np.inf, S)
+    P = softmax_rows(S)
+    return P @ V, P
+
+
+def split_heads(X, h):
+    """(n, d) -> (h, n, d // h): head i gets columns i * d/h to (i + 1) * d/h."""
+    n, d = X.shape
+    return X.reshape(n, h, d // h).transpose(1, 0, 2)
+
+
+def merge_heads(Y):
+    """(h, n, dh) -> (n, h * dh), the inverse of split_heads."""
+    h, n, dh = Y.shape
+    return Y.transpose(1, 0, 2).reshape(n, h * dh)
+
+
+def mha_forward(X, Wq, Wk, Wv, Wo, h, causal=True):
+    """Multi-head self-attention: project, split into h heads, attend per head, merge, project.
+    Return (Y, cache)."""
+    Q, K, V = split_heads(X @ Wq, h), split_heads(X @ Wk, h), split_heads(X @ Wv, h)
+    outs, Ps = [], []
+    for i in range(h):
+        O, P = attention(Q[i], K[i], V[i], causal=causal)
+        outs.append(O)
+        Ps.append(P)
+    M = merge_heads(np.stack(outs))
+    return M @ Wo, (X, Q, K, V, np.stack(Ps), M)
+
+
+C = math.sqrt(2.0 / math.pi)
+
+
+def gelu(x):
+    return 0.5 * x * (1.0 + np.tanh(C * (x + 0.044715 * x ** 3)))
+
+
+def layernorm(x, g, b, eps=1e-5):
+    mu = x.mean(axis=-1, keepdims=True)
+    var = x.var(axis=-1, keepdims=True)
+    return g * (x - mu) / np.sqrt(var + eps) + b
+
+
+def init_block(d, seed=0):
+    rng = np.random.default_rng(seed)
+    w = lambda a, b: rng.normal(size=(a, b)) * 0.02
+    return {
+        "ln1_g": np.ones(d), "ln1_b": np.zeros(d),
+        "Wq": w(d, d), "Wk": w(d, d), "Wv": w(d, d), "Wo": w(d, d), "bo": np.zeros(d),
+        "ln2_g": np.ones(d), "ln2_b": np.zeros(d),
+        "W1": w(d, 4 * d), "b1": np.zeros(4 * d), "W2": w(4 * d, d), "b2": np.zeros(d),
+    }
+
+
+def block_forward(X, p, h):
+    """Pre-norm decoder block: X + MHA(LN1(X)), then + MLP(LN2(.)) with a 4d GELU hidden layer."""
+    a, _ = mha_forward(layernorm(X, p["ln1_g"], p["ln1_b"]), p["Wq"], p["Wk"], p["Wv"], p["Wo"], h)
+    X = X + a + p["bo"]
+    m = gelu(layernorm(X, p["ln2_g"], p["ln2_b"]) @ p["W1"] + p["b1"]) @ p["W2"] + p["b2"]
+    return X + m
+
+
+def block_param_count(d):
+    """Parameters of one block as created by init_block: four d x d attention matrices, the output
+    bias, the two MLP matrices with their biases, and two layer norms."""
+    return 12 * d * d + 10 * d

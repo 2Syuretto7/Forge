@@ -1,62 +1,50 @@
 import unittest
-import numpy as np
+import torch
 import sub
 
 
-def test_exact_dedup_and_boilerplate():
-    docs = ["A b", "a  B", "c\nfooter", "d\nfooter", "e"]
-    assert sub.exact_dedup(docs) == [0, 2, 3, 4]
-    assert sub.strip_boilerplate(docs, 2) == ["A b", "a  B", "c", "d", "e"]
+def test_encode_example():
+    ids, mask = sub.encode_example("UPPER", "king")
+    assert bytes(ids).decode() == "UPPER: king\n=KING\n"
+    assert mask == [0] * 13 + [1] * 5
 
 
-def test_quality_rules():
-    prose = "It was the best of times, and it was the worst of times, and that was all there was to it. " * 4
-    assert sub.passes_quality(prose)
-    assert not sub.passes_quality(" ".join(["buy cheap watches online now"] * 20))
-    assert not sub.passes_quality("\n".join(f"{i} | {i * 7} | {i * 9}" for i in range(60)))
+def test_masked_loss():
+    torch.manual_seed(0)
+    logits, y = torch.randn(2, 3, 5), torch.randint(0, 5, (2, 3))
+    mask = torch.tensor([[0.0, 1, 1], [0, 0, 1]])
+    per = torch.nn.functional.cross_entropy(logits.flatten(0, 1), y.flatten(), reduction="none").view(2, 3)
+    assert torch.allclose(sub.masked_loss(logits, y, mask), (per[0, 1] + per[0, 2] + per[1, 2]) / 3)
 
 
-def test_minhash_and_near_dedup():
-    doc = sub.source_docs[0]
-    copy = doc.replace("the", "a", 1)
-    other = sub.source_docs[5]
-    sigs = [sub.minhash(doc), sub.minhash(copy), sub.minhash(other)]
-    assert np.mean(sigs[0] == sigs[1]) > 0.8 and np.mean(sigs[0] == sigs[2]) < 0.3
-    assert sub.near_dedup(sigs) == [0, 2]
+def test_lora_layer():
+    torch.manual_seed(0)
+    lin = torch.nn.Linear(6, 4)
+    lora = sub.LoRALinear(lin, 2, 4)
+    x = torch.randn(3, 6)
+    assert torch.allclose(lora(x), lin(x))
+    with torch.no_grad():
+        lora.B.normal_()
+    expected = lin(x) + 2.0 * (x @ lora.A.T) @ lora.B.T
+    assert torch.allclose(lora(x), expected, atol=1e-6)
+    assert torch.allclose(lora.merge()(x), expected, atol=1e-5)
 
 
-def test_decontaminate():
-    v = sub.val_docs[3]
-    docs = [sub.source_docs[0], "Intro. " + v.upper(), sub.source_docs[1]]
-    assert sub.decontaminate(docs, [v]) == [0, 2]
+def test_adapters_and_merge():
+    r = sub.results["lora"]
+    assert r["trainable"] < (0.5 if sub.SMALL else 0.15) * sum(p.numel() for p in sub.base.parameters())
+    assert sub.merge_error < 1e-4
 
 
-def test_pipeline_removes_the_noise():
-    kept = {k: sub.kept_kinds.count(k) for k in set(sub.kinds)}
-    assert kept.get("leak", 0) == 0
-    assert kept.get("junk", 0) <= 0.02 * sub.kinds.count("junk")
-    # Each source document and its copies should leave exactly one survivor.
-    per_source = np.bincount([o for o in sub.kept_origins if o >= 0], minlength=len(sub.source_docs))
-    assert np.mean(per_source == 1) >= 0.95, np.bincount(per_source)
-    assert per_source.sum() <= 1.02 * len(sub.source_docs)
-    assert all(sub.FOOTER not in d for d in sub.clean_docs)
-
-
-def test_cleaning_helps_at_equal_compute():
+def test_targets():
+    assert set(sub.test_words).isdisjoint(sub.train_words)
     if sub.SMALL:
-        raise unittest.SkipTest("the comparison needs the full training runs")
-    assert sub.results["clean"]["test"] < sub.results["raw"]["test"] - 0.03, sub.results
-
-
-def test_contamination_shows():
-    if sub.SMALL:
-        raise unittest.SkipTest("the comparison needs the full training runs")
-    raw, clean = sub.results["raw"], sub.results["clean"]
-    assert raw["leaked"] < raw["unleaked"] - 0.05, raw
-    assert abs(clean["leaked"] - clean["unleaked"]) < abs(raw["leaked"] - raw["unleaked"]), (raw, clean)
+        raise unittest.SkipTest("checked on the full-size run")
+    assert sub.lora_accuracy >= sub.TARGETS["accuracy"], sub.results["lora"]["eval"]
+    assert sub.lora_forgetting <= sub.TARGETS["forgetting"], sub.lora_forgetting
 
 
 def test_report():
     text = sub.REPORT.lower()
     assert len(text.split()) >= 80
-    assert "test loss" in text and "contamination" in text
+    assert "lora" in text and "forgetting" in text and "full fine-tuning" in text and "replay" in text

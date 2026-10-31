@@ -1,12 +1,12 @@
-# Pre-tokenization
+# Data-parallel SGD
 
-`PATTERN` is a simplified version of GPT-2's splitting rule: contractions, words and numbers with an optional leading space, runs of punctuation with an optional leading space, and whitespace.
+Every rank holds a shard $(X_r, y_r)$ of the batch and the same weights. Each computes its local gradient; the gradients are combined; every rank applies the same update, so the weights stay identical without ever being sent.
 
-1. `pretokenize(text)`: the list of chunks `PATTERN.findall(text)`, which concatenate back to `text`.
-2. `train_bpe_chunks(text, vocab_size)`: BPE in which pairs are counted only inside chunks, so no merge crosses a chunk boundary. Count each distinct chunk once with its frequency, which also makes training much faster.
+1. `local_loss_grad(w, X, y)`: the loss $\tfrac12 \operatorname{mean}((Xw - y)^2)$ on one shard and its gradient.
+2. `dp_step(w, shards, lr)`: one synchronous step whose gradient equals the full-batch gradient, even when shards differ in size.
 
 ## Hints
 
-1. Build `freq = {chunk: count}` and `words = {chunk: list of byte ids}`.
-2. Each round, add `freq[chunk]` for every adjacent pair inside each chunk's ids.
-3. Apply the chosen merge to every chunk's ids.
+1. The gradient is $X^\top (Xw - y)/n$ for a shard of $n$ examples.
+2. The full-batch gradient is the size-weighted average of the shard gradients: $\sum_r n_r g_r / \sum_r n_r$.
+3. In practice the shards are equal and the all-reduce averages; exercise 12 shows what goes wrong when they are not.

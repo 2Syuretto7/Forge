@@ -1,55 +1,23 @@
-def to_bytes(text):
-    """The UTF-8 bytes of text, as a list of integers 0..255."""
-    return list(text.encode("utf-8"))
+import numpy as np
 
 
-def from_bytes(ids):
-    """Decode a list of byte values back to text, replacing invalid sequences."""
-    return bytes(ids).decode("utf-8", errors="replace")
-
-
-def count_pairs(ids, counts=None):
-    """Counts of adjacent pairs, in order of first occurrence."""
-    counts = {} if counts is None else counts
-    for a, b in zip(ids, ids[1:]):
-        counts[(a, b)] = counts.get((a, b), 0) + 1
-    return counts
-
-
-def merge(ids, pair, new_id):
-    """Replace every non-overlapping occurrence of pair, scanning left to right, with new_id."""
-    out, i = [], 0
-    while i < len(ids):
-        if i + 1 < len(ids) and ids[i] == pair[0] and ids[i + 1] == pair[1]:
-            out.append(new_id)
-            i += 2
-        else:
-            out.append(ids[i])
-            i += 1
-    return out
-
-
-def train_bpe(text, vocab_size):
-    """Byte-level BPE: start from the 256 byte values and repeatedly merge the most frequent adjacent
-    pair (ties: the pair seen first) into a new id 256, 257, ... until vocab_size ids exist or no pair
-    occurs twice. Return the merges as a dict {(a, b): new_id} in the order they were learned."""
-    ids = to_bytes(text)
-    merges = {}
-    for new_id in range(256, vocab_size):
-        counts = count_pairs(ids)
-        if not counts:
-            break
-        best = max(counts, key=counts.get)
-        if counts[best] < 2:
-            break
-        ids = merge(ids, best, new_id)
-        merges[best] = new_id
-    return merges
-
-
-def vocab_bytes(merges):
-    """The byte string each id stands for."""
-    vocab = {i: bytes([i]) for i in range(256)}
-    for (a, b), i in merges.items():
-        vocab[i] = vocab[a] + vocab[b]
-    return vocab
+def ring_allreduce(xs):
+    """Simulate a ring all-reduce over P ranks, each holding one array in xs. Split every array into
+    P chunks (np.array_split). Reduce-scatter: in step s = 0 .. P-2, every rank r sends its chunk
+    (r - s) mod P to rank r + 1, which adds it to its own. All-gather: in step s, every rank r sends
+    its chunk (r + 1 - s) mod P to rank r + 1, which replaces its own. All sends in a step happen at
+    once. Return (the P resulting arrays, the number of elements each rank sent)."""
+    P = len(xs)
+    chunks = [[c.astype(float).copy() for c in np.array_split(x, P)] for x in xs]
+    sent = 0
+    for s in range(P - 1):
+        msgs = [(r, (r - s) % P, chunks[r][(r - s) % P].copy()) for r in range(P)]
+        for r, i, data in msgs:
+            chunks[(r + 1) % P][i] += data
+        sent += len(msgs[0][2])
+    for s in range(P - 1):
+        msgs = [(r, (r + 1 - s) % P, chunks[r][(r + 1 - s) % P].copy()) for r in range(P)]
+        for r, i, data in msgs:
+            chunks[(r + 1) % P][i] = data
+        sent += len(msgs[0][2])
+    return [np.concatenate(c) for c in chunks], sent

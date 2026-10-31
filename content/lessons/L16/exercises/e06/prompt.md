@@ -1,19 +1,11 @@
-# Quality heuristics
+# Training an adapter
 
-Rae et al. (2021) filtered web text for Gopher with simple rules. Implement them.
+Fit a LoRA adapter to a known target update by gradient descent, and compare with the best possible rank-$r$ error.
 
-1. `quality_signals(doc)` returning a dictionary with:
-   - `n_words`: whitespace-separated words;
-   - `mean_word_len`;
-   - `symbol_ratio`: the larger of the number of `#` characters and of `...` occurrences, per word;
-   - `bullet_lines`: the fraction of non-empty lines starting (after leading spaces) with `-`, `*` or a bullet character (`"•"`);
-   - `ellipsis_lines`: the fraction of non-empty lines ending with `...`;
-   - `alpha_words`: the fraction of words containing at least one letter;
-   - `stop_words`: how many of `STOP_WORDS` occur (case-insensitive, with surrounding punctuation stripped).
-2. `passes(doc, min_words=50, max_words=100000)`: between `min_words` and `max_words` words, mean word length between 3 and 10, symbol ratio at most 0.1, at most 90% bullet lines and 30% ellipsis lines, at least 80% of words with a letter, and at least two stop words.
+Implement `fit_lora(target, r, alpha, steps=3000, lr=0.05, seed=0)`: minimize $\tfrac12 \|\frac{\alpha}{r} B A - \Delta\|_F^2$, starting as LoRA does from $B = 0$ and $A$ with entries $\mathcal{N}(0, 1/r)$ (drawn with `np.random.default_rng(seed)`). Return $A$, $B$ and the final loss.
 
 ## Hints
 
-1. Guard every ratio against empty documents with `max(1, ...)` in the denominator.
-2. `any(c.isalpha() for c in w)` tests a word for a letter.
-3. The stop-word rule removes text that is not running English prose, such as lists of keywords, tables and code.
+1. With $E = \frac{\alpha}{r} B A - \Delta$: $\partial B = \frac{\alpha}{r} E A^\top$, $\partial A = \frac{\alpha}{r} B^\top E$.
+2. Update $A$ and $B$ from gradients computed at the same point.
+3. Gradient descent on this factorization reaches the SVD optimum: its only minima are global.

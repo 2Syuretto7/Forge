@@ -1,8 +1,6 @@
-# Build: kernel algorithms in NumPy
+# Build: deduplication and filtering
 
-These exercises implement, in NumPy, exactly the algorithms the Triton kernels in the notebook run: the same loops over blocks, the same running statistics. Get them right here, where you can print every intermediate value.
-
-## Blocks and memory
+## Exact and near duplicates
 
 :::exercise{ref=e01}
 :::
@@ -16,31 +14,26 @@ These exercises implement, in NumPy, exactly the algorithms the Triton kernels i
 :::exercise{ref=e04}
 :::
 
-## Fused normalization
-
 :::exercise{ref=e05}
 :::
 
-## FlashAttention
+## Quality
 
 :::exercise{ref=e06}
 :::
 
 ::::predict{id=p3 kind=choice answer=c}
-Your tiled FlashAttention processes key blocks in order $1, 2, \dots$. What happens to the output if you process them in reverse order?
+A quality classifier is trained to separate Wikipedia articles (label 1) from random crawl pages (label 0), and you keep pages scoring above 0.5. Which good text is most at risk of being removed?
 
-- It changes slightly, because the running maximum is different.
-- It is wrong, because the rescaling assumes increasing positions.
-- It is the same up to floating-point rounding.
-- It is the same only without a causal mask.
+- Well-edited encyclopedic text.
+- Spam.
+- Good writing in styles absent from Wikipedia, such as dialogue, poetry or informal forums.
+- Nothing: a classifier with high accuracy only removes junk.
 
 :::reveal
-The merge of two online-softmax summaries is symmetric and associative: whatever order the blocks arrive in, the final $m$ is the overall maximum and $l$ and the accumulator are rescaled to it exactly. Only rounding differs. This freedom is what lets kernels split the key dimension across programs and merge the partial results.
+The classifier learns what the reference looks like, not what quality is. Text far from the reference in style or dialect scores low however good it is, so aggressive classifier filtering narrows the distribution. Combine classifiers with rules, keep documents stochastically rather than by a hard cutoff, and check what was removed.
 :::
 ::::
 
 :::exercise{ref=e07}
-:::
-
-:::exercise{ref=e08}
 :::

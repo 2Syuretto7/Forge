@@ -1,11 +1,13 @@
-# Merging and counting
+# The fine-tuning stage: LoRA
 
-1. `merge(W0, A, B, alpha)`: the single matrix $W_0 + \frac{\alpha}{r} B A$ that behaves exactly like the LoRA layer; merged, the adapter costs nothing at inference.
-2. `lora_params(d_in, d_out, r)`: the trainable parameters of a rank-$r$ adapter, $r(d_\text{in} + d_\text{out})$.
-3. `trainable_fraction(n_layer, d, r, per_layer=("q", "v"))`: the fraction of a transformer's $12\,n_\text{layer} d^2$ block parameters trained by rank-$r$ adapters on the listed $d \times d$ projections of every layer.
+The fine-tuning stage trains low-rank adapters on a frozen model (L16). For one linear layer:
+
+1. `lora_forward(x, W, A, B, alpha)`: $y = x W^\top + \tfrac{\alpha}{r} x A^\top B^\top$.
+2. `lora_backward(x, A, B, alpha, gy)`: the gradients of $A$ and $B$, given the gradient `gy` of the loss with respect to $y$.
+3. `merge(W, A, B, alpha)`: one matrix that computes the same output, for serving without overhead.
 
 ## Hints
 
-1. Merging is exact: $x W^\top = x W_0^\top + \frac{\alpha}{r} x A^\top B^\top$.
-2. Several adapters can share one base model and be swapped per request, unmerged.
-3. The fraction does not depend on the number of layers.
+1. With $h = x A^\top$, the adapter output is $s\, h B^\top$ with $s = \alpha/r$, so $\partial B = s\, g_y^\top h$.
+2. Backpropagate through $B$ to $h$, then through $A$: $\partial A = s\,(g_y B)^\top x$.
+3. Merging adds $s\, B A$ to $W$; the served model has no adapter at all.

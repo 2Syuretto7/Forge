@@ -1,22 +1,9 @@
-# Build: three normalizations and a deep stack
+# Build: a tokenizer and a language-modeling pipeline
 
-## Normalization layers
+## Bytes and merges
 
 :::exercise{ref=e01}
 :::
-
-::::predict{id=p3 kind=choice answer=b}
-Batch norm (with $\gamma = 1$, $\beta = 0$, tiny $\epsilon$) receives a batch of exactly two examples. What are its outputs?
-
-- The inputs unchanged.
-- For every feature, $+1$ for the example with the larger value and $-1$ for the other (or 0 for both if they are equal).
-- Zeros.
-- Values that depend on the magnitude of the difference.
-
-:::reveal
-With two values $a > b$, the mean is $(a + b)/2$ and the standard deviation is $(a - b)/2$, so the normalized values are exactly $+1$ and $-1$. Whatever the input, a batch of two keeps only the sign of each difference: batch norm's statistics are only as good as the batch is large.
-:::
-::::
 
 :::exercise{ref=e02}
 :::
@@ -27,15 +14,26 @@ With two values $a > b$, the mean is $(a + b)/2$ and the standard deviation is $
 :::exercise{ref=e04}
 :::
 
-## Residual streams
+## Data and baselines
 
 :::exercise{ref=e05}
 :::
 
-## A deep stack in five variants
-
 :::exercise{ref=e06}
 :::
+
+::::predict{id=p3 kind=choice answer=a}
+A bigram model with add-one smoothing is trained on the training split and evaluated on validation text. Compared with its training loss, its validation loss is:
+
+- Higher, and the gap grows with the vocabulary size, because more bigrams are never seen in training.
+- Lower, because smoothing helps.
+- Equal, because a bigram model cannot overfit.
+- Infinite, because some validation bigrams never occur in training.
+
+:::reveal
+Smoothing keeps every probability positive, so the loss is finite, but bigrams that never appeared in training get only the smoothed share, and with $V^2$ possible pairs a larger vocabulary leaves more of them unseen. This is overfitting in its simplest form, and the reason language models are always evaluated on held-out text.
+:::
+::::
 
 :::exercise{ref=e07}
 :::

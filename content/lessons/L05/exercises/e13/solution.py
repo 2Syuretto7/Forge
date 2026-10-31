@@ -1,16 +1,66 @@
 import numpy as np
 
 
-def poly2(X):
-    x1, x2 = X[:, 0], X[:, 1]
-    return np.column_stack([np.ones(len(X)), x1, x2, x1 * x1, x1 * x2, x2 * x2])
+class SGD:
+    """SGD with optional heavy-ball momentum and L2 weight decay on the weights (keys starting with "W")."""
+
+    def __init__(self, lr, momentum=0.0, weight_decay=0.0):
+        self.lr, self.momentum, self.weight_decay = lr, momentum, weight_decay
+        self.v = {}
+
+    def step(self, params, grads, lr=None):
+        lr = self.lr if lr is None else lr
+        for k in params:
+            g = grads[k]
+            if self.weight_decay and k.startswith("W"):
+                g = g + self.weight_decay * params[k]
+            if self.momentum:
+                self.v[k] = self.momentum * self.v.get(k, 0.0) + g
+                g = self.v[k]
+            params[k] -= lr * g
 
 
-def fit_and_score(F_train, y_train, F_test, y_test, l2=1e-3):
-    w = np.zeros(F_train.shape[1])
-    n = F_train.shape[0]
-    for _ in range(3000):
-        s = 0.5 * (1 + np.tanh(0.5 * (F_train @ w)))
-        w -= 0.5 * (F_train.T @ (s - y_train) / n + l2 * w)
-    pred = (F_test @ w) > 0
-    return float(np.mean(pred == (y_test == 1)))
+class Adam:
+    """Adam on a dict of arrays. weight_decay applies to the weights only, either decoupled
+    (AdamW) or as an L2 term added to the gradient."""
+
+    def __init__(self, lr, b1=0.9, b2=0.999, eps=1e-8, weight_decay=0.0, decoupled=True, bias_correction=True):
+        self.lr, self.b1, self.b2, self.eps = lr, b1, b2, eps
+        self.weight_decay, self.decoupled, self.bias_correction = weight_decay, decoupled, bias_correction
+        self.m, self.v, self.t = {}, {}, 0
+
+    def step(self, params, grads, lr=None):
+        lr = self.lr if lr is None else lr
+        self.t += 1
+        c1 = 1.0 - self.b1 ** self.t if self.bias_correction else 1.0
+        c2 = 1.0 - self.b2 ** self.t if self.bias_correction else 1.0
+        for k in params:
+            g = grads[k]
+            wd = self.weight_decay if k.startswith("W") else 0.0
+            if wd and not self.decoupled:
+                g = g + wd * params[k]
+            self.m[k] = self.b1 * self.m.get(k, 0.0) + (1.0 - self.b1) * g
+            self.v[k] = self.b2 * self.v.get(k, 0.0) + (1.0 - self.b2) * g * g
+            if wd and self.decoupled:
+                params[k] -= lr * wd * params[k]
+            params[k] -= lr * (self.m[k] / c1) / (np.sqrt(self.v[k] / c2) + self.eps)
+
+
+def simulate(method, s, lr=0.01, wd=0.1, steps=1000):
+    """One weight W starting at 1 whose data gradient alternates +s, -s, +s, ...
+    method "adamw": decoupled decay; "adam_l2": L2 added to the gradient. Return the final weight."""
+    opt = Adam(lr, weight_decay=wd, decoupled=(method == "adamw"))
+    params = {"W": np.array([1.0])}
+    for t in range(1, steps + 1):
+        opt.step(params, {"W": np.array([s if t % 2 else -s])})
+    return float(params["W"][0])
+
+
+def predicted_adamw(lr, wd, steps):
+    """Decoupled decay shrinks every weight by (1 - lr wd) per step."""
+    return (1.0 - lr * wd) ** steps
+
+
+def predicted_l2_noisy(s, lr, wd, steps):
+    """L2 inside Adam when the data gradient's RMS s dominates: each step removes about lr wd W / s."""
+    return float(np.exp(-steps * lr * wd / s))

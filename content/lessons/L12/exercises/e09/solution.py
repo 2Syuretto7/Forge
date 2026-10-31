@@ -1,11 +1,23 @@
-def flash_smem_bytes(block_m, block_n, d, bytes_per=2):
-    """On-chip bytes of one FlashAttention program: a Q tile (block_m x d), a K and a V tile
-    (block_n x d each) in the input precision, and an fp32 accumulator (block_m x d) and score tile
-    (block_m x block_n)."""
-    return (block_m * d + 2 * block_n * d) * bytes_per + 4 * (block_m * d + block_m * block_n)
+def words_of(doc):
+    """Lowercased words with surrounding punctuation stripped, empty ones dropped."""
+    out = [w.strip(".,;:!?\"'()[]").lower() for w in doc.split()]
+    return [w for w in out if w]
 
 
-def best_blocks(d, budget, sizes=(16, 32, 64, 128), bytes_per=2):
-    """Among square blocks block_m = block_n from `sizes`, the largest that fits the budget."""
-    fit = [b for b in sizes if flash_smem_bytes(b, b, d, bytes_per) <= budget]
-    return max(fit) if fit else None
+def ngrams(words, n=13):
+    """The set of n-word tuples of a word list."""
+    return {tuple(words[i:i + n]) for i in range(len(words) - n + 1)}
+
+
+def build_index(eval_docs, n=13):
+    """Every n-gram of every evaluation document."""
+    index = set()
+    for d in eval_docs:
+        index |= ngrams(words_of(d), n)
+    return index
+
+
+def decontaminate(train_docs, eval_docs, n=13):
+    """Indices of the training documents that share no n-gram with any evaluation document."""
+    index = build_index(eval_docs, n)
+    return [i for i, d in enumerate(train_docs) if not (ngrams(words_of(d), n) & index)]

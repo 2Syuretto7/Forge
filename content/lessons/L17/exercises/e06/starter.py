@@ -1,12 +1,13 @@
-class DynamicLossScaler:
-    """The scale PyTorch's GradScaler manages: on a step whose gradients contain inf or NaN, skip the
-    step and multiply the scale by backoff; after `interval` consecutive good steps, multiply it by
-    growth."""
+import numpy as np
 
-    def __init__(self, scale=2.0 ** 16, growth=2.0, backoff=0.5, interval=2000):
-        self.scale, self.growth, self.backoff, self.interval = scale, growth, backoff, interval
-        self.good = 0
 
-    def update(self, found_inf):
-        """Record one step; return True if the optimizer should apply it."""
-        raise NotImplementedError
+def kl_estimators(logp, logp_ref):
+    """Per-sample estimates of KL(pi || pi_ref) from samples drawn from pi, given their log
+    probabilities under both: k1 = logp - logp_ref, and k3 = (r - 1) - log r with
+    r = exp(logp_ref - logp). Return (k1, k3) as arrays."""
+    raise NotImplementedError
+
+
+def exact_kl(p, q):
+    """KL(p || q) for two discrete distributions."""
+    raise NotImplementedError

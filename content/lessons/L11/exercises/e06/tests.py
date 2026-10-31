@@ -1,28 +1,29 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(6)
+P = dict(E=1.69, A=406.4, B=410.7, alpha=0.34, beta=0.28)
 
 
-def test_grad_matmul_backward():
-    X, W, G = rng.normal(size=(5, 3)), rng.normal(size=(3, 4)), rng.normal(size=(5, 4))
-    dX, dW = sub.matmul_backward(G, X, W)
-    f = lambda X, W: float(np.sum((X @ W) * G))
-    nX = np.zeros_like(X)
-    for idx in np.ndindex(X.shape):
-        E = np.zeros_like(X)
-        E[idx] = 1e-6
-        nX[idx] = (f(X + E, W) - f(X - E, W)) / 2e-6
-    nW = np.zeros_like(W)
-    for idx in np.ndindex(W.shape):
-        E = np.zeros_like(W)
-        E[idx] = 1e-6
-        nW[idx] = (f(X, W + E) - f(X, W - E)) / 2e-6
-    assert np.allclose(dX, nX, atol=1e-7) and np.allclose(dW, nW, atol=1e-7)
+def test_grad_dloss_dlogN():
+    C = 1e21
+    for N in [1e8, 1e9, 1e10]:
+        h = 1e-5
+        up = sub.law(N * np.exp(h), C / (6 * N * np.exp(h)), **P)
+        down = sub.law(N * np.exp(-h), C / (6 * N * np.exp(-h)), **P)
+        assert abs(sub.dloss_dlogN(N, C, **P) - (up - down) / (2 * h)) < 1e-8
 
 
-def test_step_flops_and_rule_of_thumb():
-    shapes = [(512, 2048), (2048, 512)]
-    params = sum(a * b for a, b in shapes)
-    assert sub.step_flops(1000, shapes) == 6 * 1000 * params
-    assert sub.flops_per_token_per_param() == 6
+def test_optimum_beats_every_other_split():
+    for C in [1e19, 1e22]:
+        N, D, loss = sub.optimal_allocation(C, **P)
+        assert abs(6 * N * D / C - 1) < 1e-12
+        assert abs(sub.dloss_dlogN(N, C, **P)) < 1e-10
+        sizes = N * np.logspace(-1, 1, 41)
+        assert loss <= sub.law(sizes, C / (6 * sizes), **P).min() + 1e-12
+
+
+def test_more_compute_more_of_both():
+    N1, D1, L1 = sub.optimal_allocation(1e20, **P)
+    N2, D2, L2 = sub.optimal_allocation(1e21, **P)
+    assert abs(N2 / N1 - 10 ** (0.28 / 0.62)) < 1e-9 and abs(D2 / D1 - 10 ** (0.34 / 0.62)) < 1e-9
+    assert L2 < L1

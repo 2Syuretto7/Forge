@@ -1,16 +1,12 @@
-# Training at depth 20
+# Temperature, top-k and top-p
 
-Adam (`adam_init`, `adam_step`), `evaluate` and the stack are provided. Implement `train(depth, width, mode, lr, steps, warmup=0, seed=0, batch=50, branch_scale=1.0)`:
-
-- data `make_digits(2000, 0)`, parameters `init_stack(depth, width, seed, branch_scale=branch_scale)`, `rng = np.random.default_rng(seed)`;
-- each epoch draws `rng.permutation(2000)` and visits it in full batches, until `steps` steps have run;
-- step `t` (from 1) uses the rate `lr * min(1, t / warmup)` if `warmup > 0`, else `lr`;
-- return `(params, losses)` with every minibatch loss.
-
-Then train the plain and the pre-norm stacks at depth 20 and width 32 for 300 steps at rate 0.003 and compare.
+1. `softmax_t(logits, T=1.0)`: the softmax of `logits / T`.
+2. `top_k_filter(logits, k)`: keep the `k` largest logits, set the rest to `-inf`.
+3. `top_p_filter(logits, p)`: keep the smallest set of tokens, in decreasing order of probability, whose probabilities sum to at least `p`; set the rest to `-inf`.
+4. `sample(logits, rng, T=1.0, k=None, p=None)`: divide by the temperature, apply the filters that are given, and draw a token with `rng.choice`.
 
 ## Hints
 
-1. Wrap the loop in `with np.errstate(all="ignore"):` so a diverging variant does not flood the output.
-2. Follow the order exactly (permutation, then batches, then the update) so your runs match the tests.
-3. The pre-norm run takes about twice as long as the plain one: it computes two layer norms per layer.
+1. `-inf` logits get probability exactly 0 in the softmax.
+2. For top-p, sort probabilities in decreasing order and find where the cumulative sum first reaches `p` (`np.searchsorted`).
+3. With `T` near 0 the distribution becomes one-hot on the argmax.

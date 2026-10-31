@@ -7,6 +7,7 @@ import {
   importAll,
   clearAll,
   STORE_NAMES,
+  KEY_PATHS,
   type ColabRec,
   type ExerciseRec,
   type FeynmanRec,
@@ -28,14 +29,21 @@ export interface Settings {
   lastPath: string;
   // The curriculum the stored progress belongs to (see startCurriculum).
   curriculum: string;
+  // The lesson numbering the stored progress uses (see renumberLessons).
+  numbering: string;
 }
 
 export const DEFAULT_MODEL = 'claude-sonnet-5-5';
-export const DEFAULT_SETTINGS: Settings = { apiKey: '', modelId: DEFAULT_MODEL, theme: 'system', activityDays: [], lastPath: '', curriculum: '' };
+export const DEFAULT_SETTINGS: Settings = { apiKey: '', modelId: DEFAULT_MODEL, theme: 'system', activityDays: [], lastPath: '', curriculum: '', numbering: '' };
 
 // At the owner's request, progress made under an earlier curriculum is reset once rather
 // than carried over.
 export const CURRICULUM = 'math-track-2026-10';
+
+// The core lessons were renumbered from L05 to L24 to L01 to L20, after the four original
+// math lessons that held L01 to L04 gave way to the math track. At the owner's request,
+// progress saved under the old numbers is carried over to the new ones once.
+export const NUMBERING = 'core-from-L01';
 
 export interface State {
   loaded: boolean;
@@ -283,8 +291,10 @@ export async function exportProgress() {
 export async function importProgress(data: unknown) {
   await importAll(data);
   await loadStore();
-  // An imported file is the learner's chosen state: never reset it at the next start.
+  // An imported file is the learner's chosen state: never reset it at the next start, but
+  // move a file saved under the old lesson numbers to the new ones.
   await saveSetting('curriculum', CURRICULUM);
+  await renumberLessons();
 }
 
 export async function resetProgress() {
@@ -294,6 +304,7 @@ export async function resetProgress() {
   await saveSetting('activityDays', []);
   await saveSetting('lastPath', '');
   await saveSetting('curriculum', CURRICULUM);
+  await saveSetting('numbering', NUMBERING);
 }
 
 // Run once at startup: progress stored under an earlier curriculum is reset (the API key,
@@ -310,6 +321,51 @@ export async function startCurriculum() {
     0;
   await resetProgress();
   return had;
+}
+
+// The new ID for a record ID that starts with a lesson ID under the old numbering:
+// L05 to L24 become L01 to L20, and L01 to L04, the original math lessons, are dropped
+// (null). Other IDs are unchanged.
+export function renumberedId(id: string): string | null {
+  const m = /^L(\d\d)(?=\/|$)/.exec(id);
+  if (!m) return id;
+  const n = Number(m[1]);
+  if (n <= 4) return null;
+  if (n > 24) return id;
+  return `L${String(n - 4).padStart(2, '0')}${id.slice(3)}`;
+}
+
+// Run once at startup and after an import: move progress saved under the old lesson
+// numbers to the new ones. Returns true when any record moved.
+export async function renumberLessons() {
+  if (state.settings.numbering === NUMBERING) return false;
+  const db = await getDb();
+  let moved = false;
+  for (const store of STORE_NAMES) {
+    if (store === 'settings') continue;
+    const key = KEY_PATHS[store];
+    const tx = db.transaction(store, 'readwrite');
+    const records = (await tx.store.getAll()) as unknown as Record<string, unknown>[];
+    const changed = records.filter((r) => renumberedId(String(r[key])) !== r[key]);
+    // Delete every old key before writing any new one, so no new record lands on a key
+    // that is about to be deleted.
+    for (const r of changed) await tx.store.delete(String(r[key]));
+    for (const r of changed) {
+      const next = renumberedId(String(r[key]));
+      if (next !== null) await tx.store.put({ ...r, [key]: next } as never);
+    }
+    await tx.done;
+    moved ||= changed.length > 0;
+  }
+  const path = state.settings.lastPath ?? '';
+  const m = /^\/lesson\/(L\d\d)(?=\/|$)/.exec(path);
+  if (m) {
+    const next = renumberedId(m[1]);
+    await saveSetting('lastPath', next === null ? '' : `/lesson/${next}${path.slice(m[0].length)}`);
+  }
+  await saveSetting('numbering', NUMBERING);
+  await loadStore();
+  return moved;
 }
 
 export { STORE_NAMES };

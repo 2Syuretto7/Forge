@@ -1,14 +1,15 @@
-# Break it: a mask that leaks the future
+# Break it: range against precision
 
-Your softmax is provided.
+Your `round_to_format` is provided.
 
-1. `leaks_future(attn_fn, X, eps=1e-3)`: `attn_fn` maps an `(n, d)` sequence to an `(n, d)` output. For each position $t \ge 1$, add `eps` to row $t$ of a copy of `X` and check whether any output row before $t$ changes by more than `1e-12`. Return `True` as soon as one does.
-2. `off_by_one_mask(n)`: the bug, a mask that hides key $j$ from query $i$ only when $j > i + 1$.
+1. `bf16(x)` and `fp16(x)`: round to bfloat16 (8, 7) and float16 (5, 10).
+2. `survives(x, fmt)`: `True` where a value is finite and nonzero after rounding with `fmt`.
+3. `resolves(a, b, fmt)`: `True` where `a` and `b` remain different after rounding.
 
-The tests build attention with the correct mask and with yours, and check that only the buggy one leaks.
+Then find values that each format loses: large activations, tiny gradients, and small differences between nearby numbers.
 
 ## Hints
 
-1. Compute the unperturbed output once.
-2. Compare `out[:t]` only: changes at $t$ and later are allowed.
-3. `np.triu(..., k=2)` leaves the first superdiagonal unmasked.
+1. `fmt` is one of your two functions.
+2. fp16 loses values above 65504 and below about $6 \times 10^{-8}$; bf16 reaches $10^{\pm 38}$.
+3. Near 1, bf16 can only distinguish differences of about 0.008.

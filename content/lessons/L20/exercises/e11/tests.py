@@ -1,24 +1,14 @@
-import numpy as np
 import sub
 
-rng = np.random.default_rng(6)
-V = 20
+train = ["REVERSE: apple", "UPPER: pear", "REVERSE: stone", "UPPER: night"]
+evals = ["upper:  PEAR", "REVERSE: river", "REVERSE: stone", "UPPER: cloud", "UPPER: light"]
 
 
-def make(prompt_len, n=300):
-    tokens, mask = [], []
-    for _ in range(n):
-        tokens += rng.integers(0, 10, prompt_len).tolist() + rng.integers(10, 20, 5).tolist()
-        mask += [0] * prompt_len + [1] * 5
-    return np.array(tokens), np.array(mask)
+def test_leaks():
+    assert sub.leaked_items(evals, train) == [0, 2]
 
 
-def test_masking_matters_more_with_long_prompts():
-    gaps = []
-    for L in [5, 50]:
-        t, m = make(L)
-        masked = sub.response_ce(sub.fit_unigram(t, m, V), t, m)
-        unmasked = sub.response_ce(sub.fit_unigram(t, np.ones_like(m), V), t, m)
-        assert masked < unmasked
-        gaps.append(unmasked - masked)
-    assert gaps[1] > gaps[0] + 1.0
+def test_honest():
+    acc = sub.honest_accuracy([1, 0, 1, 1, 0], [0, 2])
+    assert acc["all"] == 0.6 and abs(acc["clean"] - 1 / 3) < 1e-12 and acc["leaked"] == 1.0
+    assert sub.honest_accuracy([1, 0], [])["leaked"] is None

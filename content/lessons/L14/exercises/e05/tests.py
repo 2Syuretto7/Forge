@@ -1,20 +1,19 @@
 import numpy as np
 import sub
 
-
-def test_split():
-    tr, va = sub.train_val_split(list(range(100)))
-    assert list(tr) == list(range(90)) and list(va) == list(range(90, 100))
+rng = np.random.default_rng(2)
 
 
-def test_batches():
-    ids = np.arange(1000) * 3
-    x, y = sub.get_batch(ids, 16, 8, np.random.default_rng(0))
-    assert x.shape == (8, 16) and y.shape == (8, 16)
-    assert np.all(y[:, :-1] == x[:, 1:]) and np.all(y - x == 3)
-    starts = np.random.default_rng(0).integers(0, 1000 - 16, size=8)
-    assert np.all(x[:, 0] == ids[starts])
-
-
-def test_epoch():
-    assert sub.tokens_per_epoch(1_000_000, 128, 32) == 1_000_000 / 4096
+def test_matches_unsharded_adam():
+    n, P = 10, 3
+    w = rng.normal(size=n)
+    m, v = np.zeros(n), np.zeros(n)
+    w_ref = w.copy()
+    parts = np.array_split(np.arange(n), P)
+    states = [(np.zeros(len(p)), np.zeros(len(p))) for p in parts]
+    for t in range(1, 6):
+        grads = [rng.normal(size=n) for _ in range(P)]
+        w_ref, m, v = sub.adam_update(w_ref, sum(grads) / P, m, v, t, 0.01)
+        w, states = sub.zero1_step(w, grads, states, t, 0.01)
+        assert np.allclose(w, w_ref)
+    assert sum(len(s[0]) for s in states) == n

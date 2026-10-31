@@ -1,100 +1,116 @@
-# Derivation: Triton kernels, fusion and FlashAttention
+# Derivation: duplicates, quality, mixtures and leaks
 
-## 1. The Triton programming model
+## 1. Why data quality changes scaling
 
-CUDA programs describe what one thread does. **Triton** programs describe what one **program instance** does to a block of data: you launch a grid of program instances, each finds its block with `tl.program_id`, builds vectors of offsets with `tl.arange`, loads whole blocks with `tl.load`, computes on them (`tl.dot` for small matrix products, reductions such as `tl.max` and `tl.sum`), and stores with `tl.store`. The compiler decides how the block is spread over threads, warps, registers and shared memory. Masks on loads and stores handle the ragged last block.
+In L11's law $L = E + A N^{-\alpha} + B D^{-\beta}$, $D$ counts useful tokens. If a fraction $f$ of training tokens is junk, a model trained on $D$ tokens learns as if from about $(1 - f) D$, and the data term grows by $(1-f)^{-\beta}$; duplicated text is worth less than fresh text (L11's repeated-data formula). Filtering also changes what the model learns to predict: training on text unlike the evaluation distribution moves the whole curve, not just the effective $D$.
 
-## 2. Coalesced access
-
-A warp's 32 threads issue their loads together. If they read 32 consecutive 4-byte words, the hardware serves them with a few 32-byte transactions; if each thread reads an element far from its neighbour's, every thread needs its own transaction.
-
-::::derivation{id=d1 title="Transactions per warp"}
+::::derivation{id=d1 title="The cost of junk"}
 :::step
-32 threads reading consecutive fp32 values touch $128$ bytes: [[4]] aligned 32-byte segments.
+With $\beta = 0.28$ and a quarter of the tokens wasted, the data term grows by $0.75^{-0.28} \approx$ [[1.084|tol=0.001]].
 :::
 :::step
-With a stride of 8 elements between threads, the warp touches [[32]] segments, and only $128/(32 \cdot 32) =$ [[0.125]] of the transferred bytes are used.
+To recover that loss with more raw data, you need $1/(1 - f) =$ [[1.333|tol=0.001]] times as many raw tokens, and as much more compute.
 :::
 ::::
 
-In row-major storage, reading along a row is coalesced and reading down a column is strided: lay out tiles so that consecutive threads read consecutive addresses.
+:::edge{to=L11 text="data quality shifts the scaling curve"}
+:::
 
-## 3. Fusion
+## 2. Exact duplicates
 
-Written as separate operations, a row softmax reads its input for the maximum, reads it again and writes the exponentials, reads those for the sum, and reads them again to write the result: six arrays of traffic. A fused kernel keeps the row on chip: one read and one write.
+Normalize each document (case, whitespace), hash it, and keep the first document with each hash. With a $b$-bit hash and $n$ documents, the chance that two different documents collide is about $n^2 / 2^{b+1}$ (the birthday bound), so use a cryptographic hash such as SHA-1 (160 bits) rather than a 32- or 64-bit one. The same trick removes **boilerplate**: lines that occur on many different pages are navigation and footers, not content.
 
-::::derivation{id=d2 title="A fused softmax"}
+::::derivation{id=d2 title="The birthday bound"}
 :::step
-For a $4096 \times 4096$ fp16 matrix, the unfused softmax moves $6 \cdot 4096^2 \cdot 2 =$ [[201326592]] bytes and the fused one [[67108864]].
+With a 64-bit hash and $n = 10^9$ documents, the probability of at least one false collision is about $n^2 / 2^{65} \approx$ [[0.0271|tol=0.0005]].
 :::
 :::step
-At 320 GB/s the fused kernel needs at least [[0.21|tol=0.01]] ms.
+With 160 bits it is about $10^{18}/2^{161}$, around $10^{-30}$: never.
 :::
 ::::
 
-On the roofline, fusion does not move a kernel's arithmetic: it divides its bytes, which moves a memory-bound kernel to the right, to a higher intensity and a higher attainable throughput. The widget draws the softmax already fused, at 1.25 FLOP per byte in fp16; unfused, its six passes over memory would put it at about 0.42, three times further down the memory roof.
+## 3. Near duplicates: Jaccard similarity and MinHash
 
-:::widget{name=Roofline hardware=t4 precision=fp16}
-:::
+Represent a document by its set of **shingles**, the overlapping character (or word) $k$-grams. Two documents are near-duplicates when the **Jaccard similarity** $J(A, B) = |A \cap B|/|A \cup B|$ of their shingle sets is high.
 
-:::edge{from=L11 text="the roofline, tiling and kernel fusion"}
-:::
-
-:::edge{from=L10 text="the layer norm forward and backward passes"}
-:::
-
-## 4. The online softmax
-
-Process a vector in blocks. Keep $m$, the maximum so far, and $l = \sum_{\text{seen}} e^{x_j - m}$. For a new block $b$ with maximum $m_b$:
+**MinHash.** Take a random hash function $h$ (in effect, a random ordering of all possible shingles) and record the smallest hash in each set. The smallest element of $A \cup B$ is equally likely to be any of its members, and the two minima agree exactly when that element lies in $A \cap B$. So
 $$
-m' = \max(m, m_b), \qquad l' = l\, e^{m - m'} + \sum_{j \in b} e^{x_j - m'}.
+\Pr\bigl[\min h(A) = \min h(B)\bigr] = \frac{|A \cap B|}{|A \cup B|} = J(A, B).
 $$
-Starting from $m = -\infty$, $l = 0$, after the last block $p_j = e^{x_j - m}/l$. Two summaries of disjoint parts merge the same way: $m = \max(m_1, m_2)$, $l = l_1 e^{m_1 - m} + l_2 e^{m_2 - m}$.
+With $k$ independent hash functions the fraction of agreeing minima is an unbiased estimate of $J$ with standard deviation $\sqrt{J(1-J)/k}$. Each document shrinks to a signature of $k$ integers, whatever its length.
 
-::::derivation{id=d3 title="Two blocks"}
+::::derivation{id=d3 title="MinHash accuracy"}
 :::step
-The first block is $(1, 3)$: $m = 3$ and $l = e^{-2} + e^0 \approx$ [[1.1353|tol=0.0005]].
+For $J = 0.8$ and $k = 128$, the standard deviation of the estimate is $\sqrt{0.8 \cdot 0.2/128} \approx$ [[0.0354|tol=0.0005]].
 :::
 :::step
-The second block is $(2, 5)$: $m' = 5$, and $l' = 1.1353\, e^{-2} + e^{-3} + e^{0} \approx$ [[1.2034|tol=0.0005]], which equals $\sum_j e^{x_j - 5}$ over all four values.
+To halve it you need [[4]] times as many hash functions.
 :::
 ::::
 
-## 5. FlashAttention
+## 4. Locality-sensitive hashing: comparing only likely pairs
 
-Apply the online softmax to attention. A program owns a block of queries $Q_i$ and keeps, per query, a running maximum $m$, a running sum $l$ and an accumulator $a$ for the output. For each block of keys and values $K_j, V_j$:
+Cut each signature into $b$ bands of $r$ rows and hash every band into a bucket. Two documents with similarity $s$ match on one given band with probability $s^r$ (all $r$ rows must agree), so they fail to share any band with probability $(1 - s^r)^b$, and become **candidates** with probability
 $$
-S = c\,Q_i K_j^\top, \quad m' = \max(m, \operatorname{rowmax} S), \quad P = e^{S - m'}, \quad \alpha = e^{m - m'}, \quad l' = \alpha l + \operatorname{rowsum} P, \quad a' = \alpha a + P V_j.
+P(s) = 1 - (1 - s^r)^b.
 $$
-At the end, $O_i = a / l$. The $N \times N$ scores exist only one tile at a time, on chip. Standard attention moves $\Theta(Nd + N^2)$ elements to and from device memory; FlashAttention moves $\Theta(N^2 d^2 / M)$ for on-chip memory of $M$ elements, many times less for typical $d$ and $M$ (Dao et al., 2022).
+This is an S-shaped curve, steepest near $s^* \approx (1/b)^{1/r}$. Only candidates are compared, so the work is roughly linear in the corpus. Choose $b$ and $r$ so that the curve rises around your similarity cutoff: more rows per band push it right and make it steeper; more bands push it left.
 
-For the backward pass, FlashAttention stores only $L_i = m + \ln l$, the log-sum-exp of each row, and recomputes each tile of probabilities as $P = e^{S - L}$. With $D_i = \sum_k \text{d}O_{ik} O_{ik}$, the softmax gradient becomes $\text{d}S = P \odot (\text{d}P - D)$: L13's formula, without the stored matrix.
-
-::::derivation{id=d4 title="Memory for one head"}
+::::derivation{id=d4 title="An S-curve"}
 :::step
-At $N = 4096$, the attention weights of one head in fp16 take $4096^2 \cdot 2 =$ [[33554432]] bytes.
+With $b = 16$ bands of $r = 8$ rows, a pair with $s = 0.8$ becomes a candidate with probability $1 - (1 - 0.8^8)^{16} \approx$ [[0.947|tol=0.001]].
 :::
 :::step
-FlashAttention keeps one fp32 log-sum-exp per query: [[16384]] bytes.
+A pair with $s = 0.5$ does so with probability about [[0.0607|tol=0.0005]].
+:::
+:::step
+The threshold $(1/16)^{1/8}$ is about [[0.7071|tol=0.0005]].
 :::
 ::::
 
-:::edge{from=L13 text="scaled dot-product attention and its backward pass"}
+Move the threshold around with the widget, and see how many hashes you need for a sharp cut.
+
+:::widget{name=LshCurve}
 :::
 
-## 6. Choosing block sizes
+## 5. Quality filtering
 
-Each program holds its tiles in shared memory and registers. With block sizes $B_m$ (queries) and $B_n$ (keys) and head dimension $d$, a FlashAttention program needs a $B_m \times d$ query tile, $B_n \times d$ key and value tiles, and fp32 accumulators of $B_m \times d$ and $B_m \times B_n$. Larger blocks reuse each loaded value more; blocks too large for on-chip memory spill or fail to compile, and fewer programs fit on each SM.
+**Rules.** The Gopher pipeline (Rae et al., 2021) removed documents outside 50 to 100,000 words, with a mean word length outside 3 to 10 characters, with too many symbols, bullets or trailing ellipses, with fewer than 80% of words containing a letter, or without at least two common English function words. Each rule targets a kind of junk: lists, tables, code dumps, keyword spam.
 
-::::derivation{id=d5 title="Fitting 64 KB"}
+**Classifiers.** GPT-3's pipeline trained a logistic-regression classifier on hashed word features to distinguish curated reference text from raw crawl, and kept crawl documents stochastically, favoring those that scored like the reference. A classifier is only as good as its reference set: it also removes good text that looks unlike the reference, such as other dialects and genres.
+
+## 6. Mixtures
+
+A training set mixes domains of very different sizes. Sampling with weights $p_j$ for a budget of $T$ tokens repeats domain $j$ for $p_j T / \text{size}_j$ epochs, so small high-quality domains are often upsampled, and multilingual models flatten the weights with a temperature, $p_j \propto \text{size}_j^{1/\tau}$.
+
+Suppose domain $j$'s excess loss after $p_j T$ tokens is $c_j (p_j T)^{-\beta}$ and we minimize the total. A Lagrange multiplier for $\sum_j p_j = 1$ gives $\beta c_j p_j^{-\beta - 1} = \lambda$ for every $j$, so
+$$
+p_j \propto c_j^{1/(1 + \beta)}:
+$$
+domains with more left to learn get more weight, but less than proportionally.
+
+::::derivation{id=d5 title="Optimal weights"}
 :::step
-For $B_m = B_n = 64$ and $d = 64$: $(64 \cdot 64 + 2 \cdot 64 \cdot 64) \cdot 2 + 4 \cdot (64 \cdot 64 + 64 \cdot 64) =$ [[57344]] bytes, which fits in a T4 SM's 64 KB.
+With $c = (4, 1)$ and $\beta = 1$, the weights are proportional to $(4^{1/2}, 1)$, so the first domain gets $p_1 =$ [[0.667|tol=0.001]].
+:::
+:::step
+A domain of 20 billion tokens with weight 0.1 in a run of a trillion tokens is repeated for [[5]] epochs.
 :::
 ::::
 
-## 7. Numerics inside kernels
+## 7. Contamination
 
-Load fp16, compute in fp32: $e^x$ overflows fp16 above $\ln 65504 \approx 11.09$, and an fp16 sum of thousands of terms loses its low bits. Subtract the maximum before exponentiating. For statistics such as a variance, the one-pass formula $\mathbb E[x^2] - \mathbb E[x]^2$ cancels catastrophically when the mean is large compared with the spread; Welford's update, $\delta = x - \mu$, $\mu \mathrel{+}= \delta / n$, $M_2 \mathrel{+}= \delta (x - \mu)$, does not.
+If evaluation text appears in the training data, a model can reproduce the answers it memorized, and the score measures memory instead of skill. GPT-3's authors flagged training documents sharing any 13-word sequence with an evaluation example and reported scores on the clean subset separately. Contamination does more than shift a number: a model that memorizes more can look better than one that generalizes better, reversing the decision the evaluation was for (exercise 11).
 
-:::edge{to=L22 text="Inference kernels: attention over cached and paged keys and values."}
+:::edge{from=L02 text="test-set leakage, now at web scale"}
+:::
+
+## 8. Pipelines that can stop and resume
+
+Data at scale is read as a stream of **shards**. A loader should give each example once per epoch in a shuffled order, run on many workers, and after a crash resume **exactly** where it stopped: otherwise a resumed run sees some data twice and some never, and its results cannot be reproduced. The robust design derives every random order from the seed and the epoch (and the shard), so the loader's whole state is a few integers. Anything with hidden state, a shuffle buffer or a generator, must be saved in the checkpoint along with the model.
+
+:::edge{from=L10 text="tokenizing and windowing a corpus"}
+:::
+
+:::edge{to=L15 text="The pretraining run reads its data through a resumable pipeline."}
 :::

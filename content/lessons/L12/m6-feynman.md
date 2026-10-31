@@ -1,11 +1,10 @@
-# Explain it plainly: how FlashAttention saves memory and time
+# Explain it plainly: from a crawl to training data
 
-Explain to an engineer who knows how attention is computed why FlashAttention is faster and uses less memory, although it performs the same arithmetic.
+Explain to a new engineer what happens between a raw web crawl and the token stream a model trains on, and why each step matters.
 
 - Write 150 to 400 words.
-- Use the picture of the score matrix and the GPU's small, fast on-chip memory.
-- Explain the online softmax and why blocks can be processed one at a time.
-- Mention what the backward pass stores instead of the full matrix.
+- Cover deduplication (including how near-duplicates are found without comparing every pair), quality filtering and decontamination.
+- Give one way a careless pipeline makes a model look better than it is.
 
-:::feynman{id=f1 prompt="Explain why FlashAttention is faster and uses less memory than standard attention although it does the same arithmetic, including the online softmax and what the backward pass keeps." key_points="Standard attention writes the N by N score and probability matrices to device memory and reads them back, which is slow because it is memory-bound|FlashAttention processes keys and values in tiles that fit in fast on-chip memory, so the full matrix is never stored|The online softmax keeps a running maximum and sum and rescales them when the maximum grows, giving the exact softmax in one pass|The backward pass stores only one log-sum-exp per query and recomputes the probabilities tile by tile|Memory falls from quadratic to linear in sequence length and speed improves because far fewer bytes move"}
+:::feynman{id=f1 prompt="Explain the steps that turn a raw web crawl into training data, including how near-duplicates are found efficiently, and one way a careless pipeline can make a model look better than it is." key_points="Exact duplicates are removed by hashing normalized documents, and repeated boilerplate lines are stripped|Near-duplicates are found with MinHash signatures, whose agreement rate estimates Jaccard similarity of shingle sets|Locality-sensitive hashing with bands makes only likely pairs candidates, avoiding comparing every pair|Quality filters use rules or a classifier trained against reference text, and a classifier can remove good text unlike its reference|Evaluation text leaking into training data inflates scores, so training data is decontaminated with n-gram overlap against evaluation sets"}
 :::

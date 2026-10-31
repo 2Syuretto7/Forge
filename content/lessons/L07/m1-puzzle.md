@@ -1,43 +1,24 @@
-# Puzzle: what a line cannot do, and a network that cannot start
+# Puzzle: the same FLOPs, a thousand times slower
 
-Three arms of a spiral, one per class, wind around the origin. Logistic regression draws straight boundaries; no arrangement of three lines separates the arms.
+A T4 GPU (the one Colab gives you) can perform 65 trillion half-precision floating-point operations per second on its tensor cores. Multiply two $4096 \times 4096$ matrices on it and you get close to that. Add two vectors of $2^{26}$ numbers and you get a tiny fraction of it.
 
-::::predict{id=p1 kind=choice answer=b}
-You train softmax regression on the three-arm spiral (300 points). What training accuracy do you expect?
-
-- About 100 percent, given enough iterations.
-- Around 50 percent: better than chance (33 percent) but far from separating the arms.
-- About 33 percent, exactly chance.
-- 0 percent, because the classes are interleaved.
+::::predict{id=p1 kind=numeric answer=0.053 tol=0.01}
+The T4 moves at most 320 GB/s between its memory and its cores. A half-precision vector addition reads 2 bytes from each input and writes 2 bytes per element, for one FLOP. What is the highest throughput it can reach, in TFLOP/s?
 
 :::reveal
-A linear classifier carves the plane into three wedges. Each wedge catches part of every arm, so accuracy lands around 50 percent. A network with one hidden layer of 100 ReLU units reaches nearly 100 percent: it builds its own features (bent combinations of the inputs) and then draws linear boundaries in that feature space.
+Each FLOP needs 6 bytes, so at 320 GB/s the addition can do at most $320 \times 10^9 / 6 \approx 5.3 \times 10^{10}$ FLOP/s, about 0.053 TFLOP/s: less than a tenth of a percent of the peak. Its speed is set entirely by memory bandwidth. Most operations in a neural network, everything except matrix products and convolutions, are like this.
 :::
 ::::
 
-The fix is to learn the features. Stack a layer that computes new features $h = \phi(xW_1 + b_1)$ from the inputs, with a nonlinearity $\phi$ such as ReLU, and feed $h$ into softmax regression. Training adjusts $W_1$ and $b_1$ so that the arms become linearly separable in $h$-space. Computing how to adjust them is backpropagation.
-
-::::predict{id=p2 kind=choice answer=c}
-You initialize such a network with every weight and bias equal to zero and train it with gradient descent. What happens?
-
-- It trains normally; initialization only affects speed.
-- It trains, but more slowly than with random weights.
-- The hidden units stay identical to one another forever, so the network behaves like a model with a single hidden unit.
-- The loss is undefined because of division by zero.
+::::predict{id=p2 kind=numeric answer=8.14 tol=0.2}
+The T4 has 40 streaming multiprocessors, each with 64 fp32 cores, running at up to 1.59 GHz, and each core completes one fused multiply-add (2 FLOPs) per cycle. What is its peak fp32 throughput in TFLOP/s?
 
 :::reveal
-With identical weights, every hidden unit computes the same value and receives the same gradient, so after any number of updates they are still identical. (With ReLU and all-zero weights the hidden gradients are even exactly zero.) Random initialization breaks this symmetry. Movement 5 makes you watch it happen.
+$40 \times 64 \times 1.59 \times 10^9 \times 2 \approx 8.14 \times 10^{12}$ FLOP/s, the 8.1 TFLOP/s on the datasheet. The 65 TFLOP/s figure comes from the separate tensor cores, which multiply small half-precision matrices in one instruction.
 :::
 ::::
 
-The widget shows reverse mode on a tiny two-layer network with one input. Step through the backward pass and check each gradient against the chain rule. Then set $w_1 x + b_1$ negative (for instance $w_1 = 1.1$, $x = 0.9$, $b_1 = -2$): the ReLU outputs zero and every gradient upstream of it vanishes. That is a dead unit.
+Explore the two limits in the widget: change the matrix size and the precision, and watch which kernels sit under the slanted memory roof and which reach the flat compute roof.
 
-:::widget{name=ComputationGraph preset=mlp}
+:::widget{name=Roofline hardware=t4 precision=fp16}
 :::
-
-## Questions to carry into the derivation
-
-1. What exactly does a multi-layer network compute, and why can it represent curved boundaries?
-2. What is the backward pass of each layer type, and how do they compose?
-3. How much does the backward pass cost compared with the forward pass?
-4. Which initializations make training impossible, and why?

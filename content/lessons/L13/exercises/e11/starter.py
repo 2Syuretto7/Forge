@@ -1,20 +1,17 @@
 import numpy as np
 
 
-def softmax_rows(S):
-    """Softmax of every row, stable for large entries; -inf entries get weight 0."""
-    m = S.max(axis=-1, keepdims=True)
-    E = np.exp(S - m)
-    return E / E.sum(axis=-1, keepdims=True)
+def scores(Q, K, dtype):
+    """Q K^T computed with inputs and result in dtype (as an fp16 matmul without scaling would)."""
+    raise NotImplementedError
 
 
-def softmax_backward(P, dP):
-    """Given P = softmax_rows(S) and dL/dP, return dL/dS."""
-    return P * (dP - (dP * P).sum(axis=-1, keepdims=True))
+def scaled_first(Q, K, dtype):
+    """Divide Q by sqrt(d) before the product, so the scores stay in range."""
+    raise NotImplementedError
 
 
-def saturation(d, scaled, n=16, seed=0):
-    """Random queries and keys with unit-variance entries, shape (n, d). Return the mean over rows of
-    the largest attention weight, and the mean absolute entry of the softmax Jacobian applied to a
-    random upstream gradient (how much gradient reaches the scores)."""
+def stable_lse(x):
+    """log(sum(exp(x))) of a float vector computed in float64 after subtracting the maximum, and its
+    gradient (the softmax)."""
     raise NotImplementedError

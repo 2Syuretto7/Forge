@@ -1,19 +1,26 @@
-import numpy as np
 import sub
 
-z = np.array([6.0, 3.0, 2.5, 0.0, -1.0, -3.0])
+raw = sub.digest("raw corpus v1")
 
 
-def test_temperature():
-    ents = [sub.entropy(sub.soften(z, T)) for T in [0.5, 1, 2, 4]]
-    assert all(a < b for a, b in zip(ents, ents[1:]))
-    for T in [0.5, 1, 2, 4]:
-        assert np.array_equal(np.argsort(sub.soften(z, T)), np.argsort(z))
+def chain():
+    recs, inp = [], raw
+    for stage, cfg, out in [("data", {"min_len": 50}, "clean"), ("pretrain", {"steps": 3000}, "base.pt"),
+                            ("finetune", {"rank": 8}, "sft.pt"), ("rl", {"beta": 0.05}, "rl.pt")]:
+        r = sub.make_record(stage, inp, cfg, out)
+        recs.append(r)
+        inp = r["output"]
+    return recs
 
 
-def test_topk():
-    p = sub.soften(z, 1.0)
-    q = sub.topk_teacher(p, 3)
-    assert abs(q.sum() - 1) < 1e-12 and np.count_nonzero(q) == 3
-    full = sub.topk_teacher(p, 6)
-    assert np.allclose(full, p)
+def test_records():
+    r = chain()[1]
+    assert r["stage"] == "pretrain" and r["config"] == sub.digest({"steps": 3000}) and r["output"] == sub.digest("base.pt")
+    assert sub.check_chain(chain(), raw) is None
+
+
+def test_broken_link():
+    recs = chain()
+    recs[2]["input"] = sub.digest("an older base.pt")
+    assert sub.check_chain(recs, raw) == 2
+    assert sub.check_chain(chain(), sub.digest("raw corpus v2")) == 0

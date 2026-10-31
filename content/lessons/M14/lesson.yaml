@@ -14,7 +14,7 @@ movements:
 hooks:
   - {to: M23, text: "PCA is the eigen-decomposition of the covariance matrix, computed stably as the SVD of the centred data."}
   - {to: M33, text: "Randomized SVD finds the top singular vectors of a huge matrix from a few matrix products."}
-  - {to: L20, text: "LoRA fine-tunes a model by adding a low-rank matrix, the object Eckart-Young describes."}
+  - {to: L16, text: "LoRA fine-tunes a model by adding a low-rank matrix, the object Eckart-Young describes."}
 reuses:
   - {from: M13, concept: "the spectral theorem and power iteration"}
 annotations:

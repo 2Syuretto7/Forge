@@ -1,12 +1,15 @@
-# Recall bridge: tensor cores and the roofline
+# Recall bridge: KL, the score function and a fine-tuned model
 
-From L11: a T4 multiplies matrices at 8.1 TFLOP/s in fp32 and 65 TFLOP/s in fp16 on its tensor cores, and memory-bound operations run at the speed of bytes. Halving the bytes per number halves their time; switching matrix products to fp16 multiplies their roof by eight. The price is numerical: fewer bits for the exponent and the mantissa. Reviews due from L11 appear above.
+From M27: the KL divergence measures how far one distribution is from another, and it is never negative. From L03: the gradient of softmax cross-entropy with respect to the logits is $p - y$. From L16: supervised fine-tuning teaches a model to imitate good responses. This lesson asks for more than imitation: improve the model on what we actually want, measured by a reward, without letting it drift into nonsense. Reviews due from M27, L03 and L16 appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step
-The T4's fp16 tensor-core peak is $65/8.1 \approx$ [[8.02|tol=0.02]] times its fp32 peak.
+For a softmax policy with probabilities $(0.7, 0.2, 0.1)$, the gradient of $\log p_3$ with respect to the third logit is $1 - 0.1 =$ [[0.9]].
 :::
 :::step
-A memory-bound kernel that moves 4 bytes per value in fp32 moves [[2]] in fp16.
+With respect to the first logit it is [[-0.7]].
+:::
+:::step
+$\mathrm{KL}(p \,\|\, p) =$ [[0]] for any distribution $p$.
 :::
 ::::

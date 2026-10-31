@@ -1,11 +1,13 @@
-# Break it: attention without the scale
+# Break it: attention scores in fp16
 
-Your softmax and its backward pass are provided. Implement `saturation(d, scaled, n=16, seed=0)`: draw queries and keys of shape `(n, d)` with unit-normal entries from `np.random.default_rng(seed)`, form the scores (divided by $\sqrt d$ if `scaled`), take the softmax, and return two numbers: the mean over rows of the largest weight, and the mean absolute value of `softmax_backward(P, G)` for a random upstream gradient `G` drawn next from the same generator.
+1. `scores(Q, K, dtype)`: $QK^\top$ with inputs and result in `dtype`, as an fp16 matrix product without scaling computes it.
+2. `scaled_first(Q, K, dtype)`: divide $Q$ by $\sqrt d$ before the product.
+3. `stable_lse(x)`: $\log \sum_j e^{x_j}$ of a vector, computed in float64 after subtracting the maximum, and its gradient, the softmax.
 
-Compare $d = 16$ and $d = 512$, scaled and unscaled. Unscaled, the weights become nearly one-hot and the gradient reaching the scores shrinks about tenfold.
+With large activations, the fp16 scores overflow to infinity; scaling first keeps them finite, and the softmax that follows must still be computed stably.
 
 ## Hints
 
-1. Draw `Q`, then `K`, then `G` with shape `(n, n)`.
-2. `P.max(axis=1).mean()`.
-3. Divide by `np.sqrt(d)` only when `scaled`.
+1. `Q.astype(dtype) @ K.astype(dtype).T`.
+2. Scaling $Q$ by $1/\sqrt d$ is what attention does anyway; doing it before the product protects the range.
+3. The gradient of the log-sum-exp is $e^{x - \text{lse}}$.

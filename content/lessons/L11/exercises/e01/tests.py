@@ -1,18 +1,30 @@
 import sub
 
 
-def test_matmul():
-    assert sub.matmul_cost(64, 512, 512) == (2 * 64 * 512 * 512, 2 * (64 * 512 + 512 * 512 + 64 * 512))
-    assert abs(sub.intensity(sub.matmul_cost(4096, 4096, 4096)) - 4096 / 3) < 1e-9
-    assert sub.matmul_cost(2, 3, 4, bytes_per=4) == (48, 4 * (8 + 12 + 6))
+def reference(vocab, ctx, d, n_layer):
+    shapes = []
+    for _ in range(n_layer):
+        shapes += [(d,), (d,), (d, 3 * d), (3 * d,), (d, d), (d,), (d,), (d,), (d, 4 * d), (4 * d,), (4 * d, d), (d,)]
+    shapes += [(d,), (d,)]
+    count = 0
+    for s in shapes:
+        n = 1
+        for v in s:
+            n *= v
+        count += n
+    return count, count + vocab * d + ctx * d
 
 
-def test_elementwise():
-    assert sub.elementwise_cost(1_000_000, 1, 2, bytes_per=4) == (1_000_000, 12_000_000)
-    f, b = sub.elementwise_cost(10, 8, 1)
-    assert (f, b) == (80, 40)
+def test_counts_match_the_architecture():
+    for args in [(512, 128, 192, 4), (65, 128, 64, 2), (50257, 1024, 768, 12)]:
+        out = sub.count_params(*args)
+        non, total = reference(*args)
+        assert out["non_embedding"] == non and out["total"] == total
+        assert out["approx"] == 12 * args[3] * args[2] ** 2
 
 
-def test_softmax():
-    assert sub.softmax_cost(32, 1000) == (160_000, 128_000)
-    assert abs(sub.intensity(sub.softmax_cost(8, 8, bytes_per=4)) - 5 / 8) < 1e-12
+def test_rule_of_thumb_improves_with_width():
+    small = sub.count_params(65, 128, 64, 2)
+    large = sub.count_params(50257, 2048, 4096, 32)
+    assert abs(small["approx"] / small["non_embedding"] - 1) > 0.01
+    assert abs(large["approx"] / large["non_embedding"] - 1) < 0.001

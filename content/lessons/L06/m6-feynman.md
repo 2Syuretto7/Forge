@@ -1,11 +1,11 @@
-# Explain it plainly: double descent
+# Explain it plainly: why deep networks need residuals and normalization
 
-Explain to someone who learned "more parameters means more overfitting" why a model with many more parameters than training examples can generalize better than one with exactly as many.
+Explain to a programmer who has trained a three-layer network why simply stacking 30 layers fails, and what residual connections and normalization layers each do about it.
 
 - Write 150 to 400 words.
-- Use a concrete example with numbers of points and parameters.
-- Explain what is special about the point where parameters equal data points.
-- Say what the training procedure contributes.
+- Use a concrete picture, such as a message passed along a line of 30 people.
+- Explain what goes wrong in the forward pass and in the backward pass.
+- Mention one trade-off or failure of the fixes.
 
-:::feynman{id=f1 prompt="Explain the double-descent curve: why test error rises as the number of parameters approaches the number of training points, peaks there, and falls again with even more parameters." key_points="Test error is noise plus squared bias plus variance, and the classical U comes from bias falling while variance rises|At the interpolation threshold there is exactly one perfect fit and it needs huge coefficients to pass through every noisy point|Huge coefficients come from a nearly singular design, with a smallest singular value close to zero, which amplifies noise|With more parameters than points, many perfect fits exist and gradient descent from zero picks the smallest one, which spreads the fit out|Regularization such as ridge removes the peak"}
+:::feynman{id=f1 prompt="Explain why a plain 30-layer network trains badly, and what residual connections and normalization layers each contribute to making it trainable." key_points="In a plain deep stack the signal and the gradient are multiplied by many layer Jacobians, so they shrink or grow geometrically with depth|A residual connection adds the input back, so the backward pass always has an identity path that carries the gradient unchanged|Normalization rescales activations to a fixed scale during training, not only at initialization|Pre-norm keeps the skip path clean while post-norm normalizes it at every layer and needs warmup|A concrete trade-off such as batch norm depending on the batch, or the residual stream growing without normalization"}
 :::

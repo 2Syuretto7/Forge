@@ -1,24 +1,27 @@
-# Break it: tiny kernels and needless synchronization
+# Break it: narrow fits and untuned learning rates
 
-## Launch-bound loops
+## Extrapolating a straight line
 
-The fastest way to make a GPU slow is to give it work in tiny pieces. A Python loop over rows that calls a tensor operation per element or per row pays the launch overhead every time, and the GPU spends most of its time idle. The same happens, more mildly, in NumPy: every Python-level operation costs far more than the arithmetic it performs.
+Set the widget to fit runs between $10^{18}$ and $10^{19}$ FLOPs with a pure power law, then widen the range and switch on the floor.
+
+:::widget{name=ScalingFit lo=18 hi=19 fit=pure}
+:::
 
 :::exercise{ref=e11}
 :::
 
-## Synchronizing every step
+## One learning rate for every size
 
-::::predict{id=p5 kind=choice answer=a}
-A training loop logs `loss.item()` after every step. Each step needs 2 ms of CPU time to launch its kernels and 6 ms of GPU time. How much slower is the loop than one that logs only every 100 steps?
+::::predict{id=p5 kind=choice answer=b}
+You sweep five model sizes, all at the learning rate that was best for the smallest. Fitting $L - E = k N^{-a}$ to the results gives an exponent that is:
 
-- About a third slower: 8 ms per step instead of 6.
-- No slower: logging is cheap.
-- Twice as slow.
-- About 100 times slower.
+- Correct, since the learning rate only affects training speed.
+- Too small: the large models are trained at a rate too high for them and look worse than they are.
+- Too large: the large models benefit from the higher rate.
+- Undefined.
 
 :::reveal
-Without synchronization, the CPU issues step $i + 1$ while the GPU runs step $i$, so a step costs $\max(2, 6) = 6$ ms. With `.item()` every step, the CPU waits for the GPU, then the GPU waits while the CPU issues the next step: $2 + 6 = 8$ ms. The loss is the same; only the overlap is lost. When the CPU and GPU times are close, synchronizing every step nearly doubles the time.
+The best rate falls as models grow. At the small model's rate the large models lose some of their advantage, the fitted curve flattens, and you would conclude that scaling up helps less than it does. Exercise 12 measures the size of the error; retune the rate (or use a parametrization in which it transfers across widths) before fitting.
 :::
 ::::
 
@@ -27,6 +30,7 @@ Without synchronization, the CPU issues step $i + 1$ while the GPU runs step $i$
 
 ## What to take away
 
-- Before optimizing a kernel, find out which roof it is under: memory-bound kernels need fewer bytes (fusion, lower precision), not faster arithmetic.
-- Give the GPU large operations; fuse or batch small ones.
-- Keep GPU values on the GPU: log them every so often, never every step.
+- Fit losses in log space, over as wide a range as you can afford, with a floor.
+- Hold out your largest run and predict it before looking.
+- Bootstrap your fits; the constants are less certain than the predictions.
+- Retune the learning rate and schedule length for every size and token count.

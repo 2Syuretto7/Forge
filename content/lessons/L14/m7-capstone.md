@@ -1,19 +1,20 @@
-# Capstone: a GPT with its own tokenizer
+# Capstone: plan a run, then simulate it
 
-In the notebook you train a byte-level BPE tokenizer with 512 tokens on Shakespeare, encode the corpus, train a four-layer GPT with tied embeddings on the tokens, report the validation loss in nats per token and in bits per character, and write the sampling filters. The target is below 2.3 bits per character; the reference settings reach it in a few minutes on a T4.
+The notebook has two parts, and runs on any Colab runtime (CPU is enough).
+
+**The plan.** A 13-billion-parameter model (40 layers, width 5120, 40 heads) is to be trained with sequence length 2048 on 64 GPUs of 80 GB in 8 servers. You choose the degrees of tensor, pipeline and data parallelism, the ZeRO stage, the micro-batch and checkpointing, check the memory per GPU with the planner's formulas, and justify the choice in writing.
+
+**The simulation.** Four CPU processes talk through `torch.distributed` with the gloo backend. You write gradient averaging for data parallelism, ZeRO stage 1 with a reduce-scatter and an all-gather, and a tensor-parallel MLP, and check each against a single-process reference. A last section measures the bytes saved for backward with and without `torch.utils.checkpoint`.
 
 :::exercise{ref=capstone}
 :::
 
-:::colab{notebook=L14}
+:::colab{notebook=L14 runtime=cpu}
 :::
 
 ## When you finish
 
-You can now train a language model end to end. L15 asks how its loss changes with more parameters, more data and more compute; L16 asks what data to feed it; L17 makes the same training run faster in reduced precision.
+You can plan the hardware for a run and implement the communication it needs. L15 runs a real pretraining job and handles what goes wrong during one: spikes, crashes and resumption.
 
-:::edge{to=L15 text="How the loss scales with parameters, data and compute."}
-:::
-
-:::edge{to=L16 text="Which data, and how to prepare it at scale."}
+:::edge{to=L15 text="A real pretraining run, monitored and resumable."}
 :::

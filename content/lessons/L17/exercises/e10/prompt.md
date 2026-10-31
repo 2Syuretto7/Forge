@@ -1,12 +1,9 @@
-# Predicting the speedup
+# RL on arithmetic
 
-1. `amdahl_speedup(fractions, speedups)`: the overall speedup when parts of a run that take the given fractions of the original time are sped up by the given factors.
-2. `t4_part_speedups()`: the speedup bounds on a T4 for matrix products (fp32 cores to fp16 tensor cores) and for memory-bound operations (half the bytes).
-
-If 70 percent of a step is matrix products and 30 percent memory-bound work, what speedup can mixed precision give at most? Compare it with what the capstone measures.
+A policy answers "$a + b \bmod 10$" for digits $a, b$ with logits $\theta[a, b, :]$ over the answer digit. Implement `rl_arithmetic(steps, lr, group, seed, beta=0.0, theta0=None)`: each step, for every one of the 100 prompts, sample `group` answers, reward 1 for the right digit, compute group advantages, and ascend $\sum \text{adv} \cdot \text{score} / \text{group}$; when `beta` is positive, also descend $\beta$ times the gradient of $\mathrm{KL}(\pi \,\|\, \pi_0)$, with $\pi_0$ the initial policy. Return the final logits and the accuracy of the greedy answers.
 
 ## Hints
 
-1. New time $= \sum_i f_i / s_i$; the speedup is its inverse.
-2. The memory-bound part limits the result: even infinitely fast matrix products leave $0.3/2$.
-3. Real tensor-core kernels reach well below their peak, so measured speedups are lower than this bound.
+1. The KL gradient with respect to the logits is $\pi \odot (\log(\pi/\pi_0) - \mathrm{KL})$.
+2. Use one `np.random.default_rng(seed)` for the whole run.
+3. From the uniform policy every prompt's group sometimes contains the right answer, so the signal is there from the first step; harder tasks need a policy that is already sometimes right, which is why RL follows fine-tuning.

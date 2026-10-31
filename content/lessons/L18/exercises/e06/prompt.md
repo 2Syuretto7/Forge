@@ -1,12 +1,13 @@
-# A tensor-parallel MLP
+# Paged KV memory
 
-Megatron-LM splits a transformer's MLP over $t$ GPUs without communicating inside it. The first layer is split by **columns**: rank $r$ computes its own slice of the hidden units, $h_r = \operatorname{ReLU}(x W_{1,r} + b_{1,r})$, and since ReLU is elementwise no exchange is needed. The second layer is split by **rows**: rank $r$ multiplies its hidden slice by its rows $W_{2,r}$, giving a partial output; one all-reduce sums the partial outputs.
+Reserving the maximum context for every sequence wastes most of the cache, because most sequences end early. PagedAttention (vLLM, 2023) stores each sequence's cache in fixed-size pages allocated as it grows, like virtual memory.
 
-1. `tp_mlp_forward(x, W1s, b1s, W2s, b2)`: return $y = \sum_r h_r W_{2,r} + b_2$ and a cache.
-2. `tp_mlp_backward(dy, cache, W1s, W2s)`: per-rank $(\partial W_{1,r}, \partial b_{1,r}, \partial W_{2,r})$, the shared $\partial b_2$, and $\partial x$, which is again a sum over ranks.
+1. `pages_needed(tokens, block)`.
+2. `paged_waste(lengths, block)`: unused token slots when every sequence holds whole pages.
+3. `contiguous_waste(lengths, max_len)`: unused slots when every sequence reserves `max_len`.
 
 ## Hints
 
-1. The cache needs $x$, each rank's pre-activation $z_r$ and hidden slice $h_r$.
-2. $\partial W_{2,r} = h_r^\top dy$ and $\partial z_r = (dy\, W_{2,r}^\top) \odot [z_r > 0]$.
-3. Forward needs one all-reduce (of $y$), backward one (of $\partial x$): two per MLP per pass, whatever $t$.
+1. A sequence wastes at most `block - 1` slots in its last page.
+2. Pages need not be contiguous: a table maps each sequence's logical pages to physical ones.
+3. Less waste means more sequences in the same memory, which means a larger batch and higher throughput.

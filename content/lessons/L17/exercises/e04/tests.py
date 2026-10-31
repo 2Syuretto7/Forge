@@ -1,15 +1,14 @@
 import numpy as np
 import sub
 
-V = [0.01] * 10000
+r = np.array([0.0, 0.0, 1.0, 0.0, 2.0])
+V = np.array([0.5, 0.4, 0.9, 0.3, 1.0, 0.0])
 
 
-def test_naive_stalls():
-    s = sub.naive_sum(V, np.float16)
-    assert isinstance(s, np.float16) and float(s) == 32.0
+def test_limits():
+    assert np.allclose(sub.gae(r, V, 0.9, 0.0), r + 0.9 * V[1:] - V[:-1])
+    assert np.allclose(sub.gae(r, V, 0.9, 1.0), sub.returns(r, 0.9) - V[:-1])
 
 
-def test_repairs():
-    assert abs(float(sub.kahan_sum(V, np.float16)) - 100) < 0.1
-    assert abs(float(sub.wide_accumulator_sum(V, np.float16)) - 100) < 0.1
-    assert abs(float(sub.naive_sum(V, np.float32)) - 100) < 0.01
+def test_returns():
+    assert np.allclose(sub.returns([1, 1, 1], 0.5), [1.75, 1.5, 1.0])

@@ -1,39 +1,41 @@
-# Build: fitting, measuring and selecting
+# Build: three normalizations and a deep stack
 
-Eight exercises: polynomial fits and their train and test curves, a direct simulation of the bias-variance decomposition, ridge with a gradient check, k-fold cross-validation and model selection, minimum-norm interpolation and the implicit regularization of gradient descent, and ridge's effective degrees of freedom.
-
-## Polynomials and the classical U
+## Normalization layers
 
 :::exercise{ref=e01}
 :::
 
+::::predict{id=p3 kind=choice answer=b}
+Batch norm (with $\gamma = 1$, $\beta = 0$, tiny $\epsilon$) receives a batch of exactly two examples. What are its outputs?
+
+- The inputs unchanged.
+- For every feature, $+1$ for the example with the larger value and $-1$ for the other (or 0 for both if they are equal).
+- Zeros.
+- Values that depend on the magnitude of the difference.
+
+:::reveal
+With two values $a > b$, the mean is $(a + b)/2$ and the standard deviation is $(a - b)/2$, so the normalized values are exactly $+1$ and $-1$. Whatever the input, a batch of two keeps only the sign of each difference: batch norm's statistics are only as good as the batch is large.
+:::
+::::
+
 :::exercise{ref=e02}
 :::
-
-## Measuring bias and variance directly
-
-The decomposition is an identity about averages over training sets. Simulate many training sets and you can measure each term.
 
 :::exercise{ref=e03}
 :::
 
-## Regularization
-
 :::exercise{ref=e04}
 :::
 
-:::exercise{ref=e12}
-:::
-
-## Cross-validation and model selection
+## Residual streams
 
 :::exercise{ref=e05}
 :::
 
+## A deep stack in five variants
+
 :::exercise{ref=e06}
 :::
-
-## Interpolation
 
 :::exercise{ref=e07}
 :::

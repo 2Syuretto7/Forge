@@ -1,8 +1,8 @@
-# Capstone: predict a run before you train it
+# Capstone: a pretraining run that survives its own failures
 
-In the notebook you train twenty small character-level GPTs on Tiny Shakespeare: four layers at five widths, from 51 thousand to 790 thousand non-embedding parameters, each at four token budgets from half a million to four million characters. You fit $L(N, D) = E + A N^{-\alpha} + B D^{-\beta}$ to them with the method of exercise 5, derive the compute-optimal frontier, and then write down the predicted loss of a model more than twice as large as any in the sweep **before** training it.
+You write the pieces of a real training script (the schedule, atomic checkpoints with every piece of state, the spike check, and an evaluation harness with bootstrap intervals), check exact resume on a tiny model, and run the nanoGPT-sized character model (6 layers, width 384, 10.7 million parameters) for 5,000 steps on Tiny Shakespeare. At data position 3,000 the stream turns into random characters for ten batches; your detector must catch it, restore the checkpoint from before, skip the data and continue. On a T4 the run takes roughly 15 to 25 minutes: Tiny Shakespeare supports no longer run without overfitting. The same script runs for hours on a larger corpus, and with checkpoints on Google Drive it resumes after a disconnected session.
 
-At this scale every run is still early in training, where the loss falls roughly linearly in the logarithm of the tokens, so the floor $E$ is not determined and the fit pins it at zero; the exponents describe this regime only. That is a finding, not a failure: it is exactly the situation in which extrapolating far beyond the sweep would mislead. The autograder checks that the fit describes the sweep (relative RMS error below 3%), that the prediction was recorded before the held-out run started, and that it lands within 8% of the measured loss.
+The autograder checks the schedule, bitwise exact resume, the checkpoint contents, that the spike was flagged within two batches of the corruption and rolled back to a checkpoint before it, that the logged steps are complete and contain no corrupted data, a final validation loss below **1.70** that is lower than before the spike, and the report.
 
 :::exercise{ref=capstone}
 :::
@@ -12,10 +12,7 @@ At this scale every run is still early in training, where the loss falls roughly
 
 ## When you finish
 
-You can now size a training run from a budget and check the plan against small experiments. L18 asks what happens when the model you sized no longer fits on one GPU; L19 runs a real pretraining job and watches it for the failures that small sweeps never show.
+You have run a pretraining job the way large ones are run, at small scale. L16 starts from a pretrained model and adapts it with fine-tuning; L20 runs the whole pipeline end to end.
 
-:::edge{to=L18 text="When the model no longer fits on one GPU."}
-:::
-
-:::edge{to=L19 text="A real pretraining run, monitored and recovered."}
+:::edge{to=L16 text="Fine-tuning the pretrained model."}
 :::

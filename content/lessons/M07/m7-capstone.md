@@ -7,7 +7,7 @@ Large language models need to know where each token is. The rotary encoding (RoP
 
 ## When you finish
 
-You have used rotation, complex numbers and Euler's formula on the exact mechanism inside many current language models. M09 makes vectors and dot products general, M10 makes rotations into matrices, and in L13 the rotary encoding sits inside a full attention layer.
+You have used rotation, complex numbers and Euler's formula on the exact mechanism inside many current language models. M09 makes vectors and dot products general, M10 makes rotations into matrices, and in L09 the rotary encoding sits inside a full attention layer.
 
-:::edge{to=L13 text="the rotary encoding inside an attention layer."}
+:::edge{to=L09 text="the rotary encoding inside an attention layer."}
 :::

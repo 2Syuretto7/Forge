@@ -1,17 +1,21 @@
 import numpy as np
 
 
-def design(x, degree):
-    return np.vander(np.asarray(x, dtype=float), degree + 1, increasing=True)
+def batchnorm_forward(x, gamma, beta, eps=1e-5):
+    """Normalize each feature (column) over the batch, then scale and shift. Return (y, cache)."""
+    mu = x.mean(axis=0)
+    var = x.var(axis=0)
+    r = 1.0 / np.sqrt(var + eps)
+    xh = (x - mu) * r
+    return gamma * xh + beta, (xh, r, gamma)
 
 
-def fit_poly(x, y, degree):
-    return np.linalg.lstsq(design(x, degree), y, rcond=None)[0]
-
-
-def predict(coef, x):
-    return design(x, len(coef) - 1) @ coef
-
-
-def mse(yhat, y):
-    return float(np.mean((np.asarray(yhat) - np.asarray(y)) ** 2))
+def batchnorm_backward(dy, cache):
+    """Return (dx, dgamma, dbeta)."""
+    xh, r, gamma = cache
+    n = dy.shape[0]
+    dgamma = (dy * xh).sum(axis=0)
+    dbeta = dy.sum(axis=0)
+    dxh = dy * gamma
+    dx = r / n * (n * dxh - dxh.sum(axis=0) - xh * (dxh * xh).sum(axis=0))
+    return dx, dgamma, dbeta

@@ -1,9 +1,8 @@
 import sub
 
 
-def test_audit():
-    good = [(s, sub.expected_lr(s, 1e-3, 200, 6000)) for s in range(1, 6001, 7)]
-    assert sub.audit_lr(good, 1e-3, 200, 6000) is None
-    bad = [(s, sub.expected_lr(s if s <= 3000 else s - 3000, 1e-3, 200, 6000)) for s in range(1, 6001)]
-    assert sub.audit_lr(bad, 1e-3, 200, 6000) == 3001
-    assert sub.expected_lr(200, 1e-3, 200, 6000) == 1e-3
+def test_memorizes_noise():
+    train, test = sub.random_feature_probe(100, 1000, 200)
+    assert train == 1.0 and 0.4 < test < 0.6
+    train2, _ = sub.random_feature_probe(1000, 1000, 20)
+    assert train2 < 0.7

@@ -1,12 +1,14 @@
-# The variance formula on both sides of the threshold
+# Residual branches without normalization
 
-Check Section 5's exact formulas by simulation, with no signal: $y = \epsilon$, $\sigma = 1$, features standard normal.
+The unnormalized residual stack (`res`) explodes at initialization. Fix it without any normalization:
 
-- `variance_theory(n, p)`: $p/(n - p - 1)$ for $p < n - 1$, $n/(p - n - 1)$ for $p > n + 1$, and `inf` otherwise.
-- `variance_sim(n, p, trials, seed)`: for each trial draw `X` `(n, p)` then `y` `(n,)` from one `np.random.default_rng(seed)`; fit least squares if $p < n$ and the minimum-norm interpolant if $p > n$; return the average of $\|\hat w\|^2$.
+1. `branch_scale_for(depth)` returns $1/\sqrt{\text{depth}}$, the factor that keeps $(1 + \alpha^2)^{\text{depth}}$ bounded.
+2. `compare_branch_scaling(depth=20, width=32, steps=300, lr=3e-3, seed=0)` trains `res` with branch scale 1 and with `branch_scale_for(depth)` (your `train` is provided) and returns `{"unscaled": loss, "scaled": loss}`, each the mean of the last 30 minibatch losses.
+
+Scaling or zero-initializing the last layer of each branch is how very deep networks are trained without (or alongside) normalization.
 
 ## Hints
 
-1. Least squares: `np.linalg.lstsq(X, y, rcond=None)[0]`.
-2. Minimum norm: `X.T @ np.linalg.solve(X @ X.T, y)`.
-3. Heavy tails near the threshold make simulations noisy; the tests stay a few features away from it.
+1. Pass the scale through `train(..., branch_scale=s)`; `init_stack` multiplies every `W{l}` by it.
+2. Use the same seed for both runs so only the scale differs.
+3. Compare the first few losses of the two runs as well: the unscaled one starts in the tens of thousands.

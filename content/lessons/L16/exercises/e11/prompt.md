@@ -1,12 +1,12 @@
-# Break it: a leaked test set
+# Break it: training on the prompt
 
-`make_docs(n, seed)` generates documents from one random word chain, so documents share statistics but not text. Train an $n$-gram language model on training documents, and evaluate it on held-out documents, once clean and once with the evaluation documents leaked into training.
+Leave the mask out and the model is also trained to produce the prompts, and with long prompts most of its gradient goes there. A unigram model shows the cost in one line: fit next-token frequencies on everything, and the response distribution gets diluted by the prompt's.
 
-1. `train_counts(docs, n)`: pad each document with $n - 1$ `"<s>"` tokens, and count every context (the previous $n - 1$ words) and every (context, next word). Return the two dictionaries.
-2. `avg_logloss(model, docs, n, vocab_size, k=0.1)`: the mean of $-\ln p(w \mid c)$ over every word of `docs`, with $p(w \mid c) = \bigl(\text{count}(c, w) + k\bigr) / \bigl(\text{count}(c) + k V\bigr)$.
+1. `fit_unigram(tokens, mask, vocab)`: token frequencies over the positions where `mask` is 1, with add-one smoothing.
+2. `response_ce(p, tokens, mask)`: the mean $-\ln p(t)$ over the masked-in tokens.
 
 ## Hints
 
-1. Keys are tuples: the context `tuple(w[i - n + 1:i])` and the $n$-gram `context + (w[i],)`.
-2. Add-$k$ smoothing keeps unseen words possible, so the loss stays finite.
-3. A model with long contexts memorizes the exact sequences it saw: on leaked documents its loss collapses, which says nothing about new text. The tests also check what this does to model selection: the chain generating the documents is first order, so the bigram model is the right one, yet with the leak a 4-gram model looks far better.
+1. `np.bincount(..., minlength=vocab)` counts tokens.
+2. Fitting with the response mask estimates the response distribution; fitting with all ones estimates a mixture of prompts and responses.
+3. The longer the prompts, the worse the unmasked fit is on responses.

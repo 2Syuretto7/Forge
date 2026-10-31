@@ -1,14 +1,13 @@
-# Exact duplicates and boilerplate
+# The best low-rank update
 
-Before near-duplicates, the cheap wins: identical documents and lines repeated across many pages (navigation menus, cookie notices, licence footers).
+LoRA restricts the update to rank $r$. By the Eckart-Young theorem (M14's SVD), the best rank-$r$ approximation of a matrix in Frobenius norm is its truncated SVD, and the error is set by the discarded singular values.
 
-1. `normalize(doc)`: lowercase and collapse whitespace.
-2. `exact_dedup(docs)`: the indices of the first occurrence of each document, comparing SHA-1 digests of the normalized text.
-3. `boilerplate_lines(docs, min_docs)`: the set of stripped, non-empty lines that occur in at least `min_docs` different documents (count each line once per document).
-4. `strip_lines(doc, lines)`: the document without the lines whose stripped text is in `lines`.
+1. `best_rank_r(M, r)`: the truncated SVD.
+2. `relative_error(M, r)`: $\sqrt{\sum_{i > r} \sigma_i^2 / \sum_i \sigma_i^2}$.
+3. `rank_for(M, tol)`: the smallest rank whose relative error is at most `tol`.
 
 ## Hints
 
-1. `hashlib.sha1(s.encode("utf-8")).hexdigest()` gives a fixed-size key; storing digests instead of documents keeps memory small.
-2. Count lines through a per-document set so that a line repeated within one document counts once.
-3. Keep blank lines in `strip_lines`; only remove the listed ones.
+1. `np.linalg.svd(M, full_matrices=False)` returns $U$, the singular values and $V^\top$.
+2. `(U[:, :r] * S[:r]) @ Vt[:r]` keeps the top $r$ components.
+3. Fine-tuning updates of large models are often close to low rank, which is why small $r$ works.

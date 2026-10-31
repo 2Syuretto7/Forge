@@ -77,7 +77,7 @@ The trace (the sum of the diagonal) satisfies $\operatorname{tr}(MN) = \operator
 
 In two dimensions the subspace is a line, and the dotted segment is the residual, perpendicular to it. Move $y$ anywhere: the right angle stays.
 
-:::edge{to=L05 text="linear regression is this problem; L05 explains why squared error is the natural loss."}
+:::edge{to=L01 text="linear regression is this problem; L01 explains why squared error is the natural loss."}
 :::
 
 :::edge{to=M22 text="variance is a squared length and covariance an inner product, so fitting and statistics share this geometry."}

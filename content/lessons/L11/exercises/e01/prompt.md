@@ -1,15 +1,15 @@
-# Counting FLOPs and bytes
+# Counting parameters
 
-Return `(flops, bytes)` for each operation, counting the minimum traffic: every input read once and every output written once, at `bytes_per` bytes per number.
+Implement `count_params(vocab, ctx, d, n_layer)` for the L10 GPT. Return a dictionary with:
 
-1. `matmul_cost(m, n, k, bytes_per=2)`: $C = AB$ with $A$ of shape $(m, k)$ and $B$ of shape $(k, n)$; a multiply-add counts as 2 FLOPs.
-2. `elementwise_cost(n_elems, flops_per_elem, n_inputs, bytes_per=2)`: reads `n_inputs` arrays and writes one.
-3. `softmax_cost(rows, cols, bytes_per=2)`: 5 FLOPs per element; the input is read once and the output written once.
+- `"total"`: every parameter, with the output layer tied to the token embedding (so it adds none);
+- `"non_embedding"`: everything except the token and position embeddings;
+- `"approx"`: the rule of thumb $12\,n_\text{layer}\,d^2$.
 
-`intensity(cost)` (given) divides the two.
+Each block has two layer norms (a weight and a bias of size $d$ each), a fused $d \to 3d$ projection, a $d \to d$ output projection, and an MLP $d \to 4d \to d$; every linear layer has a bias. A final layer norm follows the blocks.
 
 ## Hints
 
-1. The matmul reads $mk + kn$ values and writes $mn$.
-2. Each output value of $C$ is a dot product of length $k$: $k$ multiplies and $k$ adds.
-3. Check: a square fp16 matmul has intensity $n/3$.
+1. A linear layer from $m$ to $n$ features has $mn + n$ parameters; a layer norm over $d$ features has $2d$.
+2. One block has $12d^2 + 13d$ parameters.
+3. Scaling laws use the non-embedding count: embeddings are lookups, not matrix multiplications, and contribute almost no FLOPs.

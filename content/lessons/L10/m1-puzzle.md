@@ -1,31 +1,34 @@
-# Puzzle: more layers, worse training
+# Puzzle: what is a token?
 
-The L07 network had three layers and reached about 90 percent test accuracy. Make it deeper: 20 hidden layers of width 32, He initialization, Adam, everything else the same.
+Your L09 model read one character at a time: 65 possible symbols, and a context of 128 characters, about two lines of a play. A word-level model would see much further back with the same context length, but its vocabulary would be every word in the language, and any word it never saw in training would be unreadable.
 
 ::::predict{id=p1 kind=choice answer=c}
-After 300 Adam steps, how does the 20-layer plain network's training loss compare with the 3-layer network's?
+Which tokenization does GPT-style training use?
 
-- Lower: more layers means more capacity, and Adam handles the rest.
-- About the same: the extra layers learn the identity.
-- Much higher: the deep network trains worse, although it could represent everything the shallow one does.
-- It diverges to infinity.
+- Characters, because every string is covered.
+- Whole words, with a special token for unknown words.
+- Pieces learned from data: frequent sequences of bytes become single tokens, and anything else falls back to individual bytes.
+- A fixed list of English syllables.
 
 :::reveal
-It trains much worse: in this lesson's experiments the 20-layer plain network ends near a loss of 1.2, while the same depth with residual connections and layer norm reaches about 0.17. A deep network could copy the shallow one by making the extra layers identities, but gradient descent does not find that solution easily. This **degradation problem** is what residual networks (He et al., 2015) were invented to solve.
+Byte-pair encoding starts from the 256 possible bytes and learns merges of frequent adjacent pairs: " the" becomes one token, a rare name stays several. Every string is a sequence of UTF-8 bytes, so nothing is ever unknown. The vocabulary size is a dial between characters (small vocabulary, long sequences) and words (huge vocabulary, short sequences).
 :::
 ::::
 
-Watch what happens inside a deep stack in the widget: the scale of the activations from layer to layer, and the scale of the gradients flowing back.
+Step through the merges in the widget, and switch word splitting off to see merges that cross spaces.
 
-:::widget{name=ActivationStats depth=20 init=he act=relu}
+:::widget{name=TokenizerStepper}
 :::
 
-Now turn on the residual connections without normalization. Each layer adds its output to its input.
+::::predict{id=p2 kind=choice answer=b}
+A model with a BPE vocabulary of 512 reports a validation loss of 2.4 nats per token, and a character-level model reports 1.6 nats per character on the same text. Which is better?
 
-::::predict{id=p2 kind=numeric answer=1024 tol=150}
-Suppose each layer adds a branch whose output is uncorrelated with its input, has zero mean, and has the same second moment as the input. By what factor does the root mean square of the stream grow over 20 layers?
+- The character model: 1.6 is less than 2.4.
+- You cannot tell until you know how many characters a token covers on average.
+- The BPE model, because tokens are better than characters.
+- They are equal, because both use cross-entropy.
 
 :::reveal
-Each layer doubles the second moment, $\mathbb E[(h + F)^2] = \mathbb E[h^2] + \mathbb E[F^2] = 2\,\mathbb E[h^2]$, so after 20 layers it is $2^{20}$ times larger and the RMS is $2^{10} = 1024$ times larger. Residual connections fix the gradient but, unscaled, blow up the forward pass. Normalization or scaled branches fix that, which is the subject of this lesson.
+The losses are per token and per character, different units. If a BPE token covers 1.9 characters on average, 2.4 nats per token is $2.4/1.9 \approx 1.26$ nats per character, better than 1.6. Divide by the characters per token, then by $\ln 2$, to get bits per character, the unit that compares models with different tokenizers.
 :::
 ::::

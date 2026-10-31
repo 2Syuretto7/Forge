@@ -1,51 +1,26 @@
 import numpy as np
 import sub
 
-X, Y = sub.make_digits(6, 0)
+
+def test_probs():
+    ids = [0, 1, 0, 1, 1, 2]
+    P = sub.bigram_probs(ids, 3, alpha=1.0)
+    assert np.allclose(P.sum(axis=1), 1)
+    assert np.isclose(P[0, 1], (2 + 1) / (2 + 3)) and np.isclose(P[2, 0], 1 / 3)
+    P0 = sub.bigram_probs(ids, 3, alpha=0.0 + 1e-12)
+    assert np.isclose(P0[1, 0], 1 / 3, atol=1e-9)
 
 
-def _check(mode):
-    p = sub.init_stack(3, 8, seed=1)
-    for k in p:
-        if k[0] in "gb":
-            p[k] = p[k] + 0.1 * np.arange(p[k].size)
-    _, g = sub.stack_loss_and_grads(p, X, Y, 3, mode)
-    assert sorted(g) == sorted(p)
-    for k in ["Win", "W0", "W2", "g1", "b2", "gf", "bf", "Wout"]:
-        num = np.zeros_like(p[k])
-        for idx in list(np.ndindex(p[k].shape))[:12]:
-            old = p[k][idx]
-            p[k][idx] = old + 1e-6
-            lp, _ = sub.stack_loss_and_grads(p, X, Y, 3, mode)
-            p[k][idx] = old - 1e-6
-            lm, _ = sub.stack_loss_and_grads(p, X, Y, 3, mode)
-            p[k][idx] = old
-            num[idx] = (lp - lm) / 2e-6
-            assert abs(num[idx] - g[k][idx]) < 1e-6, (mode, k, idx)
+def test_loss_units():
+    ids = [0, 1, 0, 1]
+    P = np.full((2, 2), 0.5)
+    assert np.isclose(sub.cross_entropy(ids, P), np.log(2))
+    assert np.isclose(sub.perplexity(np.log(2)), 2.0)
+    assert np.isclose(sub.bits_per_char(1.5, 1000, 2000), 1.5 / 2 / np.log(2))
 
 
-def test_grad_plain():
-    _check("plain")
-
-
-def test_grad_plain_ln():
-    _check("plain_ln")
-
-
-def test_grad_res():
-    _check("res")
-
-
-def test_grad_pre():
-    _check("pre")
-
-
-def test_grad_post():
-    _check("post")
-
-
-def test_forward_shapes():
-    p = sub.init_stack(4, 16)
-    for mode in sub.MODES:
-        logits, hidden, _ = sub.stack_forward(p, X, 4, mode)
-        assert logits.shape == (6, 10) and hidden.shape == (6, 16)
+def test_validation_is_worse_than_training():
+    rng = np.random.default_rng(6)
+    ids = rng.integers(0, 20, size=400)
+    P = sub.bigram_probs(ids[:300], 20)
+    assert sub.cross_entropy(ids[300:], P) > sub.cross_entropy(ids[:300], P)

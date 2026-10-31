@@ -1,15 +1,27 @@
-# Scale and measure: memory and speed
+# Scale it: DPO and verifiable rewards
+
+## DPO
+
+::::predict{id=p3 kind=choice answer=b}
+DPO and RLHF with PPO are trained on the same preference data with the same $\beta$. In the limit of unlimited data and optimization, their policies:
+
+- Differ, because DPO has no reward model.
+- Are the same: both reach the KL-regularized optimum of the Bradley-Terry reward.
+- Differ, because DPO cannot use a KL penalty.
+- Are the same only if $\beta = 1$.
+
+:::reveal
+DPO is derived from the same objective: its loss is the Bradley-Terry likelihood written in terms of the policy that would be optimal for that reward. In practice they differ because data and optimization are finite, PPO samples new responses while DPO only sees the dataset, and the reward model generalizes differently from the implicit one.
+:::
+::::
+
+:::exercise{ref=e08}
+:::
+
+## Rewards you can check
 
 :::exercise{ref=e09}
 :::
-
-::::predict{id=p4 kind=numeric answer=112 tol=2}
-How many gigabytes of weights, gradients and Adam state does training a 7-billion-parameter model need in mixed precision, before any activations?
-
-:::reveal
-$7 \times 10^9 \times 16$ bytes $= 112$ GB: more than an 80 GB GPU holds, before a single activation is stored. Mixed precision does not shrink this; L18 shows how to split it across GPUs.
-:::
-::::
 
 :::exercise{ref=e10}
 :::

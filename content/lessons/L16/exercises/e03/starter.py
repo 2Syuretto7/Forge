@@ -1,20 +1,12 @@
-def candidate_probability(s, bands, rows):
-    """Probability that two documents with Jaccard similarity s share at least one band, with the
-    signature split into `bands` bands of `rows` rows."""
+import numpy as np
+
+
+def lora_forward(x, W0, A, B, alpha):
+    """y = x W0^T + (alpha / r) (x A^T) B^T, with the frozen weight W0 (out, in), A (r, in) and
+    B (out, r)."""
     raise NotImplementedError
 
 
-def dprob_ds(s, bands, rows):
-    """The derivative of candidate_probability with respect to s."""
-    raise NotImplementedError
-
-
-def threshold(bands, rows):
-    """The similarity where the S-curve is steepest, approximately (1 / bands) ** (1 / rows)."""
-    raise NotImplementedError
-
-
-def choose_bands(num_perm, target):
-    """Among the (bands, rows) with bands * rows == num_perm, the pair whose threshold is closest
-    to target."""
+def lora_backward(dy, x, W0, A, B, alpha):
+    """Gradients of the loss with respect to A, B and x, given dL/dy; W0 is frozen and gets none."""
     raise NotImplementedError

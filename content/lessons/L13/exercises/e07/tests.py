@@ -1,25 +1,18 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(7)
+STEP = 2.0 ** -7
 
 
-def test_position_zero_and_norm():
-    X = rng.normal(size=(4, 8))
-    assert np.allclose(sub.rope(X, np.zeros(4)), X)
-    R = sub.rope(X, np.array([1, 5, 20, 300]))
-    assert np.allclose(np.linalg.norm(R, axis=1), np.linalg.norm(X, axis=1))
+def test_unbiased():
+    rng = np.random.default_rng(0)
+    x = np.full(20000, 1.0 + 0.3 * STEP)
+    r = sub.stochastic_round(x, STEP, rng)
+    assert set(np.unique(r)) == {1.0, 1.0 + STEP}
+    assert abs(r.mean() - x[0]) < 3e-4
 
 
-def test_relative_positions():
-    q, k = rng.normal(size=(1, 16)), rng.normal(size=(1, 16))
-    def score(m, n):
-        return float((sub.rope(q, np.array([m])) @ sub.rope(k, np.array([n])).T)[0, 0])
-    assert np.isclose(score(3, 7), score(103, 107))
-    assert np.isclose(score(0, 4), score(50, 54))
-    assert not np.isclose(score(3, 7), score(3, 8))
-
-
-def test_single_pair():
-    x = np.array([[1.0, 0.0]])
-    assert np.allclose(sub.rope(x, np.array([2.0])), [[np.cos(2), np.sin(2)]])
+def test_small_updates():
+    assert sub.accumulate(1.0, 1e-3, 1000, STEP, "nearest") == 1.0
+    runs = [sub.accumulate(1.0, 1e-3, 1000, STEP, "stochastic", np.random.default_rng(s)) for s in range(10)]
+    assert abs(np.mean(runs) - 2.0) < 0.05

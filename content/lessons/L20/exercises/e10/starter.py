@@ -1,16 +1,19 @@
-import numpy as np
+import hashlib
+import json
 
 
-def soften(logits, T):
-    """softmax(logits / T)."""
+def digest(obj):
+    """The first 12 hex characters of the SHA-256 of obj as sorted JSON."""
     raise NotImplementedError
 
 
-def entropy(p):
+def make_record(stage, input_digest, config, output):
+    """A manifest record for one stage: its name, the digest of what it read, and the digests of
+    its configuration and of what it wrote."""
     raise NotImplementedError
 
 
-def topk_teacher(p, k):
-    """Keep the teacher's k largest probabilities and renormalize them (storing the teacher's full
-    distribution for every token of a corpus costs vocabulary-size numbers per token)."""
+def check_chain(records, first_input):
+    """Index of the first record whose input is not the output of the record before it (or
+    first_input for the first record), or None if the chain is intact."""
     raise NotImplementedError

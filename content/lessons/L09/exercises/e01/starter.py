@@ -1,11 +1,11 @@
 import numpy as np
 
 
-def quad_fg(A, b, x):
-    """f(x) = 0.5 x^T A x - b^T x and its gradient, for symmetric A."""
+def softmax_rows(S):
+    """Softmax of every row, stable for large entries; -inf entries get weight 0."""
     raise NotImplementedError
 
 
-def gd(grad, x0, lr, steps):
-    """Gradient descent from x0. Return all iterates, shape (steps + 1, d)."""
+def softmax_backward(P, dP):
+    """Given P = softmax_rows(S) and dL/dP, return dL/dS."""
     raise NotImplementedError

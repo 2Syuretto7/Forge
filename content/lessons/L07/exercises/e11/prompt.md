@@ -1,14 +1,14 @@
-# Break it: dead ReLUs
+# Break it: Python-level loops
 
-Measure how many ReLU units are dead, and show that dead units receive exactly zero gradient.
+1. `row_norms_loop(X)`: the Euclidean norm of every row of `X`, computed with two nested Python loops, one multiply and add per element.
+2. `row_norms_vector(X)`: the same with one vectorized expression.
+3. `time_per_call(f, X, min_time=0.02)`: call `f(X)` 1, 2, 4, ... times in a row until one batch takes at least `min_time` seconds by `time.perf_counter`, and return that batch's time divided by its number of calls. Browser clocks tick in steps of up to a tenth of a millisecond, so a single fast call can measure as zero.
+4. `overhead_ratio(rows=200, cols=100, repeats=3)`: on `np.random.default_rng(0).normal(size=(rows, cols))`, the best of `repeats` measurements of the loop version's time per call divided by that of the vectorized one.
 
-- `dead_fraction(W1, b1, X)`: the fraction of hidden units whose pre-activation $XW_1 + b_1$ is $\le 0$ for **every** row of `X`.
-- `first_layer_grads(params, X, y)`: the gradients of `W1` and `b1` for a `2 -> h -> 3` ReLU network (copy your `loss_and_grads`); return `(dW1, db1)`.
-
-The tests kill most units with a large negative bias and check that their gradient columns are exactly zero.
+Each loop iteration is one interpreted operation on one number, much as each eager PyTorch call is one kernel launch on one tensor. The ratio is the cost of overhead.
 
 ## Hints
 
-1. `active = (X @ W1 + b1) > 0`; a unit is dead if `active[:, j]` is all false.
-2. Dead columns of `dW1` and entries of `db1` must be exactly `0.0`, not merely small.
-3. A large negative bias is the easiest way to kill a unit; a destructive learning-rate step does the same in practice.
+1. Index with `X[i, j]` inside the loops.
+2. `np.sqrt((X * X).sum(axis=1))` for the vectorized version.
+3. Repeating a fast call until the total is long compared with the clock's step, then taking the best of several such measurements, removes both rounding and noise (this is what `timeit` does).

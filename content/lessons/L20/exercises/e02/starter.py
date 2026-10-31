@@ -1,9 +1,23 @@
-import numpy as np
+import hashlib
 
 
-def build_example(prompt, response, bos, sep, eos, pad, max_len):
-    """Token ids [bos] + prompt + [sep] + response + [eos], truncated to max_len + 1 and padded with
-    pad. Return (inputs, targets, mask), each of length max_len: inputs are the first max_len ids,
-    targets the same ids shifted left by one, and mask is 1 exactly where the target is a response
-    token or the eos."""
+def normalize(doc):
+    return " ".join(doc.lower().split())
+
+
+def ngrams(text, n):
+    w = text.lower().split()
+    return {tuple(w[i:i + n]) for i in range(len(w) - n + 1)}
+
+
+def clean(docs, min_len=50, min_alpha=0.6):
+    """Indices of the documents kept: drop every document whose normalized text was seen
+    before, then those shorter than min_len characters or with a fraction of letters below
+    min_alpha."""
+    raise NotImplementedError
+
+
+def contaminated(train_docs, test_docs, n=8):
+    """Indices of the test documents that share at least one word n-gram with the training
+    documents."""
     raise NotImplementedError

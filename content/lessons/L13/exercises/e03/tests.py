@@ -1,29 +1,15 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(3)
+
+def test_ulp():
+    assert sub.ulp(1.0) == 2.0 ** -10 and sub.ulp(2048.0) == 2.0 and sub.ulp(1.5) == 2.0 ** -10
+    assert sub.ulp(1.0, 8, 7) == 2.0 ** -7
+    assert sub.ulp(1e-7) == 2.0 ** -24
 
 
-def _check(causal):
-    Q, K, V = rng.normal(size=(5, 4)), rng.normal(size=(5, 4)), rng.normal(size=(5, 3))
-    G = rng.normal(size=(5, 3))
-    O, P = sub.attention(Q, K, V, causal=causal)
-    grads = sub.attention_backward(G, Q, K, V, P)
-    f = lambda Q, K, V: float(np.sum(sub.attention(Q, K, V, causal=causal)[0] * G))
-    for pos, (arr, g) in enumerate(zip((Q, K, V), grads)):
-        num = np.zeros_like(arr)
-        for idx in np.ndindex(arr.shape):
-            args = [Q.copy(), K.copy(), V.copy()]
-            args[pos][idx] += 1e-6
-            fp = f(*args)
-            args[pos][idx] -= 2e-6
-            num[idx] = (fp - f(*args)) / 2e-6
-        assert np.allclose(g, num, atol=1e-7), (causal, pos)
-
-
-def test_grad_causal():
-    _check(True)
-
-
-def test_grad_full():
-    _check(False)
+def test_exact_integers():
+    assert sub.largest_exact_integer(10) == 2048
+    assert float(np.float16(2048) + np.float16(1)) == 2048.0
+    assert float(np.float16(2047) + np.float16(1)) == 2048.0
+    assert sub.largest_exact_integer(23) == 2 ** 24 and float(np.float32(2 ** 24) + np.float32(1)) == 2.0 ** 24

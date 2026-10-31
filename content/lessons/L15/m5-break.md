@@ -1,27 +1,29 @@
-# Break it: narrow fits and untuned learning rates
+# Break it: silent resume bugs
 
-## Extrapolating a straight line
+The worst failures do not crash. A run that resumes with the wrong data order or the wrong learning rate keeps training, its loss looks plausible, and its results can never be reproduced.
 
-Set the widget to fit runs between $10^{18}$ and $10^{19}$ FLOPs with a pure power law, then widen the range and switch on the floor.
-
-:::widget{name=ScalingFit lo=18 hi=19 fit=pure}
-:::
+## The data order
 
 :::exercise{ref=e11}
 :::
 
-## One learning rate for every size
+## The schedule
 
-::::predict{id=p5 kind=choice answer=b}
-You sweep five model sizes, all at the learning rate that was best for the smallest. Fitting $L - E = k N^{-a}$ to the results gives an exponent that is:
+Compare the healthy run with the learning-rate bug in the widget, with the lower panel on the learning rate.
 
-- Correct, since the learning rate only affects training speed.
-- Too small: the large models are trained at a rate too high for them and look worse than they are.
-- Too large: the large models benefit from the higher rate.
-- Undefined.
+:::widget{name=LossSpikeExplorer run=lr_bug compare=healthy}
+:::
+
+::::predict{id=p4 kind=choice answer=a}
+A run is resumed at step 3000 of 6000, but its scheduler object is rebuilt without restoring its step count. What happens to the learning rate?
+
+- It goes through warmup again from almost zero and returns to the peak, in the middle of training.
+- Nothing: the schedule is stored in the optimizer.
+- It stays at the value it had at step 3000.
+- It drops to zero.
 
 :::reveal
-The best rate falls as models grow. At the small model's rate the large models lose some of their advantage, the fitted curve flattens, and you would conclude that scaling up helps less than it does. Exercise 12 measures the size of the error; retune the rate (or use a parametrization in which it transfers across widths) before fitting.
+A scheduler that counts its own calls restarts from zero, so the run repeats warmup and then sits at the peak rate when it should be decaying: a learning-rate bug introduced by a restart. Computing the rate from the step alone (exercise 5), and auditing the logged rates after every resume (exercise 12), removes the bug and catches it.
 :::
 ::::
 
@@ -30,7 +32,7 @@ The best rate falls as models grow. At the small model's rate the large models l
 
 ## What to take away
 
-- Fit losses in log space, over as wide a range as you can afford, with a floor.
-- Hold out your largest run and predict it before looking.
-- Bootstrap your fits; the constants are less certain than the predictions.
-- Retune the learning rate and schedule length for every size and token count.
+- Log the loss, the gradient norm before clipping, the learning rate and throughput every step, and the validation loss with an interval regularly.
+- Checkpoint everything the next step depends on, atomically, and test exact resume.
+- Detect spikes against a trailing window; recover by restoring a checkpoint before the spike and skipping the data around it.
+- After every resume, check the data order and the learning rate against an uninterrupted run.

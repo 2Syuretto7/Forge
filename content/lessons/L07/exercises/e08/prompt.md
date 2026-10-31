@@ -1,13 +1,11 @@
-# A ReLU network built by hand
+# Host-to-device transfers
 
-Section 2 showed how to write any piecewise linear interpolant as a one-hidden-layer ReLU network. Build it explicitly, with no training.
-
-- `hinge_network(knots, values)`: knots $t_0 < \dots < t_k$ and target values there. Return `(w, b, a, c)` for $f(x) = c + \sum_j a_j\,\max(0, w_j x + b_j)$ that equals linear interpolation on $[t_0, t_k]$. Use one unit with $w = 1, b = -t_0$ carrying the first slope, and one unit per interior knot with output weight equal to the change of slope.
-- `evaluate(params, x)`.
-- `max_error(f, n_pieces)`: for $f$ on $[-1, 1]$ and `n_pieces` equal pieces, build the network from $f$ at the knots and return the largest error on a grid of 2,001 points.
+1. `transfer_time(nbytes, bw, latency_s=10e-6)`: a fixed latency plus bytes over bandwidth.
+2. `effective_bandwidth(nbytes, bw, latency_s=10e-6)`: bytes divided by that time. Small copies never reach the link's bandwidth.
+3. `input_pipeline_time(batch_bytes, compute_s, bw, overlap)`: the time per training step when each batch must be copied first; without overlap, copy then compute; with overlap (pinned memory and `non_blocking=True`, copying the next batch during this step), the larger of the two.
 
 ## Hints
 
-1. Slopes: `np.diff(values) / np.diff(knots)`.
-2. Output weights: the first slope, then `np.diff(slopes)`.
-3. `c = values[0]`.
+1. PCIe 3.0 x16 peaks near 16 GB/s; about 12 GB/s is typical from pinned memory.
+2. Half the link's bandwidth is reached when `nbytes / bw` equals the latency.
+3. Overlap hides the copy completely only when it is shorter than the compute.

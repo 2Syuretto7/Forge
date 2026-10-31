@@ -1,14 +1,16 @@
 import numpy as np
 
 
-def global_norm(grads):
-    """The L2 norm of all gradient arrays taken together."""
-    return float(np.sqrt(sum(np.sum(g * g) for g in grads)))
+def accuracy_ci(correct, n_boot=2000, seed=0, level=0.95):
+    """Accuracy over items (an array of 0/1) with a percentile bootstrap interval that resamples
+    items. Return (accuracy, low, high)."""
+    c = np.asarray(correct, dtype=float)
+    rng = np.random.default_rng(seed)
+    means = c[rng.integers(0, len(c), (n_boot, len(c)))].mean(axis=1)
+    lo, hi = np.quantile(means, [(1 - level) / 2, (1 + level) / 2])
+    return float(c.mean()), float(lo), float(hi)
 
 
-def clip_by_global_norm(grads, max_norm):
-    """Scale every gradient by min(1, max_norm / norm) so the global norm is at most max_norm.
-    Return (clipped grads, the norm before clipping)."""
-    norm = global_norm(grads)
-    scale = min(1.0, max_norm / norm) if norm > 0 else 1.0
-    return [g * scale for g in grads], norm
+def standard_error(p, n):
+    """The standard error of an accuracy p measured on n independent items."""
+    return float(np.sqrt(p * (1 - p) / n))

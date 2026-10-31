@@ -1,24 +1,23 @@
-# Scale it: finding causes and recovering
-
-## Which examples?
+# Scale it: finding features and the components that matter
 
 :::exercise{ref=e08}
 :::
 
-## Rolling back
+::::predict{id=p3 kind=choice answer=c}
+A two-layer attention-only transformer is trained on sequences made of a random block of tokens followed by the same block again. How does its loss on the second copy compare with the first?
 
-::::predict{id=p3 kind=numeric answer=54 tol=2}
-Writing a checkpoint of a large model takes one minute, and the cluster loses a node about once a day. Using the Young/Daly rule, roughly how many minutes apart should checkpoints be?
+- About the same: the tokens are random, so nothing is predictable.
+- Somewhat lower, from learning which tokens are common.
+- Far lower, close to zero once training has gone on long enough: an induction circuit looks up each token's earlier occurrence and copies what followed it.
+- Higher, because the model has to remember the first copy.
 
 :::reveal
-$T^* = \sqrt{2 C M} = \sqrt{2 \cdot 60 \cdot 86400} \approx 3220$ seconds, about 54 minutes. Checkpointing more often wastes time writing; less often loses more work at each failure. As clusters grow, $M$ shrinks and checkpoints must get faster, which is why large runs save them asynchronously and shard them across nodes.
+The first copy is random, so its loss stays near $\ln V$ for a vocabulary of $V$ tokens. The second copy is fully predictable from the first, and the network learns a previous-token head and an induction head that together look up and copy. The drop is abrupt during training. The capstone trains exactly this model and locates the two heads.
 :::
 ::::
 
 :::exercise{ref=e09}
 :::
-
-## Watching every layer
 
 :::exercise{ref=e10}
 :::

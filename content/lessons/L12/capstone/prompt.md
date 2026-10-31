@@ -1,10 +1,12 @@
-# Capstone: FlashAttention in Triton
+# Capstone: clean a crawl, then prove it helped
 
-Open the Colab notebook with a **T4 GPU** runtime. After a worked vector-add kernel, write:
+Open the Colab notebook with a **T4 GPU** runtime and work through it:
 
-1. `softmax_kernel`: a fused row softmax (one program per row, computed in fp32).
-2. `matmul_kernel`: a tiled matrix product with masked loads and stores and an fp32 accumulator.
-3. `layernorm_kernel`: a fused layer norm forward pass.
-4. `flash_kernel`: the forward pass of FlashAttention with the online softmax.
+1. Write `exact_dedup` and `strip_boilerplate`.
+2. Write `passes_quality` with the Gopher rules.
+3. Write `minhash` over character 5-gram shingles and `near_dedup` with LSH bands and union-find.
+4. Write `decontaminate` with 13-word overlaps against the validation documents.
+5. Run the pipeline, then train the same model for the same number of steps on the raw and on the cleaned crawl.
+6. Write a report of at least 80 words: what each step removed, the test-loss difference, and what the leaked and unleaked validation losses show.
 
-The autograder checks each kernel against PyTorch at sizes that are not multiples of the block sizes, checks your FlashAttention against unfused attention within $10^{-2}$ in fp16, and, on the GPU, that it is faster at sequence length 2048 with 16 heads of dimension 64.
+The autograder checks each step on small cases, that no leaked document and at most 2% of the junk survive, that each source document leaves exactly one survivor, that cleaning lowers the test loss by at least **0.03 nats per byte** at equal compute, that the raw model's validation loss is inflated on the leaked documents, and the report.

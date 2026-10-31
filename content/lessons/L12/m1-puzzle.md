@@ -1,24 +1,24 @@
-# Puzzle: a softmax that never sees the whole row
+# Puzzle: what is in a web crawl?
 
-A softmax normalizes by the sum of $e^{x_j}$ over the whole row, and the numerically safe version first subtracts the row's maximum. Both seem to require the entire row before any output can be written. For attention over 32,000 positions, a row of scores does not fit in a GPU core's fast memory.
+A raw crawl of the web is mostly not prose: navigation menus, cookie banners, product listings, machine-generated pages, the same news story syndicated to hundreds of sites, and forum posts quoting benchmark questions.
 
 ::::predict{id=p1 kind=choice answer=b}
-Can you compute a numerically stable softmax by reading the row once, in blocks, keeping only a few numbers between blocks?
+You train two identical models with identical compute: one on a raw crawl, one on the same crawl after removing duplicates and junk, which leaves 40% of the text. Which reaches the lower loss on clean held-out text?
 
-- No: the maximum is needed before any exponential can be computed.
-- Yes: keep a running maximum and a running sum, and rescale the sum whenever the maximum grows.
-- Only if the row is sorted.
-- Only approximately.
+- The raw crawl, because it has 2.5 times as much data.
+- The cleaned crawl, because every token it trains on is unique and useful.
+- They are equal, because compute is equal.
+- It depends only on the model size.
 
 :::reveal
-Keep $m$, the largest value seen so far, and $l = \sum e^{x_j - m}$ over the values seen so far. When a block raises the maximum to $m'$, multiply the old $l$ by $e^{m - m'}$, which converts every old term to the new reference, and add the block's terms. After the last block, $l$ is the exact normalizer. This **online softmax** is the idea behind FlashAttention.
+At fixed compute both models see the same number of tokens. On the raw crawl many of those tokens are repeats or junk, so the model effectively trains on less, and on text unlike the held-out set. Deduplication and filtering usually help at equal compute: Lee et al. (2022) found that models trained on deduplicated data matched or beat the originals in fewer steps and emitted memorized training text far less often. The capstone measures the effect on your own corpus.
 :::
 ::::
 
-::::predict{id=p2 kind=numeric answer=11.09 tol=0.05}
-In fp16, the largest finite number is 65504. Above what input does $e^x$ overflow to infinity?
+::::predict{id=p2 kind=numeric answer=5e17 tol=0.1e17}
+To find near-duplicates by comparing every pair of a billion documents, how many pairs would you compare?
 
 :::reveal
-$\ln 65504 \approx 11.09$. Attention scores beyond 11 are common, so an fp16 softmax that exponentiates without subtracting the maximum, or that accumulates in fp16, produces infinities and NaNs. Kernels load fp16 and compute in fp32.
+$\binom{10^9}{2} = 10^9 (10^9 - 1)/2 \approx 5 \times 10^{17}$. At a million comparisons per second that is 16,000 years. MinHash compresses each document into a short signature, and locality-sensitive hashing compares only documents that collide in a bucket: the work becomes roughly linear in the corpus.
 :::
 ::::

@@ -1,10 +1,13 @@
-# Where the memory goes
+# Prefill and decode on the roofline
 
-1. `model_state_bytes(n_params, zero=0, dp=1)`: bytes on one GPU for mixed-precision Adam (2 bytes of 16-bit weights, 2 of 16-bit gradients, 12 of fp32 master weights, momentum and variance per parameter), with ZeRO stage $k$ sharding the first $k$ of (optimizer states, gradients, weights) over `dp` ranks. Return a dictionary with keys `weights`, `grads`, `optim`.
-2. `activation_bytes(seq, batch, d, heads, layers, tp=1, flash=False, checkpoint=False)`: activations stored for backward, $s\,b\,d\,(34 + 5 a s / d)$ bytes per layer (Korthikanti et al., 2022), divided by `tp`; FlashAttention removes the $5as/d$ term; with full checkpointing, keep only each layer's $2sbd$-byte input plus one layer's activations being recomputed.
+Serving has two phases. **Prefill** processes the whole prompt at once: every weight read from memory is used for every prompt token. **Decode** generates one token per sequence per step: every weight is read again for just `batch` tokens.
+
+1. `decode_intensity(n_params, batch, kv_bytes, weight_bytes=2)`: FLOPs per byte of a decode step, $2 N b$ FLOPs over $N \cdot \text{weight\_bytes} + \text{kv\_bytes}$.
+2. `prefill_intensity(n_params, prompt_tokens, weight_bytes=2)`: $2 N T$ FLOPs over $N \cdot \text{weight\_bytes}$.
+3. `step_time(flops, bytes_moved, peak_flops, bandwidth)`: the roofline time, the larger of the two.
 
 ## Hints
 
-1. Stage 1 divides only the optimizer states by `dp`, stage 2 also the gradients, stage 3 also the weights.
-2. The $5as/d$ term is the $a$ attention matrices of size $s \times s$ (scores, softmax output and dropout mask), which grow with the square of the sequence length.
-3. Checkpointing trades memory for one extra forward pass in the backward.
+1. With 16-bit weights and no cache, decode's intensity is just the batch size.
+2. A T4's ridge point is about 200 FLOP/byte in fp16 (L07): decode stays memory-bound up to batches of hundreds.
+3. Prefill of a long prompt is compute-bound; decode is memory-bound. Serving systems schedule them differently for that reason.

@@ -1,20 +1,26 @@
-import numpy as np
 import sub
 
-rng = np.random.default_rng(12)
-X = rng.normal(size=(3, 100))
+stream = list(range(100))
 
 
-def test_masked_is_correct():
-    assert np.allclose(sub.blocked_row_sums(X, 64), X.sum(axis=1))
-    assert np.allclose(sub.blocked_row_sums(X, 128), X.sum(axis=1))
+def run(total, state):
+    return [sub.shuffle_step(stream, state) for _ in range(total)]
 
 
-def test_unmasked_reads_neighbours():
-    bad = sub.blocked_row_sums(X, 64, masked=False)
-    assert np.isclose(bad[0], X[0].sum() + X[1, :28].sum())
-    assert np.isclose(bad[2], X[2].sum() + 28 * 1000.0)
+def test_exact_resume():
+    straight = run(100, sub.new_state(10, 0))
+    assert sorted(straight) == stream
+    state = sub.new_state(10, 0)
+    first = run(37, state)
+    saved = sub.checkpoint(state)
+    run(5, state)
+    resumed = first + run(63, sub.restore(saved))
+    assert resumed == straight
+    assert sub.shuffle_step(stream, state) is not None
 
 
-def test_programs():
-    assert sub.programs_needed(100, 64) == 2 and sub.programs_needed(128, 64) == 2 and sub.programs_needed(129, 64) == 3
+def test_naive_resume_loses_items():
+    state = sub.new_state(10, 0)
+    first = run(37, state)
+    naive = first + sub.naive_resume(stream, 10, 0, state["pos"], 63)
+    assert sorted(naive) != stream

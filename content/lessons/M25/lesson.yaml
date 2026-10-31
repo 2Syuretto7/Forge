@@ -12,9 +12,9 @@ movements:
   - {file: m6-feynman.md,    mode: theory,   minutes: 45}
   - {file: m7-capstone.md,   mode: practice, minutes: 75}
 hooks:
-  - {to: L05, text: "Least squares and logistic regression are maximum likelihood under Gaussian and Bernoulli noise, and ridge regression is MAP with a Gaussian prior."}
-  - {to: L06, text: "The bias and variance of estimators become the bias-variance decomposition of a model's prediction error."}
-  - {to: L23, text: "The bootstrap returns to put confidence intervals on benchmark scores and on the difference between two models."}
+  - {to: L01, text: "Least squares and logistic regression are maximum likelihood under Gaussian and Bernoulli noise, and ridge regression is MAP with a Gaussian prior."}
+  - {to: L02, text: "The bias and variance of estimators become the bias-variance decomposition of a model's prediction error."}
+  - {to: L19, text: "The bootstrap returns to put confidence intervals on benchmark scores and on the difference between two models."}
   - {to: M27, text: "Maximizing the average log-likelihood is minimizing the cross-entropy between the data and the model."}
   - {to: M28, text: "The negative log-likelihoods of exponential families are convex, so their MLE is a convex problem."}
   - {to: M31, text: "Concentration inequalities bound how far an estimate can stray from its target with high probability, without the central limit theorem's approximation."}

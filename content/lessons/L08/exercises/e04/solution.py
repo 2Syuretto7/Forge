@@ -1,91 +1,14 @@
-import numpy as np
+def softmax_traffic(rows, cols, bytes_per=2, fused=True):
+    """Bytes moved by a row softmax. Unfused (as separate operations): read x for the max, read x
+    and write e = exp(x - max), read e for the sum, read e and write the result: 6 arrays. Fused:
+    read x once and write the result once (the row stays on chip): 2 arrays."""
+    return (2 if fused else 6) * rows * cols * bytes_per
 
 
-def unbroadcast(g, shape):
-    """Sum g over the axes that broadcasting added or stretched, to get `shape`."""
-    while g.ndim > len(shape):
-        g = g.sum(axis=0)
-    for i, s in enumerate(shape):
-        if s == 1 and g.shape[i] != 1:
-            g = g.sum(axis=i, keepdims=True)
-    return g
+def predicted_speedup(rows, cols, bytes_per=2):
+    return softmax_traffic(rows, cols, bytes_per, False) / softmax_traffic(rows, cols, bytes_per, True)
 
 
-def as_tensor(x):
-    return x if isinstance(x, Tensor) else Tensor(x)
-
-
-class Tensor:
-    def __init__(self, data, parents=(), op=""):
-        self.data = np.array(data, dtype=float)
-        self.grad = None
-        self._parents = parents
-        self._backward = None
-        self.op = op
-
-    @property
-    def shape(self):
-        return self.data.shape
-
-    def __repr__(self):
-        return f"Tensor(shape={self.data.shape}, op={self.op!r})"
-
-    def _accumulate(self, g):
-        self.grad = g.copy() if self.grad is None else self.grad + g
-
-    def __add__(self, other):
-        other = as_tensor(other)
-        out = Tensor(self.data + other.data, (self, other), "add")
-
-        def _backward():
-            self._accumulate(unbroadcast(out.grad, self.shape))
-            other._accumulate(unbroadcast(out.grad, other.shape))
-        out._backward = _backward
-        return out
-
-    __radd__ = __add__
-
-    def __mul__(self, other):
-        other = as_tensor(other)
-        out = Tensor(self.data * other.data, (self, other), "mul")
-
-        def _backward():
-            self._accumulate(unbroadcast(out.grad * other.data, self.shape))
-            other._accumulate(unbroadcast(out.grad * self.data, other.shape))
-        out._backward = _backward
-        return out
-
-    __rmul__ = __mul__
-
-    def sum(self, axis=None, keepdims=False):
-        out = Tensor(self.data.sum(axis=axis, keepdims=keepdims), (self,), "sum")
-
-        def _backward():
-            g = out.grad
-            if axis is not None and not keepdims:
-                g = np.expand_dims(g, axis)
-            self._accumulate(np.broadcast_to(g, self.shape).copy())
-        out._backward = _backward
-        return out
-
-    def backward(self):
-        order, seen, stack = [], set(), [(self, False)]
-        while stack:
-            node, done = stack.pop()
-            if done:
-                order.append(node)
-                continue
-            if id(node) in seen:
-                continue
-            seen.add(id(node))
-            stack.append((node, True))
-            for p in node._parents:
-                if id(p) not in seen:
-                    stack.append((p, False))
-        for node in order:
-            if node._parents:
-                node.grad = None  # intermediate gradients do not persist between passes
-        self.grad = np.ones_like(self.data)
-        for node in reversed(order):
-            if node._backward is not None and node.grad is not None:
-                node._backward()
+def fits_on_chip(cols, bytes_per=4, budget=64 * 1024):
+    """Whether one row (held in fp32) fits in the per-program on-chip budget."""
+    return cols * bytes_per <= budget

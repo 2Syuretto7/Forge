@@ -1,23 +1,19 @@
 import numpy as np
 
 
-def round_down_up(x, step):
-    """The two grid points around x on a grid of spacing `step`."""
-    lo = np.floor(x / step) * step
-    return lo, lo + step
+def bt_loss(w, F_win, F_lose):
+    """A linear reward r = F w. The Bradley-Terry negative log-likelihood that the preferred
+    response wins, mean over pairs of log(1 + exp(-(r_win - r_lose))), and its gradient."""
+    d = (F_win - F_lose) @ w
+    loss = np.mean(np.logaddexp(0, -d))
+    s = 1 / (1 + np.exp(d))  # sigmoid(-d)
+    return float(loss), -(F_win - F_lose).T @ s / len(d)
 
 
-def stochastic_round(x, step, rng):
-    """Round x to lo or hi = lo + step, choosing hi with probability (x - lo) / step."""
-    lo, hi = round_down_up(x, step)
-    return np.where(rng.random(np.shape(x)) < (x - lo) / step, hi, lo)
-
-
-def accumulate(w0, update, n, step, mode, rng=None):
-    """Apply w <- round(w + update) n times on a grid of spacing `step`, with round-to-nearest or
-    stochastic rounding."""
-    w = w0
-    for _ in range(n):
-        v = w + update
-        w = float(np.round(v / step) * step) if mode == "nearest" else float(stochastic_round(v, step, rng))
+def fit_bt(F_win, F_lose, steps=2000, lr=1.0):
+    """Gradient descent from zero."""
+    w = np.zeros(F_win.shape[1])
+    for _ in range(steps):
+        _, g = bt_loss(w, F_win, F_lose)
+        w -= lr * g
     return w

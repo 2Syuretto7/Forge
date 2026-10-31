@@ -1,12 +1,13 @@
-# Memory per parameter
+# Verifiable rewards
 
-1. `bytes_per_param(optimizer="adam", mixed=True)`: training memory per parameter without activations. Mixed precision: fp16 weights and gradients (2 + 2), an fp32 master copy (4), and for Adam two fp32 moments (4 + 4). Plain fp32: weights and gradients (4 + 4), and for Adam two moments (4 + 4). `optimizer` is `"adam"` or `"sgd"` (no state).
-2. `training_memory_gb(n_params, optimizer="adam", mixed=True)` and `inference_memory_gb(n_params, bytes_per_weight=2)`.
+For math and code the reward can be checked instead of learned: is the final answer right? DeepSeek-R1 and others trained reasoning with exactly such rewards, plus a format check, and normalized advantages within a group of samples for the same prompt (GRPO), with no value network.
 
-Notice what mixed precision does not save.
+1. `extract_answer(text)`: the last integer in the text (with an optional minus sign), or `None`.
+2. `reward(text, answer, want_format=True)`: 1 for the right answer in the form `Answer: <n>` at the end; 0.5 for the right number without that format (when `want_format`); 0 otherwise.
+3. `group_advantages(rewards, eps=1e-6)`: subtract the group's mean reward and divide by its standard deviation plus `eps`.
 
 ## Hints
 
-1. Write each total as a sum of its parts.
-2. Mixed-precision Adam totals 16 bytes, and so does fp32 Adam.
-3. The savings of mixed precision are in activations (half the bytes) and speed.
+1. `re.findall(r"-?\d+", text)` finds the integers.
+2. A group where every sample got the same reward gives all-zero advantages: nothing to learn from that prompt.
+3. Extraction rules are part of the reward: a lenient extractor rewards guessing, a strict one rewards formatting.

@@ -1,32 +1,37 @@
 import numpy as np
 import sub
 
-
-def _spiral(n=100, K=3, seed=0):
-    rng = np.random.default_rng(seed)
-    Xs, ys = [], []
-    for j in range(K):
-        r = np.linspace(0.0, 1.0, n)
-        t = np.linspace(4 * j, 4 * (j + 1), n) + 0.2 * rng.normal(size=n)
-        Xs.append(np.column_stack([r * np.sin(t), r * np.cos(t)]))
-        ys.append(np.full(n, j))
-    return np.concatenate(Xs), np.concatenate(ys)
+rng = np.random.default_rng(10)
+X = rng.normal(size=(5, 4))
+W1 = rng.normal(size=(4, 16)) * 0.5
+W2 = rng.normal(size=(16, 4)) * 0.25
+DY = rng.normal(size=(5, 4))
 
 
-X, y = _spiral()
+def test_grad_stored():
+    _, cache = sub.mlp_forward(X, W1, W2)
+    dx, dW1, dW2 = sub.mlp_backward(DY, cache, W1, W2)
+    f = lambda X, W1, W2: float(np.sum(sub.mlp_forward(X, W1, W2)[0] * DY))
+    for arr, g, pos in ((X, dx, 0), (W1, dW1, 1), (W2, dW2, 2)):
+        num = np.zeros_like(arr)
+        for idx in np.ndindex(arr.shape):
+            args = [X.copy(), W1.copy(), W2.copy()]
+            args[pos][idx] += 1e-6
+            fp = f(*args)
+            args[pos][idx] -= 2e-6
+            num[idx] = (fp - f(*args)) / 2e-6
+        assert np.allclose(g, num, atol=1e-7), pos
 
 
-def test_symmetric_units_never_separate():
-    p = sub.symmetric_init([2, 8, 3], 0.1)
-    assert sub.unit_spread(p["W1"]) == 0.0
-    sub.train_full_batch(p, X, y, lr=0.5, steps=1500)
-    assert sub.unit_spread(p["W1"]) < 1e-12, "all hidden units must stay identical"
+def test_recompute_matches_exactly():
+    _, c1 = sub.mlp_forward(X, W1, W2, store=True)
+    y2, c2 = sub.mlp_forward(X, W1, W2, store=False)
+    g1 = sub.mlp_backward(DY, c1, W1, W2)
+    g2 = sub.mlp_backward(DY, c2, W1, W2)
+    assert all(np.array_equal(a, b) for a, b in zip(g1, g2))
 
 
-def test_random_init_does_much_better():
-    sym = sub.symmetric_init([2, 8, 3], 0.1)
-    loss_sym = sub.train_full_batch(sym, X, y, lr=0.5, steps=1500)
-    rng = np.random.default_rng(0)
-    rnd = {"W1": rng.normal(size=(2, 8)), "b1": np.zeros(8), "W2": rng.normal(size=(8, 3)) * 0.5, "b2": np.zeros(3)}
-    loss_rnd = sub.train_full_batch(rnd, X, y, lr=0.5, steps=1500)
-    assert loss_rnd < 0.8 * loss_sym, (loss_rnd, loss_sym)
+def test_memory_saved():
+    _, c1 = sub.mlp_forward(X, W1, W2, store=True)
+    _, c2 = sub.mlp_forward(X, W1, W2, store=False)
+    assert sub.cache_floats(c1) == 9 * sub.cache_floats(c2)

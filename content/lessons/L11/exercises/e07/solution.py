@@ -1,13 +1,14 @@
-def kernel_time(flops, nbytes, peak, bw):
-    return max(flops / peak, nbytes / bw)
+import numpy as np
 
 
-def step_time(kernels, peak, bw, launch_s=10e-6):
-    """Kernels run one after another. The CPU needs launch_s to issue each one, and the GPU cannot
-    start a kernel before it is issued, so each costs the larger of its GPU time and launch_s."""
-    return sum(max(kernel_time(f, b, peak, bw), launch_s) for f, b in kernels)
+def isoflop_minimum(N, L):
+    """Runs at one compute budget: fit a parabola to loss against log N and return the model size
+    at its vertex and the loss there."""
+    c2, c1, c0 = np.polyfit(np.log(N), L, 2)
+    x = -c1 / (2 * c2)
+    return np.exp(x), c0 + c1 * x + c2 * x * x
 
 
-def launch_bound_fraction(kernels, peak, bw, launch_s=10e-6):
-    """Fraction of kernels whose GPU time is shorter than the launch overhead."""
-    return sum(kernel_time(f, b, peak, bw) < launch_s for f, b in kernels) / len(kernels)
+def allocation_exponent(C, N_opt):
+    """The exponent a in N_opt = k C^a, by a least-squares line in log-log coordinates."""
+    return np.polyfit(np.log(C), np.log(N_opt), 1)[0]

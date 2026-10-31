@@ -1,13 +1,15 @@
-# Sums that stop growing
+# Advantage estimation
 
-1. `naive_sum(values, dtype)`: add the values one at a time, rounding the running sum to `dtype` after every addition.
-2. `kahan_sum(values, dtype)`: compensated summation, also entirely in `dtype`: keep a correction `c` holding the rounding error of the last addition and subtract it from the next input.
-3. `wide_accumulator_sum(values, dtype)`: store the inputs in `dtype` but add them up in float32.
+In multi-step episodes, how much better than expected was each action? With a value estimate $V$, the TD error $\delta_t = r_t + \gamma V_{t+1} - V_t$ is a one-step answer; the return minus the value is the full-episode answer. Generalized advantage estimation mixes them:
+$$
+A_t = \sum_{k \ge 0} (\gamma\lambda)^k \delta_{t+k}.
+$$
 
-Sum ten thousand copies of 0.01 in fp16 with each.
+1. `gae(rewards, values, gamma, lam)`, where `values` has one more entry than `rewards` (the value after the last step, 0 at the end of an episode).
+2. `returns(rewards, gamma)`.
 
 ## Hints
 
-1. Wrap every intermediate in `dtype(...)` so NumPy does not silently use a wider type.
-2. Kahan: `y = v - c; t = s + y; c = (t - s) - y; s = t`.
-3. The true sum is 100; the naive fp16 sum stops at 32.
+1. Run backwards: $A_t = \delta_t + \gamma\lambda A_{t+1}$.
+2. $\lambda = 0$ gives the TD errors; $\lambda = 1$ gives returns minus values.
+3. In RL for language models the episode is one response, and often only the last token gets a reward.

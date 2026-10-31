@@ -1,12 +1,11 @@
-# Paying for inference
+# Rollback and skip
 
-A model is trained once and then serves many tokens, each costing about $2N$ FLOPs. If a model will serve $D_\text{inf}$ tokens over its life, the cheapest model to reach a target loss minimizes $6ND + 2ND_\text{inf}$, not $6ND$. `law` is provided.
+`poisoned_batch(rng, step, bad_steps)` gives a regression batch whose targets are garbage at the steps in `bad_steps`. Implement `run(steps, bad_steps, ...)`: SGD where step $t$'s batch comes from `np.random.default_rng([seed, t])`, a checkpoint every `every` steps, and, when `recover`, a spike check on each step's loss before the update: if it exceeds the mean of the previous `window` kept losses by $k$ standard deviations, restore the checkpoint at `(step - 2) // every * every`, mark every step from there to `skip_ahead` steps past the flagged one as skipped, drop the loss history after the checkpoint, and continue. Return the final weights and the flagged steps.
 
-1. `tokens_needed(N, target, E, A, B, alpha, beta)`: the training tokens a model of $N$ parameters needs to reach `target`, or `np.inf` if even infinite data cannot get it there.
-2. `cheapest_model(target, inference_tokens, E, A, B, alpha, beta)`: search 4001 log-spaced sizes from $10^6$ to $10^{13}$ and return $(N, D, \text{total FLOPs})$ of the cheapest.
+The run never consults `bad_steps`: like PaLM's recovery, it skips everything seen around the spike.
 
 ## Hints
 
-1. Solve $E + A N^{-\alpha} + B D^{-\beta} = \text{target}$ for $D$: $D = \bigl(B / (\text{target} - E - A N^{-\alpha})\bigr)^{1/\beta}$.
-2. If $\text{target} - E - A N^{-\alpha} \le 0$ the model is too small.
-3. With no inference the answer is the compute-optimal model for the budget that reaches the target; with heavy inference it is smaller and trained on more tokens.
+1. Keep the loss history as (step, loss) pairs so you can cut it back to the checkpoint.
+2. Generating each step's batch from `(seed, step)` makes skipping trivial: a skipped step's batch is simply never drawn.
+3. Compare three runs: clean, poisoned without recovery and poisoned with recovery.

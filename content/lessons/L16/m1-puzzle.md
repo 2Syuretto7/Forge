@@ -1,24 +1,29 @@
-# Puzzle: what is in a web crawl?
+# Puzzle: teaching a pretrained model a new trick
 
-A raw crawl of the web is mostly not prose: navigation menus, cookie banners, product listings, machine-generated pages, the same news story syndicated to hundreds of sites, and forum posts quoting benchmark questions.
+A pretrained model continues text. You want it to answer instructions instead, using a few thousand examples.
 
 ::::predict{id=p1 kind=choice answer=b}
-You train two identical models with identical compute: one on a raw crawl, one on the same crawl after removing duplicates and junk, which leaves 40% of the text. Which reaches the lower loss on clean held-out text?
+You fine-tune all of the model's weights on the instruction examples. Afterwards, compared with the pretrained model, its loss on ordinary text is:
 
-- The raw crawl, because it has 2.5 times as much data.
-- The cleaned crawl, because every token it trains on is unique and useful.
-- They are equal, because compute is equal.
-- It depends only on the model size.
+- Lower, because it has seen more data.
+- Higher: fine-tuning moves the weights toward the new task and away from what pretraining taught.
+- The same, because the instructions are a small dataset.
+- Undefined, because the model now only answers instructions.
 
 :::reveal
-At fixed compute both models see the same number of tokens. On the raw crawl many of those tokens are repeats or junk, so the model effectively trains on less, and on text unlike the held-out set. Deduplication and filtering usually help at equal compute: Lee et al. (2022) found that models trained on deduplicated data matched or beat the originals in fewer steps and emitted memorized training text far less often. The capstone measures the effect on your own corpus.
+Fine-tuning optimizes only the new objective, so nothing holds the weights near the solution pretraining found. The loss on the original distribution rises, sometimes a little, sometimes catastrophically. The capstone measures it, and this lesson's tools (fewer trainable parameters, replaying pretraining data, staying close to the pretrained weights) keep it small.
 :::
 ::::
 
-::::predict{id=p2 kind=numeric answer=5e17 tol=0.1e17}
-To find near-duplicates by comparing every pair of a billion documents, how many pairs would you compare?
+The widget shows a matrix acting on the plane, with its singular directions. Set the entries close to a rank-one matrix (for example all four near 1): almost all of its action lies along one direction. Fine-tuning updates of large models behave similarly: a few directions carry most of the change.
+
+:::widget{name=MatrixTransform a=1 b=0.9 c=1 d=1.1}
+:::
+
+::::predict{id=p2 kind=numeric answer=0.39 tol=0.02}
+A LoRA adapter of rank 8 is added to a $4096 \times 4096$ projection. What percentage of that matrix's parameter count does the adapter train?
 
 :::reveal
-$\binom{10^9}{2} = 10^9 (10^9 - 1)/2 \approx 5 \times 10^{17}$. At a million comparisons per second that is 16,000 years. MinHash compresses each document into a short signature, and locality-sensitive hashing compares only documents that collide in a bucket: the work becomes roughly linear in the corpus.
+$8 \cdot (4096 + 4096) = 65{,}536$ parameters against $4096^2 \approx 16.8$ million: about 0.39%. Over a whole model with adapters on only the query and value projections, the fraction of the block parameters is smaller still: about 0.065% for 32 layers of width 4096 (exercise 4).
 :::
 ::::

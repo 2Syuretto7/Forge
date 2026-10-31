@@ -1,18 +1,26 @@
-import numpy as np
+import re
 
 
-def target_update(d, rank, seed=0, decay=0.7):
-    """A d x d update whose singular values fall geometrically, sigma_i = decay^i, for i < rank."""
-    rng = np.random.default_rng(seed)
-    U, _ = np.linalg.qr(rng.normal(size=(d, d)))
-    V, _ = np.linalg.qr(rng.normal(size=(d, d)))
-    s = np.zeros(d)
-    s[:rank] = decay ** np.arange(rank)
-    return (U * s) @ V.T
+def encode_train(text):
+    """The encoding used to build the training data: UTF-8 bytes, unchanged."""
+    return list(text.encode("utf-8"))
 
 
-def error_by_rank(M, ranks):
-    """Relative Frobenius error of the best rank-r approximation for each r."""
-    S = np.linalg.svd(M, compute_uv=False)
-    total = np.sum(S ** 2)
-    return [float(np.sqrt(np.sum(S[r:] ** 2) / total)) for r in ranks]
+def encode_serve(text):
+    """The serving front end's encoding: it tidies whitespace before encoding."""
+    return list(re.sub(r"[ \t]+", " ", text).strip().encode("utf-8"))
+
+
+def skew_report(samples):
+    """Compare the two encodings on each sample. Return (rate, first) where rate is the fraction
+    of samples whose token ids differ and first is (sample index, first differing position) for
+    the first such sample, or None."""
+    bad, first = 0, None
+    for i, s in enumerate(samples):
+        a, b = encode_train(s), encode_serve(s)
+        if a != b:
+            bad += 1
+            if first is None:
+                pos = next((j for j, (x, y) in enumerate(zip(a, b)) if x != y), min(len(a), len(b)))
+                first = (i, pos)
+    return bad / len(samples), first

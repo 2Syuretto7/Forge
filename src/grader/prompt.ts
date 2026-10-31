@@ -1,5 +1,5 @@
 // Feynman grader prompts (EXECUTION_PLAN.md Section 9). The concept prompt is
-// verbatim from the plan; the design prompt is its L24 design-document variant.
+// verbatim from the plan; the design prompt is its L20 design-document variant.
 
 export const SYSTEM_PROMPT = `You grade a learner's plain-language explanation of an ML concept, in the spirit of Richard Feynman: if they cannot explain it simply, they do not yet understand it.
 Score 0-4 on each criterion:

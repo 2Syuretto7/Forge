@@ -42,26 +42,26 @@ lessons:
   - {id: M36, title: "Score functions, gradient estimators and MDPs", track: math, strand: OPT, stage: frontier, gpu: false, compute: browser}
   - {id: M37, title: "Stochastic differential equations and diffusion", track: math, strand: CAL, stage: frontier, gpu: false, compute: browser}
   - {id: M38, title: "Capstone: the mathematics of a real paper", track: math, strand: ALL, stage: frontier, gpu: false, compute: browser}
-  - {id: L05, title: "Linear and logistic regression, end to end", track: core, stage: learning, gpu: false, compute: browser}
-  - {id: L06, title: "Generalization, bias-variance and double descent", track: core, stage: learning, gpu: false, compute: browser}
-  - {id: L07, title: "Neural networks and backprop from scratch", track: core, stage: learning, gpu: false, compute: browser}
-  - {id: L08, title: "Build a mini autograd engine; PyTorch internals", track: sys, stage: learning, gpu: true, compute: browser+colab}
-  - {id: L09, title: "Optimization: SGD, momentum, Adam, schedules, initialization", track: core, stage: learning, gpu: false, compute: browser}
-  - {id: L10, title: "Normalization, residuals and training stability", track: arch, stage: models_gpus, gpu: false, compute: browser}
-  - {id: L11, title: "GPU architecture and the roofline model", track: sys, stage: models_gpus, gpu: true, compute: colab}
-  - {id: L12, title: "Writing kernels: Triton, fused ops, FlashAttention", track: sys, stage: models_gpus, gpu: true, compute: colab}
-  - {id: L13, title: "Attention and the transformer from scratch", track: arch, stage: models_gpus, gpu: true, compute: browser+colab}
-  - {id: L14, title: "Tokenization and language modeling: a GPT from scratch", track: arch, stage: models_gpus, gpu: true, compute: colab}
-  - {id: L15, title: "Scaling laws and compute-optimal training", track: llm, stage: scale, gpu: true, compute: colab}
-  - {id: L16, title: "Data at scale: curation, dedup, mixtures, pipelines", track: sys, stage: scale, gpu: true, compute: browser+colab}
-  - {id: L17, title: "Mixed precision and floating-point numerics", track: sys, stage: models_gpus, gpu: true, compute: colab}
-  - {id: L18, title: "Distributed training: DDP, FSDP/ZeRO, tensor and pipeline parallel", track: sys, stage: scale, gpu: true, compute: colab}
-  - {id: L19, title: "A real pretraining run: loss spikes, checkpoints, eval harness", track: sys, stage: scale, gpu: true, compute: colab}
-  - {id: L20, title: "Fine-tuning: SFT, LoRA, distillation", track: llm, stage: frontier, gpu: true, compute: colab}
-  - {id: L21, title: "RL for language models: policy gradients, RLHF, DPO, verifiable rewards", track: llm, stage: frontier, gpu: true, compute: colab}
-  - {id: L22, title: "Inference systems: KV cache, batching, quantization, speculative decoding", track: sys, stage: frontier, gpu: true, compute: colab}
-  - {id: L23, title: "Evaluation and interpretability: probes, sparse autoencoders, circuits", track: llm, stage: frontier, gpu: true, compute: colab}
-  - {id: L24, title: "Capstone: train, align, evaluate and serve a small LM", track: all, stage: frontier, gpu: true, compute: colab}
+  - {id: L01, title: "Linear and logistic regression, end to end", track: core, stage: learning, gpu: false, compute: browser}
+  - {id: L02, title: "Generalization, bias-variance and double descent", track: core, stage: learning, gpu: false, compute: browser}
+  - {id: L03, title: "Neural networks and backprop from scratch", track: core, stage: learning, gpu: false, compute: browser}
+  - {id: L04, title: "Build a mini autograd engine; PyTorch internals", track: sys, stage: learning, gpu: true, compute: browser+colab}
+  - {id: L05, title: "Optimization: SGD, momentum, Adam, schedules, initialization", track: core, stage: learning, gpu: false, compute: browser}
+  - {id: L06, title: "Normalization, residuals and training stability", track: arch, stage: models_gpus, gpu: false, compute: browser}
+  - {id: L07, title: "GPU architecture and the roofline model", track: sys, stage: models_gpus, gpu: true, compute: colab}
+  - {id: L08, title: "Writing kernels: Triton, fused ops, FlashAttention", track: sys, stage: models_gpus, gpu: true, compute: colab}
+  - {id: L09, title: "Attention and the transformer from scratch", track: arch, stage: models_gpus, gpu: true, compute: browser+colab}
+  - {id: L10, title: "Tokenization and language modeling: a GPT from scratch", track: arch, stage: models_gpus, gpu: true, compute: colab}
+  - {id: L11, title: "Scaling laws and compute-optimal training", track: llm, stage: scale, gpu: true, compute: colab}
+  - {id: L12, title: "Data at scale: curation, dedup, mixtures, pipelines", track: sys, stage: scale, gpu: true, compute: browser+colab}
+  - {id: L13, title: "Mixed precision and floating-point numerics", track: sys, stage: models_gpus, gpu: true, compute: colab}
+  - {id: L14, title: "Distributed training: DDP, FSDP/ZeRO, tensor and pipeline parallel", track: sys, stage: scale, gpu: true, compute: colab}
+  - {id: L15, title: "A real pretraining run: loss spikes, checkpoints, eval harness", track: sys, stage: scale, gpu: true, compute: colab}
+  - {id: L16, title: "Fine-tuning: SFT, LoRA, distillation", track: llm, stage: frontier, gpu: true, compute: colab}
+  - {id: L17, title: "RL for language models: policy gradients, RLHF, DPO, verifiable rewards", track: llm, stage: frontier, gpu: true, compute: colab}
+  - {id: L18, title: "Inference systems: KV cache, batching, quantization, speculative decoding", track: sys, stage: frontier, gpu: true, compute: colab}
+  - {id: L19, title: "Evaluation and interpretability: probes, sparse autoencoders, circuits", track: llm, stage: frontier, gpu: true, compute: colab}
+  - {id: L20, title: "Capstone: train, align, evaluate and serve a small LM", track: all, stage: frontier, gpu: true, compute: colab}
 edges:
   # Vertical (prerequisites)
   - {from: M01, to: M02, type: vertical}
@@ -86,7 +86,7 @@ edges:
   - {from: M10, to: M11, type: vertical}
   - {from: M10, to: M18, type: vertical}
   - {from: M11, to: M12, type: vertical}
-  - {from: M12, to: L05, type: vertical}
+  - {from: M12, to: L01, type: vertical}
   - {from: M12, to: M13, type: vertical}
   - {from: M13, to: M14, type: vertical}
   - {from: M13, to: M23, type: vertical}
@@ -104,8 +104,8 @@ edges:
   - {from: M18, to: M19, type: vertical}
   - {from: M18, to: M20, type: vertical}
   - {from: M18, to: M28, type: vertical}
-  - {from: M19, to: L07, type: vertical}
-  - {from: M19, to: L08, type: vertical}
+  - {from: M19, to: L03, type: vertical}
+  - {from: M19, to: L04, type: vertical}
   - {from: M20, to: M23, type: vertical}
   - {from: M21, to: M22, type: vertical}
   - {from: M22, to: M23, type: vertical}
@@ -116,16 +116,16 @@ edges:
   - {from: M24, to: M25, type: vertical}
   - {from: M24, to: M29, type: vertical}
   - {from: M24, to: M31, type: vertical}
-  - {from: M25, to: L05, type: vertical}
-  - {from: M25, to: L06, type: vertical}
+  - {from: M25, to: L01, type: vertical}
+  - {from: M25, to: L02, type: vertical}
   - {from: M25, to: M31, type: vertical}
   - {from: M25, to: M35, type: vertical}
   - {from: M26, to: M33, type: vertical}
-  - {from: M27, to: L06, type: vertical}
-  - {from: M27, to: L14, type: vertical}
+  - {from: M27, to: L02, type: vertical}
+  - {from: M27, to: L10, type: vertical}
   - {from: M27, to: M30, type: vertical}
   - {from: M27, to: M36, type: vertical}
-  - {from: M28, to: L09, type: vertical}
+  - {from: M28, to: L05, type: vertical}
   - {from: M28, to: M29, type: vertical}
   - {from: M28, to: M30, type: vertical}
   - {from: M29, to: M35, type: vertical}
@@ -138,51 +138,51 @@ edges:
   - {from: M35, to: M38, type: vertical}
   - {from: M36, to: M38, type: vertical}
   - {from: M37, to: M38, type: vertical}
+  - {from: L01, to: L02, type: vertical}
+  - {from: L01, to: L03, type: vertical}
+  - {from: L02, to: L11, type: vertical}
+  - {from: L03, to: L04, type: vertical}
+  - {from: L03, to: L05, type: vertical}
+  - {from: L03, to: L09, type: vertical}
+  - {from: L04, to: L07, type: vertical}
   - {from: L05, to: L06, type: vertical}
-  - {from: L05, to: L07, type: vertical}
-  - {from: L06, to: L15, type: vertical}
+  - {from: L05, to: L11, type: vertical}
+  - {from: L06, to: L09, type: vertical}
   - {from: L07, to: L08, type: vertical}
-  - {from: L07, to: L09, type: vertical}
   - {from: L07, to: L13, type: vertical}
-  - {from: L08, to: L11, type: vertical}
+  - {from: L07, to: L14, type: vertical}
+  - {from: L09, to: L08, type: vertical}
   - {from: L09, to: L10, type: vertical}
-  - {from: L09, to: L15, type: vertical}
-  - {from: L10, to: L13, type: vertical}
-  - {from: L11, to: L12, type: vertical}
-  - {from: L11, to: L17, type: vertical}
-  - {from: L11, to: L18, type: vertical}
-  - {from: L13, to: L12, type: vertical}
+  - {from: L09, to: L16, type: vertical}
+  - {from: L09, to: L18, type: vertical}
+  - {from: L09, to: L19, type: vertical}
+  - {from: L10, to: L11, type: vertical}
+  - {from: L10, to: L12, type: vertical}
+  - {from: L11, to: L14, type: vertical}
+  - {from: L11, to: L15, type: vertical}
+  - {from: L12, to: L15, type: vertical}
   - {from: L13, to: L14, type: vertical}
-  - {from: L13, to: L20, type: vertical}
-  - {from: L13, to: L22, type: vertical}
-  - {from: L13, to: L23, type: vertical}
+  - {from: L13, to: L18, type: vertical}
   - {from: L14, to: L15, type: vertical}
-  - {from: L14, to: L16, type: vertical}
-  - {from: L15, to: L18, type: vertical}
-  - {from: L15, to: L19, type: vertical}
-  - {from: L16, to: L19, type: vertical}
-  - {from: L17, to: L18, type: vertical}
-  - {from: L17, to: L22, type: vertical}
-  - {from: L18, to: L19, type: vertical}
+  - {from: L15, to: L16, type: vertical}
+  - {from: L16, to: L17, type: vertical}
+  - {from: L17, to: L19, type: vertical}
+  - {from: L08, to: L18, type: vertical}
+  - {from: L15, to: L20, type: vertical}
+  - {from: L16, to: L20, type: vertical}
+  - {from: L17, to: L20, type: vertical}
+  - {from: L18, to: L20, type: vertical}
   - {from: L19, to: L20, type: vertical}
-  - {from: L20, to: L21, type: vertical}
-  - {from: L21, to: L23, type: vertical}
-  - {from: L12, to: L22, type: vertical}
-  - {from: L19, to: L24, type: vertical}
-  - {from: L20, to: L24, type: vertical}
-  - {from: L21, to: L24, type: vertical}
-  - {from: L22, to: L24, type: vertical}
-  - {from: L23, to: L24, type: vertical}
   # Horizontal (same stage, across tracks or strands)
-  - {from: M30, to: L05, type: horizontal, note: "Ridge regression is a Lagrangian with a norm constraint"}
-  - {from: M31, to: L06, type: horizontal, note: "Concentration bounds put numbers on the generalization gap"}
-  - {from: M29, to: L09, type: horizontal, note: "Proved rates meet the practical optimizers"}
-  - {from: M34, to: L10, type: horizontal, note: "Variance preservation is what initialization and normalization protect"}
-  - {from: M33, to: L11, type: horizontal, note: "Arithmetic intensity places each kernel on the roofline"}
-  - {from: M34, to: L13, type: horizontal, note: "Near-orthogonality explains the 1/sqrt(d) in attention"}
-  - {from: M35, to: L15, type: horizontal, note: "Your fitting machinery produces the scaling-law fit"}
-  - {from: M36, to: L21, type: horizontal, note: "REINFORCE is the policy-gradient estimator behind RLHF"}
-  - {from: M38, to: L24, type: horizontal, note: "The paper audit method is applied to your capstone model"}
+  - {from: M30, to: L01, type: horizontal, note: "Ridge regression is a Lagrangian with a norm constraint"}
+  - {from: M31, to: L02, type: horizontal, note: "Concentration bounds put numbers on the generalization gap"}
+  - {from: M29, to: L05, type: horizontal, note: "Proved rates meet the practical optimizers"}
+  - {from: M34, to: L06, type: horizontal, note: "Variance preservation is what initialization and normalization protect"}
+  - {from: M33, to: L07, type: horizontal, note: "Arithmetic intensity places each kernel on the roofline"}
+  - {from: M34, to: L09, type: horizontal, note: "Near-orthogonality explains the 1/sqrt(d) in attention"}
+  - {from: M35, to: L11, type: horizontal, note: "Your fitting machinery produces the scaling-law fit"}
+  - {from: M36, to: L17, type: horizontal, note: "REINFORCE is the policy-gradient estimator behind RLHF"}
+  - {from: M38, to: L20, type: horizontal, note: "The paper audit method is applied to your capstone model"}
   - {from: M01, to: M06, type: horizontal, note: "Scientific notation is a logarithm in disguise"}
   - {from: M01, to: M08, type: horizontal, note: "Orders of magnitude meet the size of sample spaces"}
   - {from: M06, to: M07, type: horizontal, note: "E to the i theta joins growth and rotation"}
@@ -201,35 +201,35 @@ edges:
   - {from: M25, to: M28, type: horizontal, note: "Negative log-likelihoods of exponential families are convex"}
   - {from: M29, to: M32, type: horizontal, note: "Constant-step SGD is a Markov chain with a stationary distribution"}
   - {from: M33, to: M34, type: horizontal, note: "Randomized SVD works because random projections preserve geometry"}
-  - {from: L08, to: L09, type: horizontal, note: "Your autograd engine drives the optimizers"}
-  - {from: L11, to: L13, type: horizontal, note: "Attention cost read on the roofline"}
-  - {from: L16, to: L15, type: horizontal, note: "Data quality shifts the scaling curve"}
-  - {from: L17, to: L14, type: horizontal, note: "Train the GPT in reduced precision"}
-  - {from: L10, to: L12, type: horizontal, note: "The layer norm derived here becomes a fused kernel"}
-  - {from: L20, to: L22, type: horizontal, note: "A distilled student is a natural speculative-decoding draft"}
+  - {from: L04, to: L05, type: horizontal, note: "Your autograd engine drives the optimizers"}
+  - {from: L07, to: L09, type: horizontal, note: "Attention cost read on the roofline"}
+  - {from: L12, to: L11, type: horizontal, note: "Data quality shifts the scaling curve"}
+  - {from: L13, to: L10, type: horizontal, note: "Train the GPT in reduced precision"}
+  - {from: L06, to: L08, type: horizontal, note: "The layer norm derived here becomes a fused kernel"}
+  - {from: L16, to: L18, type: horizontal, note: "A distilled student is a natural speculative-decoding draft"}
   # Long-range (an idea planted early returns in a later stage)
   - {from: M01, to: M35, type: long_range, note: "Orders of magnitude return as compute budgets on log-log axes"}
   - {from: M02, to: M12, type: long_range, note: "Two equations in two unknowns return as the normal equations"}
   - {from: M03, to: M31, type: long_range, note: "Quantifiers and proof by contradiction return in generalization bounds"}
-  - {from: M04, to: L07, type: long_range, note: "Sums of shifted ReLUs return as one-hidden-layer networks"}
+  - {from: M04, to: L03, type: long_range, note: "Sums of shifted ReLUs return as one-hidden-layer networks"}
   - {from: M05, to: M29, type: long_range, note: "Geometric series return as linear convergence rates"}
-  - {from: M07, to: L13, type: long_range, note: "Planar rotations return as rotary position embeddings"}
+  - {from: M07, to: L09, type: long_range, note: "Planar rotations return as rotary position embeddings"}
   - {from: M08, to: M31, type: long_range, note: "Counting returns as the union bound and growth functions"}
   - {from: M09, to: M34, type: long_range, note: "The dot product returns as near-orthogonality in high dimension"}
-  - {from: M10, to: L13, type: long_range, note: "Matrix products are the whole of attention's compute"}
+  - {from: M10, to: L09, type: long_range, note: "Matrix products are the whole of attention's compute"}
   - {from: M13, to: M29, type: long_range, note: "Eigenvalues of the Hessian set momentum's optimal value"}
   - {from: M13, to: M32, type: long_range, note: "A stationary distribution is an eigenvector with eigenvalue 1"}
-  - {from: M14, to: L20, type: long_range, note: "SVD returns as the low-rank update in LoRA"}
+  - {from: M14, to: L16, type: long_range, note: "SVD returns as the low-rank update in LoRA"}
   - {from: M16, to: M29, type: long_range, note: "The second-order Taylor term returns as the step-size limit 2/L"}
   - {from: M20, to: M37, type: long_range, note: "Change of variables returns as density transport in diffusion"}
   - {from: M24, to: M36, type: long_range, note: "Monte Carlo returns as gradient estimation"}
-  - {from: M25, to: L23, type: long_range, note: "The bootstrap returns as confidence intervals on evals"}
-  - {from: M26, to: L17, type: long_range, note: "Machine epsilon returns as the limits of bf16 and fp8"}
-  - {from: M27, to: L21, type: long_range, note: "KL divergence returns as the RLHF penalty"}
-  - {from: M30, to: L21, type: long_range, note: "The KL-regularized optimum returns as the basis of DPO"}
-  - {from: L09, to: L19, type: long_range, note: "Learning-rate schedules return in spike recovery"}
-  - {from: L05, to: L13, type: long_range, note: "Softmax returns as attention weights"}
-  - {from: L06, to: L16, type: long_range, note: "Test-set leakage returns as train/eval contamination"}
-  - {from: L07, to: L21, type: long_range, note: "The gradient p - y returns as the policy-gradient score function"}
-  - {from: L08, to: L18, type: long_range, note: "Tensors saved for backward return as activation memory"}
-  - {from: L15, to: L24, type: long_range, note: "Your scaling fit sizes the capstone model and token budget"}
+  - {from: M25, to: L19, type: long_range, note: "The bootstrap returns as confidence intervals on evals"}
+  - {from: M26, to: L13, type: long_range, note: "Machine epsilon returns as the limits of bf16 and fp8"}
+  - {from: M27, to: L17, type: long_range, note: "KL divergence returns as the RLHF penalty"}
+  - {from: M30, to: L17, type: long_range, note: "The KL-regularized optimum returns as the basis of DPO"}
+  - {from: L05, to: L15, type: long_range, note: "Learning-rate schedules return in spike recovery"}
+  - {from: L01, to: L09, type: long_range, note: "Softmax returns as attention weights"}
+  - {from: L02, to: L12, type: long_range, note: "Test-set leakage returns as train/eval contamination"}
+  - {from: L03, to: L17, type: long_range, note: "The gradient p - y returns as the policy-gradient score function"}
+  - {from: L04, to: L14, type: long_range, note: "Tensors saved for backward return as activation memory"}
+  - {from: L11, to: L20, type: long_range, note: "Your scaling fit sizes the capstone model and token budget"}

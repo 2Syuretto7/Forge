@@ -1,12 +1,11 @@
-# Break it: a rank too small
+# Break it: the server sees different tokens
 
-If the update a task needs has more directions than the adapter's rank, no amount of training recovers them.
+The model was trained on raw bytes. The serving front end tidies whitespace before encoding: it collapses runs of spaces and tabs and strips the ends. Nothing crashes, but the model now sees inputs unlike anything it trained on (verse indented with spaces, prompts ending in a newline). Both encoders are provided.
 
-1. `target_update(d, rank, seed=0, decay=0.7)`: a $d \times d$ update with singular values $0.7^i$ for $i < \text{rank}$ and zero beyond, a decaying spectrum like that of real fine-tuning updates.
-2. `error_by_rank(M, ranks)`: the relative error of the best rank-$r$ approximation for each $r$.
+Implement `skew_report(samples)`: the fraction of samples whose encodings differ, and for the first such sample, its index and the first position where the token ids differ.
 
 ## Hints
 
-1. Build the update from orthonormal $U$ and $V$ (`np.linalg.qr` of random matrices) and the chosen singular values.
-2. The error falls as singular values are captured, and reaches zero at the true rank.
-3. When a fine-tune plateaus well above its full fine-tuning loss, try a larger rank or more adapted layers before more steps.
+1. Compare the two lists of ids; if one is a prefix of the other, the first difference is at the shorter length.
+2. Train/serve skew is found by running the training encoder and the serving path on the same inputs and comparing, before launch.
+3. The fix is one encoder, shared by training and serving, versioned with the model.

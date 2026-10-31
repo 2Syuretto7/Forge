@@ -1,16 +1,26 @@
+import numpy as np
 import sub
 
+rng = np.random.default_rng(0)
+logits = rng.normal(size=(6, 5)) * 2
+targets = np.array([1, 4, 0, 2, 2, 3])
+mask = np.array([0, 0, 1, 1, 0, 1], dtype=float)
 
-def test_shingles():
-    assert sub.shingles("abcdef", 3) == {"abc", "bcd", "cde", "def"}
-    assert sub.shingles("Ab  C", 2) == {"ab", "b ", " c"}
-    assert sub.shingles("hi", 5) == {"hi"}
+
+def test_value():
+    loss, g = sub.masked_ce(logits, targets, mask)
+    logp = logits - np.log(np.exp(logits).sum(1, keepdims=True))
+    assert abs(loss - (-logp[[2, 3, 5], targets[[2, 3, 5]]].mean())) < 1e-12
+    assert np.all(g[[0, 1, 4]] == 0)
 
 
-def test_jaccard():
-    a = sub.shingles("the cat sat on the mat")
-    assert sub.jaccard(a, a) == 1.0
-    assert sub.jaccard(a, sub.shingles("THE  cat sat on the mat")) == 1.0
-    assert sub.jaccard({"x"}, {"y"}) == 0.0
-    assert sub.jaccard({1, 2, 3}, {2, 3, 4}) == 0.5
-    assert sub.jaccard(set(), set()) == 1.0
+def test_grad_masked_ce():
+    _, g = sub.masked_ce(logits, targets, mask)
+    num = np.zeros_like(logits)
+    for idx in np.ndindex(logits.shape):
+        P = logits.copy()
+        P[idx] += 1e-6
+        up = sub.masked_ce(P, targets, mask)[0]
+        P[idx] -= 2e-6
+        num[idx] = (up - sub.masked_ce(P, targets, mask)[0]) / 2e-6
+    assert np.allclose(g, num, atol=1e-8)

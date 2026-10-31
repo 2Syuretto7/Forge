@@ -1,20 +1,12 @@
-import numpy as np
 import sub
 
 
-def test_unit_std_explodes():
-    r = sub.activation_rms(10, 256, 1.0, seed=0)
-    growth = (r[-1] / r[0]) ** (1 / 9)
-    assert abs(growth / sub.predicted_growth(256, 1.0) - 1) < 0.1, growth
-    assert r[-1] > 1e9
+def test_times():
+    assert abs(sub.pipelined_time(100, 2e-3, 6e-3) - (8e-3 + 99 * 6e-3)) < 1e-12
+    assert abs(sub.synced_time(100, 2e-3, 6e-3) - 0.8) < 1e-12
 
 
-def test_he_init_is_stable():
-    r = sub.activation_rms(10, 256, np.sqrt(2 / 256), seed=0)
-    assert 0.3 < r[-1] < 3, r[-1]
-    assert abs(sub.predicted_growth(256, np.sqrt(2 / 256)) - 1) < 1e-12
-
-
-def test_small_std_vanishes():
-    r = sub.activation_rms(10, 256, 0.01, seed=0)
-    assert r[-1] < 1e-6
+def test_slowdown():
+    assert abs(sub.sync_slowdown(1, 2e-3, 6e-3) - 1.0) < 1e-12
+    assert 1.32 < sub.sync_slowdown(1000, 2e-3, 6e-3) < 1.34
+    assert sub.sync_slowdown(10000, 5e-3, 5e-3) > 1.99

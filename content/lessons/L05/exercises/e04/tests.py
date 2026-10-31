@@ -1,34 +1,31 @@
-import warnings
 import numpy as np
 import sub
 
-rng = np.random.default_rng(4)
-X = rng.normal(size=(60, 3))
-y = (X @ np.array([1.0, -1.0, 0.5]) + 0.3 * rng.normal(size=60) > 0).astype(float)
+
+def test_ema_debias():
+    assert np.allclose(sub.ema([3.0] * 10, 0.9, debias=True), 3.0)
+    raw = sub.ema([3.0] * 10, 0.9)
+    assert abs(raw[0] - 0.3) < 1e-12 and abs(raw[9] - 3 * (1 - 0.9 ** 10)) < 1e-12
 
 
-def test_sigmoid_is_stable():
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        s = sub.sigmoid(np.array([-1000.0, 0.0, 1000.0]))
-    assert np.allclose(s, [0.0, 0.5, 1.0])
+def test_gains():
+    assert abs(sub.momentum_gain(0.9, 0.0) - 10) < 1e-9
+    assert abs(sub.momentum_gain(0.9, np.pi) - 1 / 1.9) < 1e-9
+    assert abs(sub.ema_gain(0.9, 0.0) - 1) < 1e-9
 
 
-def test_loss_matches_naive_formula():
-    w, b = rng.normal(size=3), 0.2
-    s = 1 / (1 + np.exp(-(X @ w + b)))
-    naive = -np.mean(y * np.log(s) + (1 - y) * np.log(1 - s))
-    assert abs(sub.logistic_loss(w, b, X, y) - naive) < 1e-12
+def test_gain_matches_simulation():
+    t = np.arange(1, 601)
+    for omega in [np.pi / 6, np.pi / 2, 2 * np.pi / 3]:
+        g = np.cos(omega * t)
+        out = sub.ema(g, 0.8)
+        tail = slice(400, 600)
+        basis = np.column_stack([np.cos(omega * t[tail]), np.sin(omega * t[tail])])
+        coef, *_ = np.linalg.lstsq(basis, out[tail], rcond=None)
+        amp = np.hypot(*coef)
+        assert abs(amp - sub.ema_gain(0.8, omega)) < 1e-3 * amp, omega
 
 
-def test_grad_matches_finite_differences():
-    w, b = rng.normal(size=3), -0.4
-    dw, db = sub.logistic_grad(w, b, X, y)
-    g = np.append(dw, db)
-    num = np.zeros(4)
-    for j in range(4):
-        e = np.zeros(4)
-        e[j] = 1e-6
-        f = lambda v: sub.logistic_loss(v[:3], v[3], X, y)  # noqa: E731
-        num[j] = (f(np.append(w, b) + e) - f(np.append(w, b) - e)) / 2e-6
-    assert np.linalg.norm(g - num) / (np.linalg.norm(g) + np.linalg.norm(num)) < 1e-5
+def test_low_pass():
+    gains = [sub.momentum_gain(0.95, w) for w in np.linspace(0, np.pi, 9)]
+    assert all(a > b for a, b in zip(gains, gains[1:]))

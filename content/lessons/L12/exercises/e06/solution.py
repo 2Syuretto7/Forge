@@ -1,34 +1,40 @@
-import numpy as np
+STOP_WORDS = {"the", "be", "to", "of", "and", "that", "have", "with"}
 
 
-def reference_attention(Q, K, V):
-    S = Q @ K.T / np.sqrt(Q.shape[1])
-    P = np.exp(S - S.max(axis=1, keepdims=True))
-    P /= P.sum(axis=1, keepdims=True)
-    return P @ V
+def quality_signals(doc):
+    """Signals used by the Gopher quality rules, over whitespace-separated words and non-empty
+    lines: n_words, mean_word_len, symbol_ratio (the larger of the counts of "#" and of "..." per
+    word), bullet_lines (fraction starting with a bullet: "-", "*" or a bullet character after
+    leading spaces), ellipsis_lines (fraction ending with "..."), alpha_words (fraction of words
+    with a letter) and stop_words (how many STOP_WORDS occur, case-insensitive, punctuation
+    stripped)."""
+    words = doc.split()
+    lines = [l for l in doc.split("\n") if l.strip()]
+    n = max(1, len(words))
+    m = max(1, len(lines))
+    found = {w.strip(".,;:!?\"'()").lower() for w in words} & STOP_WORDS
+    return {
+        "n_words": len(words),
+        "mean_word_len": sum(len(w) for w in words) / n,
+        "symbol_ratio": max(doc.count("#"), doc.count("...")) / n,
+        "bullet_lines": sum(l.lstrip()[:1] in ("-", "*", "\u2022") for l in lines) / m,
+        "ellipsis_lines": sum(l.rstrip().endswith("...") for l in lines) / m,
+        "alpha_words": sum(any(c.isalpha() for c in w) for w in words) / n,
+        "stop_words": len(found),
+    }
 
 
-def flash_attention(Q, K, V, Br=4, Bc=4):
-    """Tiled attention: for each block of Br queries, loop over blocks of Bc keys and values with an
-    online softmax, never forming the full score matrix. Return (O, L) with L the log-sum-exp of each
-    row of scores (kept for the backward pass)."""
-    n, d = Q.shape
-    c = 1.0 / np.sqrt(d)
-    O = np.zeros((n, V.shape[1]))
-    L = np.zeros(n)
-    for i in range(0, n, Br):
-        q = Q[i:i + Br]
-        m = np.full(len(q), -np.inf)
-        l = np.zeros(len(q))
-        acc = np.zeros((len(q), V.shape[1]))
-        for j in range(0, n, Bc):
-            s = q @ K[j:j + Bc].T * c
-            m_new = np.maximum(m, s.max(axis=1))
-            p = np.exp(s - m_new[:, None])
-            alpha = np.exp(m - m_new)
-            l = l * alpha + p.sum(axis=1)
-            acc = acc * alpha[:, None] + p @ V[j:j + Bc]
-            m = m_new
-        O[i:i + Br] = acc / l[:, None]
-        L[i:i + Br] = m + np.log(l)
-    return O, L
+def passes(doc, min_words=50, max_words=100000):
+    """Gopher's rules: word count in [min_words, max_words], mean word length in [3, 10], symbol
+    ratio at most 0.1, at most 90% bullet lines and 30% ellipsis lines, at least 80% of words with
+    a letter, and at least two of the stop words."""
+    s = quality_signals(doc)
+    return (
+        min_words <= s["n_words"] <= max_words
+        and 3 <= s["mean_word_len"] <= 10
+        and s["symbol_ratio"] <= 0.1
+        and s["bullet_lines"] <= 0.9
+        and s["ellipsis_lines"] <= 0.3
+        and s["alpha_words"] >= 0.8
+        and s["stop_words"] >= 2
+    )

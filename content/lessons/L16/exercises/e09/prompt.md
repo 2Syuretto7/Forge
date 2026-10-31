@@ -1,14 +1,12 @@
-# Finding contamination
+# Packing examples
 
-If benchmark text leaks into the training set, the model can memorize answers and its score stops measuring generalization (L06's test-set leakage, at web scale). GPT-3's authors flagged training documents that share any 13-word sequence with an evaluation example.
+Instruction data is short and uneven. Rather than padding every example to the longest, pack several into one sequence, and keep them from seeing each other.
 
-1. `words_of(doc)`: lowercased words with surrounding punctuation stripped, empty ones dropped.
-2. `ngrams(words, n=13)`: the set of $n$-word tuples.
-3. `build_index(eval_docs, n=13)`: the union of all evaluation documents' $n$-grams.
-4. `decontaminate(train_docs, eval_docs, n=13)`: the indices of the training documents that share no $n$-gram with the evaluation set.
+1. `packed_attention_mask(lengths)`: position $i$ may attend to $j$ only if $j \le i$ and both belong to the same example; return a boolean $T \times T$ array.
+2. `packed_positions(lengths)`: position ids restarting at 0 for each example.
 
 ## Hints
 
-1. Tuples are hashable, so a set of tuples is the index.
-2. Normalizing words first catches leaks that differ only in case or punctuation.
-3. A document shorter than $n$ words has no $n$-grams and is never flagged; choose $n$ to balance missed leaks against false alarms on common phrases.
+1. Give every position its example's index with `np.repeat`, then compare the indices pairwise.
+2. Combine with the causal mask `np.tril`.
+3. Without the mask, the second example in a pack would condition on the first, which never happens at inference.

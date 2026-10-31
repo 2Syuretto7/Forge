@@ -1,135 +1,193 @@
-# Derivation: regression from noise models
+# Derivation: speed limits, momentum, adaptive steps, schedules and initialization
 
-Every model in this lesson follows the same recipe: write down a probabilistic model of how labels arise from features, take the negative log-likelihood as the loss, compute its gradient, and minimize. Linear regression, logistic regression and softmax regression are three instances. You will also see where L2 regularization comes from and how to measure whether predicted probabilities mean what they say.
+## 1. Gradient descent on a quadratic
 
-## 1. Linear regression is maximum likelihood under Gaussian noise
+Near a minimum $x^\star$, a smooth loss is approximately $f(x) = \tfrac12 (x - x^\star)^\top A (x - x^\star)$ with a symmetric positive definite Hessian $A$. The gradient is $A(x - x^\star)$, so the error $e_t = x_t - x^\star$ evolves as
 
-Data: feature rows $x_i \in \mathbb{R}^d$ stacked in $X \in \mathbb{R}^{n \times d}$, targets $y \in \mathbb{R}^n$. Model: $y_i = w^\top x_i + \epsilon_i$ with independent $\epsilon_i \sim \mathcal N(0, \sigma^2)$. (Absorb an intercept by appending a constant feature 1.)
+$$
+e_{t+1} = (I - \eta A)\, e_t.
+$$
 
-::::derivation{id=d1 title="From the Gaussian likelihood to least squares"}
+Write $A = Q \Lambda Q^\top$ (M13). In the eigenbasis the coordinates decouple: the component along eigenvector $q_i$ is multiplied by $1 - \eta \lambda_i$ at every step.
+
+- The iteration converges if and only if $|1 - \eta\lambda_i| < 1$ for every $i$, that is $0 < \eta < 2/\lambda_{\max}$.
+- The slowest component decides the rate $\rho(\eta) = \max_i |1 - \eta \lambda_i|$, which is smallest when the two extreme eigenvalues are balanced: $1 - \eta\mu = -(1 - \eta L)$, giving $\eta^\star = 2/(\mu + L)$ and
+
+$$
+\rho^\star = \frac{L - \mu}{L + \mu} = \frac{\kappa - 1}{\kappa + 1}, \qquad \kappa = L/\mu.
+$$
+
+::::derivation{id=d1 title="Rates on a valley with condition number 100"}
 :::step
-The log-likelihood is $\sum_i \log\mathcal N(y_i; w^\top x_i, \sigma^2) = -\tfrac{n}{2}\log(2\pi\sigma^2) - \dfrac{1}{2\sigma^2}\sum_i (y_i - w^\top x_i)^2$. For fixed $\sigma$, maximizing it over $w$ is the same as minimizing $\sum_i (y_i - w^\top x_i)^2$. For a single point with residual $r = y - w^\top x$, the term being minimized is [[r^2]].
+Take eigenvalues $\mu = 1$ and $L = 100$. With $\eta = 0.01$ the steep component is multiplied by $1 - 0.01 \cdot 100 =$ [[0]] per step and the flat component by [[0.99]].
 :::
 :::step
-The gradient of $L(w) = \tfrac{1}{n}\|Xw - y\|^2$ is $\tfrac{2}{n}X^\top(Xw - y)$. Setting it to zero gives the normal equations of M12. For a one-feature model with no intercept, $\hat w = \sum x_i y_i / \sum x_i^2$. With data $(1, 2), (2, 3)$ that is $(2 + 6)/(1 + 4) =$ [[1.6]].
+The best fixed rate is $\eta^\star = 2/101$, which gives contraction $\rho^\star = 99/101 \approx$ [[0.9802|tol=0.0005]] per step.
 :::
 :::step
-Maximizing over $\sigma^2$ as in M25 gives $\hat\sigma^2 = \tfrac{1}{n}\sum_i (y_i - \hat w^\top x_i)^2$, the mean squared residual. With residuals $0.2$ and $-0.2$, $\hat\sigma^2 =$ [[0.04]].
+To shrink the error by $10^{-6}$ you need $t$ with $(\rho^\star)^t = 10^{-6}$, about $\ln(10^6)/\ln(101/99) \approx$ [[691|tol=2]] steps. For large $\kappa$ this is about $\tfrac{\kappa}{2} \ln(1/\epsilon)$: the step count grows linearly with the condition number.
 :::
 ::::
 
-:::edge{from=M12 text="least squares and the normal equations"}
+:::edge{from=M28 text="eigendecomposition of symmetric matrices and the condition number"}
 :::
 
-## 2. Ridge regression is MAP with a Gaussian prior
+## 2. Momentum is a low-pass filter
 
-Put a prior $w \sim \mathcal N(0, \tau^2 I)$ on the weights. The log-posterior is the log-likelihood plus $-\|w\|^2/(2\tau^2)$, so the MAP estimate minimizes
-
-$$
-\sum_i (y_i - w^\top x_i)^2 + \lambda \|w\|^2, \qquad \lambda = \sigma^2/\tau^2 .
-$$
-
-Setting the gradient $2X^\top(Xw - y) + 2\lambda w$ to zero gives the **ridge** solution
+Heavy-ball momentum keeps a velocity:
 
 $$
-\hat w_\lambda = (X^\top X + \lambda I)^{-1} X^\top y .
+v_{t+1} = \beta v_t + \nabla f(x_t), \qquad x_{t+1} = x_t - \eta v_{t+1}.
 $$
 
-Adding $\lambda I$ lifts every eigenvalue of $X^\top X$ by $\lambda$, so it also cures the ill-conditioning of M12 and M14: the condition number becomes $(\sigma_{\max}^2 + \lambda)/(\sigma_{\min}^2 + \lambda)$.
+Unrolled, $v_{t+1} = \sum_{k \ge 0} \beta^k \nabla f(x_{t-k})$: an exponentially weighted sum of past gradients. Feed it a signal $g_t = \cos(\omega t)$ and the steady-state output is a cosine of the same frequency with amplitude
 
-::::derivation{id=d2 title="Shrinkage in one dimension"}
+$$
+|H(\omega)| = \frac{1}{|1 - \beta e^{-i\omega}|}.
+$$
+
+At $\omega = 0$ (a gradient that keeps its sign) the gain is $1/(1 - \beta)$; at $\omega = \pi$ (a gradient that flips every step, the zig-zag across a valley) it is $1/(1 + \beta)$. Momentum amplifies the slow, consistent part of the gradient and suppresses the oscillating part.
+
+::::derivation{id=d2 title="Gains and the optimal heavy ball"}
 :::step
-With one feature, ridge gives $\hat w_\lambda = \dfrac{\sum x_i y_i}{\sum x_i^2 + \lambda}$. If $\sum x_i y_i = 8$ and $\sum x_i^2 = 5$, then $\lambda = 5$ gives $\hat w =$ [[0.8]]: half the least-squares value.
+With $\beta = 0.9$, a constant gradient is amplified by [[10]] and an alternating one by $1/1.9 \approx$ [[0.526|tol=0.001]].
 :::
 :::step
-A strong prior (small $\tau^2$) means a large $\lambda$. As $\lambda \to \infty$, $\hat w_\lambda \to$ [[0]].
+On a quadratic, the best heavy-ball parameters are $\eta = 4/(\sqrt{L} + \sqrt{\mu})^2$ and $\beta = \left(\frac{\sqrt\kappa - 1}{\sqrt\kappa + 1}\right)^2$, and the error then shrinks by about $\frac{\sqrt\kappa - 1}{\sqrt\kappa + 1}$ per step. For $\kappa = 100$ that rate is $9/11 \approx$ [[0.8182|tol=0.0005]].
 :::
 :::step
-If the noise variance is $\sigma^2 = 0.25$ and the prior variance is $\tau^2 = 0.05$, then $\lambda = \sigma^2/\tau^2 =$ [[5]].
+Reducing the error by $10^{-6}$ then takes about $\ln(10^6)/\ln(11/9) \approx$ [[69|tol=1]] steps instead of 691: the step count grows like $\sqrt\kappa$ instead of $\kappa$.
 :::
 ::::
 
-:::edge{from=M25 text="maximum likelihood and Gaussian priors"}
-:::
+The **exponential moving average** (EMA) $m_t = \beta m_{t-1} + (1 - \beta) g_t$ is the same filter scaled by $1 - \beta$, so its gain at frequency zero is exactly 1. Adam uses EMAs; heavy ball uses the unscaled sum. The two are equivalent up to a rescaling of $\eta$.
 
-## 3. Logistic regression is maximum likelihood for coin flips
+## 3. Adaptive steps: RMSProp and Adam
 
-For labels $y_i \in \{0, 1\}$, model each label as a Bernoulli variable whose probability is a squashed linear score: $P(y_i = 1 \mid x_i) = \sigma(w^\top x_i + b)$ with the **sigmoid** $\sigma(a) = 1/(1 + e^{-a})$. The decision boundary $\{x : w^\top x + b = 0\}$ is a hyperplane, and the score $a = w^\top x + b$ is the **log-odds**: $\log\dfrac{P(y=1)}{P(y=0)} = a$.
-
-The negative log-likelihood per example is the binary cross-entropy of M27,
+Momentum fixes the zig-zag but still uses one learning rate for every coordinate. **RMSProp** divides each coordinate's step by a running root mean square of its gradients, so steep coordinates take proportionally smaller steps. **Adam** combines this with momentum:
 
 $$
-\ell_i = -y_i \log\sigma(a_i) - (1 - y_i)\log\big(1 - \sigma(a_i)\big).
+m_t = \beta_1 m_{t-1} + (1 - \beta_1) g_t, \qquad v_t = \beta_2 v_{t-1} + (1 - \beta_2) g_t^2,
 $$
 
-::::derivation{id=d3 title="The logistic gradient"}
+$$
+\hat m_t = \frac{m_t}{1 - \beta_1^t}, \qquad \hat v_t = \frac{v_t}{1 - \beta_2^t}, \qquad \theta_t = \theta_{t-1} - \eta \frac{\hat m_t}{\sqrt{\hat v_t} + \epsilon}.
+$$
+
+Typical values are $\beta_1 = 0.9$, $\beta_2 = 0.999$, $\epsilon = 10^{-8}$.
+
+**Bias correction.** Both averages start at zero. If the gradients were constant, $g_t = g$, then $m_t = (1 - \beta_1^t) g$ exactly: the average is biased toward zero by the factor $1 - \beta_1^t$, which the division removes. The same holds for $v_t$ with $\beta_2$.
+
+::::derivation{id=d3 title="The first Adam steps"}
 :::step
-Use $\sigma'(a) = \sigma(a)(1 - \sigma(a))$. The derivative of $-\log\sigma(a)$ is $-(1 - \sigma(a))$, and the derivative of $-\log(1 - \sigma(a))$ is $\sigma(a)$. So $\partial\ell/\partial a = -y(1 - \sigma(a)) + (1-y)\sigma(a)$, which simplifies to [[s - y]], writing s for $\sigma(a)$.
+With $\beta_1 = 0.9$, the first average is $m_1 = 0.1\, g_1$. After correction, $\hat m_1 =$ [[1]] times $g_1$.
 :::
 :::step
-By the chain rule, $\partial\ell_i/\partial w = (\sigma(a_i) - y_i)\, x_i$. Averaging over the data, $\nabla_w L = \tfrac{1}{n}X^\top(\sigma(Xw + b) - y)$. For one example with $x = 2$, $y = 1$ and $\sigma(a) = 0.7$, the gradient on $w$ is [[-0.6]].
+With correction, $\hat v_1 = g_1^2$, so the first step of each coordinate has magnitude $\eta |g_1| / |g_1| = \eta$, whatever the size of the gradient. Multiplying every gradient by $1000$ changes Adam's trajectory by a factor of [[1]] (ignoring $\epsilon$).
 :::
 :::step
-Compare with linear regression, whose gradient is $\tfrac{2}{n}X^\top(Xw - y)$: both are "features times prediction error". This shared form is a property of **generalized linear models** with their canonical link. The Hessian of the logistic loss is $\tfrac1n X^\top S X$ with $S = \operatorname{diag}(\sigma_i(1-\sigma_i))$, which is positive semidefinite, so the loss is convex and has no spurious local minima. For a single example at $\sigma = 0.5$, the weight $\sigma(1-\sigma)$ equals [[0.25]].
+Without correction, the first step is $\eta \cdot 0.1 g_1 / \sqrt{0.001 g_1^2}$, which is $0.1/\sqrt{0.001} \approx$ [[3.162|tol=0.002]] times too large.
 :::
 ::::
 
-There is no closed form for the minimizer. Gradient descent works; Newton's method, which uses the Hessian, converges in a handful of iterations (exercise 12).
+Scale invariance is Adam's main appeal: one learning rate works across layers whose gradients differ by orders of magnitude. Its cost is memory, two extra numbers per parameter, which matters for large models.
 
-## 4. Softmax regression for many classes
+## 4. Weight decay: L2 and decoupled
 
-For $K$ classes, give each class a weight vector $w_k$ and form logits $z_k = w_k^\top x + b_k$, then probabilities $p = \operatorname{softmax}(z)$. The loss is the categorical cross-entropy $-\log p_y$, and by M27 its gradient with respect to the logits is $p - e_y$. With $W \in \mathbb{R}^{d \times K}$, logits $Z = XW + \mathbf 1 b^\top$, probabilities $P$ and one-hot targets $Y$:
+**L2 regularization** adds $\tfrac{\lambda}{2}\lVert\theta\rVert^2$ to the loss, so the gradient gains $\lambda\theta$. For plain SGD the update becomes $\theta \leftarrow (1 - \eta\lambda)\theta - \eta g$: the weights shrink by a constant factor per step. This is **weight decay**, and for SGD the two names describe the same thing.
+
+For Adam they differ. Adding $\lambda\theta$ to the gradient sends it through the division by $\sqrt{\hat v}$, so a weight whose data gradient is large decays slowly and one whose gradient is tiny decays fast. **AdamW** (Loshchilov and Hutter) decouples the decay from the adaptive step:
 
 $$
-\nabla_W L = \tfrac{1}{n} X^\top (P - Y), \qquad \nabla_b L = \tfrac1n \mathbf{1}^\top (P - Y).
+\theta_t = \theta_{t-1} - \eta \left( \frac{\hat m_t}{\sqrt{\hat v_t} + \epsilon} + \lambda \theta_{t-1} \right),
 $$
 
-Logistic regression is the $K = 2$ case with one logit fixed at zero.
+with $\hat m, \hat v$ computed from the data gradient only. Every weight now shrinks by the factor $1 - \eta\lambda$ per step.
 
-:::edge{to=L13 text="Attention weights are a softmax over similarity scores, exactly this function applied to dot products."}
-:::
-
-## 5. Optimization in practice: why features must be standardized
-
-Gradient descent on a quadratic converges at a rate set by the condition number of the Hessian (M13, and in full detail L09). For linear regression the Hessian is $\tfrac{2}{n}X^\top X$. If one feature is measured in meters and another in millimeters, their scales differ by $10^3$ and the condition number by about $10^6$: the learning rate must be small enough for the steep direction, and the shallow direction then barely moves.
-
-**Standardization** rescales each feature to mean 0 and standard deviation 1 using statistics computed on the **training set only**. It does not change what linear models can represent, only how fast gradient descent finds it. Computing the statistics on all data, including test data, leaks information about the test set into training; L06 makes that failure concrete.
-
-::::derivation{id=d4 title="Condition number of two unscaled features"}
+::::derivation{id=d4 title="Decay rates"}
 :::step
-Two uncorrelated, zero-mean features with standard deviations $1$ and $1000$ give $\tfrac1n X^\top X \approx \operatorname{diag}(1, 10^6)$. Its condition number is [[1e6]].
+SGD with $\eta = 0.1$ and L2 coefficient $\lambda = 0.01$ multiplies the weights by [[0.999]] per step before the gradient step.
 :::
 :::step
-The largest stable learning rate for gradient descent on $L(w) = \tfrac1n\|Xw - y\|^2$ is about $2/\lambda_{\max}$ where $\lambda_{\max} = 2 \times 10^6$ is the top Hessian eigenvalue. That is $10^{-6}$. The error along the shallow direction then shrinks by a factor $1 - \eta \cdot 2 \approx 1 - 2 \times 10^{-6}$ per step, so reducing it by $e^{-1}$ takes about [[500000|tol=5000]] steps.
+AdamW with $\eta = 0.01$ and $\lambda = 0.1$ over 1000 steps multiplies a weight with no consistent data gradient by about $0.999^{1000} \approx$ [[0.368|tol=0.002]].
 :::
 ::::
 
-## 6. Evaluating a probabilistic classifier
+## 5. Schedules
 
-**Accuracy** counts correct argmax predictions. **Log loss** (mean cross-entropy on held-out data) also rewards being confident when right and punishes being confident when wrong; it is the quantity training minimizes. A model can have good accuracy and terrible log loss if it is overconfident.
-
-**Calibration** asks whether predicted probabilities match frequencies: among examples where the model says "70 percent", about 70 percent should be correct. A **reliability diagram** bins predictions by confidence and plots the average confidence against the observed accuracy in each bin; a calibrated model lies on the diagonal. The **expected calibration error** summarizes it:
+**Why decay.** With noisy gradients, SGD does not converge to the minimum but to a cloud around it. For $f(x) = \tfrac12 \lambda x^2$ with gradient noise of variance $\sigma^2$, the update $x \leftarrow (1 - \eta\lambda) x - \eta \xi$ has stationary variance
 
 $$
-\mathrm{ECE} = \sum_{b} \frac{n_b}{n}\,\big|\,\text{acc}(b) - \text{conf}(b)\,\big|.
+\operatorname{Var}(x) = \frac{\eta^2\sigma^2}{1 - (1 - \eta\lambda)^2} = \frac{\eta \sigma^2}{\lambda(2 - \eta\lambda)},
 $$
 
-::::derivation{id=d5 title="Reading a calibration bin"}
+roughly proportional to $\eta$. A large rate makes fast progress but leaves a wide cloud; lowering it later shrinks the cloud.
+
+**Why warm up.** At initialization the curvature can be much larger than later in training, and Adam's $\hat v$ rests on a handful of gradients. A linear ramp from zero to the peak rate over the first few hundred or thousand steps avoids early divergence.
+
+**Warmup plus cosine.** With $W$ warmup steps, $T$ total steps, peak $\eta_{\max}$ and floor $\eta_{\min}$:
+
+$$
+\eta_t = \begin{cases} \eta_{\max}\, t/W & t < W, \\ \eta_{\min} + \tfrac12(\eta_{\max} - \eta_{\min})\left(1 + \cos\!\left(\pi \frac{t - W}{T - W}\right)\right) & W \le t \le T. \end{cases}
+$$
+
+::::derivation{id=d5 title="Noise floor and the cosine schedule"}
 :::step
-A bin holds 50 predictions with average confidence $0.85$, of which 35 are correct. Its accuracy is $35/50 =$ [[0.7]].
+With $\lambda = 1$, $\sigma^2 = 1$ and $\eta = 0.1$, the stationary variance is $0.1/1.9 \approx$ [[0.0526|tol=0.0005]]. Halving $\eta$ to $0.05$ gives about [[0.0256|tol=0.0005]].
 :::
 :::step
-The model is overconfident in this bin by $0.85 - 0.7 =$ [[0.15]]. If the bin holds a fifth of the data, its contribution to the ECE is $0.2 \times 0.15 = 0.03$.
+With $\eta_{\max} = 0.003$, $\eta_{\min} = 0$, $W = 100$ and $T = 1100$, the rate at step 600, halfway through the decay, is [[0.0015]].
 :::
 ::::
 
-Maximum likelihood training tends to produce well-calibrated linear models when the model is right about the data. Large neural networks trained for many epochs are often overconfident, which is why calibration returns in L23's evaluation lesson.
+:::edge{to=L15 text="Warmup and the peak learning rate return when a large run spikes and has to be rewound."}
+:::
+
+:::edge{to=L11 text="Scaling laws assume a tuned rate and schedule per model size."}
+:::
+
+## 6. Initialization from variance preservation
+
+L03 showed activations exploding or vanishing through depth. Make it exact. A layer computes $z_j = \sum_{i=1}^{n_{\text{in}}} W_{ij} x_i$ with independent zero-mean weights of variance $s^2$, independent of the inputs. Then
+
+$$
+\mathbb{E}[z_j^2] = n_{\text{in}}\, s^2\, \mathbb{E}[x_i^2].
+$$
+
+To keep the second moment constant through a linear layer, choose $s^2 = 1/n_{\text{in}}$. The same choice suits tanh, which is close to linear near zero; because tanh is slightly contractive, activations still shrink slowly with depth (exercise 7 measures about a factor of five over 30 layers). The backward pass multiplies gradients by $W^\top$, which asks for $s^2 = 1/n_{\text{out}}$; **Xavier (Glorot) initialization** compromises with $s^2 = 2/(n_{\text{in}} + n_{\text{out}})$.
+
+ReLU zeroes the negative half of a symmetric input, so $\mathbb{E}[\operatorname{relu}(z)^2] = \tfrac12 \mathbb{E}[z^2]$. Keeping the second moment then needs $n_{\text{in}} s^2 \cdot \tfrac12 = 1$: **He initialization**, $s^2 = 2/n_{\text{in}}$.
+
+::::derivation{id=d6 title="Initialization scales"}
+:::step
+For a ReLU layer with $n_{\text{in}} = 256$, He initialization uses standard deviation $\sqrt{2/256} =$ [[0.0884|tol=0.0002]].
+:::
+:::step
+Using $s^2 = 1/n_{\text{in}}$ with ReLU instead multiplies the second moment by $\tfrac12$ per layer. After 40 layers it has shrunk by $2^{-40} \approx$ [[9.09e-13|tol=1e-14]].
+:::
+::::
+
+:::widget{name=ActivationStats depth=30 init=xavier act=relu}
+:::
+
+In the widget, compare Xavier with He for ReLU and for tanh at depth 30; watch both the activations and the gradients.
+
+:::edge{to=L06 text="Initialization sets the scale only at the start; normalization keeps it during training."}
+:::
+
+:::edge{from=L03 text="the MLP, its backward pass and the minibatch SGD loop"}
+:::
+
+:::edge{from=L04 text="parameters and gradients exposed by an autograd engine"}
+:::
 
 ## Summary
 
-| Model | Noise / likelihood | Loss | Gradient on weights |
-| --- | --- | --- | --- |
-| Linear regression | Gaussian | squared error | $\tfrac2n X^\top(Xw - y)$ |
-| Ridge | Gaussian + Gaussian prior | squared error $+ \lambda\|w\|^2$ | $\tfrac2n X^\top(Xw - y) + \tfrac{2\lambda}{n} w$ |
-| Logistic regression | Bernoulli | binary cross-entropy | $\tfrac1n X^\top(\sigma(Xw) - y)$ |
-| Softmax regression | categorical | cross-entropy | $\tfrac1n X^\top(P - Y)$ |
+| Method | Update | Fixes |
+| --- | --- | --- |
+| Gradient descent | $\theta \leftarrow \theta - \eta g$ | step limited by $2/L$; $\sim\kappa$ steps |
+| Heavy ball | $v \leftarrow \beta v + g$, $\theta \leftarrow \theta - \eta v$ | zig-zag; $\sim\sqrt\kappa$ steps |
+| Adam | $\theta \leftarrow \theta - \eta \hat m / (\sqrt{\hat v} + \epsilon)$ | per-coordinate scale |
+| AdamW | adds $-\eta\lambda\theta$ outside the adaptive step | weight decay independent of gradient scale |
+| Warmup and cosine | $\eta_t$ ramps up, then decays | early instability, late noise |
+| Xavier, He | $s^2 = 2/(n_{\text{in}} + n_{\text{out}})$, $2/n_{\text{in}}$ | activation scale through depth |

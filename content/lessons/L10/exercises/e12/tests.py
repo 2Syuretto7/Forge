@@ -1,25 +1,20 @@
 import numpy as np
 import sub
 
-RESULT = sub.warmup_experiment()
+rng0 = np.random.default_rng(12)
+V = 30
+P = rng0.dirichlet(np.full(V, 0.3), size=V)
 
 
-def test_dead_fraction_detects_dead_units():
-    X, _ = sub.make_digits(50, 1)
-    p = sub.init_stack(3, 8)
-    assert sub.dead_fraction(p, X, 3, "post") == [0.0, 0.0, 0.0]
-    # In the plain stack, layer 1 sees ReLU outputs, which are never negative, so a column of
-    # W1 with only negative entries can never fire.
-    p["W1"][:, :2] = -1.0
-    d = sub.dead_fraction(p, X, 3, "plain")
-    assert len(d) == 3 and d[1] >= 0.25
+def test_cold_loops_hot_rambles():
+    cold = sub.generate(P, 0, 300, 0.05, np.random.default_rng(1))
+    warm = sub.generate(P, 0, 300, 1.0, np.random.default_rng(1))
+    hot = sub.generate(P, 0, 300, 5.0, np.random.default_rng(1))
+    assert len(cold) == 301
+    assert sub.distinct_ratio(cold) < 0.2 < sub.distinct_ratio(warm)
+    assert sub.model_nll(cold, P) < sub.model_nll(warm, P) < sub.model_nll(hot, P)
 
 
-def test_warmup_rescues_post_norm():
-    none, warm = RESULT["none"], RESULT["warmup"]
-    assert none[0] > 1.1, RESULT
-    assert warm[0] < none[0] - 0.1, RESULT
-
-
-def test_more_dead_units_without_warmup():
-    assert RESULT["none"][1] >= RESULT["warmup"][1], RESULT
+def test_distinct_ratio():
+    assert sub.distinct_ratio([1, 2, 1, 2, 1, 2], 2) == 2 / 5
+    assert sub.distinct_ratio(list(range(10))) == 1.0

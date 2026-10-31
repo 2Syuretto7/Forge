@@ -1,23 +1,29 @@
 import numpy as np
 import sub
 
-
-def test_closed_form():
-    assert abs(sub.uncorrected_factor(1) - 0.1 / np.sqrt(0.001)) < 1e-12
-    f = sub.uncorrected_factor(np.array([1, 100]))
-    assert f.shape == (2,) and 3.2 < f[1] < 3.3
+rng = np.random.default_rng(12)
+X = rng.normal(size=(6, 4))
+Wq, Wk, Wv = (rng.normal(size=(4, 4)) for _ in range(3))
 
 
-def test_peak():
-    t, f = sub.peak()
-    assert t == 12 and abs(f - 6.5685) < 1e-3
-    t2, f2 = sub.peak(0.9, 0.99)
-    ts = np.arange(1, 10001)
-    ref = (1 - 0.9 ** ts) / np.sqrt(1 - 0.99 ** ts)
-    assert t2 == int(ts[np.argmax(ref)]) and abs(f2 - ref.max()) < 1e-12
+def _attn(mask):
+    def f(X):
+        S = (X @ Wq) @ (X @ Wk).T / 2.0
+        S = np.where(mask(X.shape[0]), -np.inf, S)
+        return sub.softmax_rows(S) @ (X @ Wv)
+    return f
 
 
-def test_measured_matches_closed_form():
-    for t in [1, 5, 12, 100]:
-        assert abs(sub.measured_factor(t) - sub.uncorrected_factor(t)) < 1e-9 * sub.uncorrected_factor(t)
-    assert abs(sub.measured_factor(7, g=-3.0) - sub.uncorrected_factor(7)) < 1e-9
+def test_correct_mask_does_not_leak():
+    correct = lambda n: np.triu(np.ones((n, n), dtype=bool), k=1)
+    assert sub.leaks_future(_attn(correct), X) is False
+
+
+def test_off_by_one_mask_leaks():
+    m = sub.off_by_one_mask(4)
+    assert m.tolist() == [[False, False, True, True], [False, False, False, True], [False] * 4, [False] * 4]
+    assert sub.leaks_future(_attn(sub.off_by_one_mask), X) is True
+
+
+def test_no_mask_leaks():
+    assert sub.leaks_future(_attn(lambda n: np.zeros((n, n), dtype=bool)), X) is True

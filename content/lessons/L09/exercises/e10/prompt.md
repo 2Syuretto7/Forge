@@ -1,16 +1,11 @@
-# A training loop with an optimizer and a schedule
+# Attention memory and intensity
 
-Your optimizers from exercise 8 and the L07 network are provided. Implement `train(opt, X, y, steps, batch=50, schedule=None, seed=0, sizes=(64, 64, 32, 10))`:
-
-- initialize with `init(list(sizes), seed)` and create `rng = np.random.default_rng(seed)`;
-- each epoch draws `perm = rng.permutation(n)` and visits it in consecutive full batches of size `batch` (drop the remainder), starting a new epoch when one is exhausted, until `steps` steps have run;
-- step `t` (counted from 1) calls `opt.step(params, grads, lr)` with `lr = schedule(t)` if a schedule is given, otherwise `None`;
-- return `(params, losses)` with the minibatch loss of every step.
-
-The tests also check that plain SGD at rate 0.3 for 600 steps reaches at least 88 percent test accuracy.
+1. `score_bytes(batch, heads, n_ctx, bytes_per=2)`: memory of one layer's attention weights.
+2. `scores_intensity(n_ctx, d_head, bytes_per=2)`: arithmetic intensity of computing $S = QK^\top$ for one head ($2n^2d$ FLOPs, reading $Q$ and $K$, writing $S$).
+3. `max_ctx_for_memory(budget_bytes, batch, heads, bytes_per=2)`: the largest context whose attention weights for one layer fit in the budget.
 
 ## Hints
 
-1. A `while t < steps` loop around a `for i in range(0, n - batch + 1, batch)` loop, breaking out when `t` reaches `steps`.
-2. `idx = perm[i:i + batch]`, then `loss_and_grads(params, X[idx], y[idx])`.
-3. Following this order exactly makes your runs reproducible against the tests.
+1. The weights are a `batch x heads x n_ctx x n_ctx` array.
+2. For large $n$ the intensity approaches $2d/b$: 64 FLOP/byte for 64-dimensional fp16 heads.
+3. Solve $B h n^2 b \le \text{budget}$ for $n$ and round down.

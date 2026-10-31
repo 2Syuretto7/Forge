@@ -1,14 +1,13 @@
-def softmax_traffic(rows, cols, bytes_per=2, fused=True):
-    """Bytes moved by a row softmax. Unfused (as separate operations): read x for the max, read x
-    and write e = exp(x - max), read e for the sum, read e and write the result: 6 arrays. Fused:
-    read x once and write the result once (the row stays on chip): 2 arrays."""
+import numpy as np
+
+
+def lsh_candidates(signatures, bands, rows):
+    """Sorted list of pairs (i, j), i < j, of documents whose signatures agree on every row of at
+    least one band. Bucket each band of each signature by (band index, tuple of its values)."""
     raise NotImplementedError
 
 
-def predicted_speedup(rows, cols, bytes_per=2):
-    raise NotImplementedError
-
-
-def fits_on_chip(cols, bytes_per=4, budget=64 * 1024):
-    """Whether one row (held in fp32) fits in the per-program on-chip budget."""
+def dedup_keep(signatures, bands, rows, min_similarity):
+    """Join candidate pairs whose signatures agree in at least min_similarity of positions into
+    clusters (union-find), and return the sorted indices to keep: the smallest of each cluster."""
     raise NotImplementedError

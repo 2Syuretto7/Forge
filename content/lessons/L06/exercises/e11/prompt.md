@@ -1,13 +1,14 @@
-# Break it: picking the winner by test score
+# Break it: batch norm with a batch of one
 
-You try `M` "models" that are pure coin flips on a test set of `n_test` examples with random labels, and report the best test accuracy. Then you evaluate that winner on a fresh test set.
+Your batch norm and layer norm, forward and backward, are provided.
 
-- `best_of_m(M, n_test, seed)`: with one `np.random.default_rng(seed)`, draw labels `y` (`n_test` coin flips), then a `(M, n_test)` matrix of random predictions; return `(best_test_accuracy, index_of_best)`.
-- `fresh_accuracy(n_fresh, seed)`: the winner's accuracy on fresh data is just another coin-flip experiment; simulate it with a new generator and return the accuracy.
-- `expected_max_accuracy(M, n_test)`: an approximation for the best of `M` independent binomial accuracies: $0.5 + \sqrt{2\ln M}\cdot\dfrac{0.5}{\sqrt{n_{\text{test}}}}$.
+1. `batch_of_one(x, gamma, beta)`: run training-mode batch norm on a batch containing only the row `x`, and its backward pass with an upstream gradient of ones. Return `(y, dx)` for that row.
+2. `layernorm_of_one(x, gamma, beta)`: the same row through layer norm, with an upstream gradient that weights the features $1, 2, \dots, d$. Return `(y, dx)`.
+
+Batch norm returns $\beta$ and a zero gradient whatever `x` is; layer norm still works.
 
 ## Hints
 
-1. Accuracy of row `m`: `np.mean(P[m] == y)`.
-2. `np.argmax` over the per-model accuracies.
-3. The approximation uses the fact that the maximum of $M$ standard normals is about $\sqrt{2\ln M}$.
+1. `x[None, :]` turns the vector into a batch of one.
+2. Return the first (only) row of each result.
+3. An upstream gradient of ones would give layer norm a zero gradient too, for a different reason (it is a constant shift of the row), which is why the test weights the features.

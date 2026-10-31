@@ -1,30 +1,41 @@
 import numpy as np
 
 
-def softmax_rows(S):
-    """Softmax of every row, stable for large entries; -inf entries get weight 0."""
-    m = S.max(axis=-1, keepdims=True)
-    E = np.exp(S - m)
-    return E / E.sum(axis=-1, keepdims=True)
+def round_to_format(x, exp_bits, man_bits):
+    """Round float64 values to the nearest value representable with exp_bits exponent bits and
+    man_bits mantissa bits (IEEE layout: bias 2^(e-1) - 1, subnormals, infinities), ties to even.
+    Values beyond the largest finite number become +-inf."""
+    x = np.asarray(x, dtype=np.float64)
+    bias = 2 ** (exp_bits - 1) - 1
+    emin = 1 - bias
+    emax = 2 ** exp_bits - 2 - bias
+    max_finite = (2 - 2.0 ** -man_bits) * 2.0 ** emax
+    a = np.abs(x)
+    with np.errstate(divide="ignore"):
+        e = np.floor(np.log2(np.where(a > 0, a, 1.0)))
+    e = np.maximum(e, emin)
+    ulp = 2.0 ** (e - man_bits)
+    r = np.round(a / ulp) * ulp  # np.round rounds halves to even
+    r = np.where(r > max_finite, np.inf, r)
+    return np.sign(x) * r
 
 
-def softmax_backward(P, dP):
-    """Given P = softmax_rows(S) and dL/dP, return dL/dS."""
-    return P * (dP - (dP * P).sum(axis=-1, keepdims=True))
+def bf16(x):
+    """Round float values to bfloat16 (8 exponent bits, 7 mantissa bits)."""
+    return round_to_format(x, 8, 7)
 
 
-def leaks_future(attn_fn, X, eps=1e-3):
-    """attn_fn maps an (n, d) sequence to an (n, d) output. Perturb each position t in turn and report
-    whether any output at a position before t changes (by more than 1e-12)."""
-    base = attn_fn(X)
-    for t in range(1, X.shape[0]):
-        Xp = X.copy()
-        Xp[t] += eps
-        if np.abs(attn_fn(Xp)[:t] - base[:t]).max() > 1e-12:
-            return True
-    return False
+def fp16(x):
+    return round_to_format(x, 5, 10)
 
 
-def off_by_one_mask(n):
-    """The bug: masking j > i + 1 instead of j > i, so each position also sees the next one."""
-    return np.triu(np.ones((n, n), dtype=bool), k=2)
+def survives(x, fmt):
+    """True where the value is finite and nonzero after rounding (it neither overflowed nor
+    underflowed)."""
+    r = fmt(x)
+    return np.isfinite(r) & (r != 0)
+
+
+def resolves(a, b, fmt):
+    """True where a and b remain distinct after rounding."""
+    return fmt(a) != fmt(b)

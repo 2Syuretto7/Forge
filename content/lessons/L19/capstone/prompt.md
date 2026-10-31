@@ -1,12 +1,12 @@
-# Capstone: a pretraining run that survives its own failures
+# Capstone: find a circuit and prove it
 
-Open the Colab notebook with a **T4 GPU** runtime (mount Google Drive first if you want checkpoints to survive a disconnection) and work through it:
+Open the Colab notebook (a T4 GPU runtime, or the CPU runtime) and work through it:
 
-1. Write `lr_at`, the warmup and cosine schedule as a function of the step.
-2. Write `save_checkpoint` and `load_checkpoint`: every piece of state the next step depends on, written atomically. The notebook checks bitwise exact resume on a tiny model.
-3. Write `evaluate`: the validation loss over fixed windows with a bootstrap interval.
-4. Write `is_spike`, the trailing-window check the loop uses to roll back and skip data.
-5. Run the 5,000-step training run, with corrupted data injected at position 3,000.
-6. Write a report of at least 80 words: the configuration, the final validation loss with its interval, the spike and the recovery, and what you would monitor in a longer run.
+1. Train the two-layer attention-only model on sequences with a repeated block; the notebook reports its loss on the first and second copies.
+2. Write `head_scores`: each head's previous-token score and induction score from its attention pattern. Choose the previous-token heads in layer 0 and the induction heads in layer 1.
+3. Write `ablated_loss`: the loss on the second copy with chosen heads mean-ablated. Ablate the previous-token heads, the induction heads, and every other head, and compare.
+4. Write `patch_effect`: the fraction of the clean-minus-corrupted metric restored by patching chosen heads' clean outputs into the corrupted run.
+5. Write `pair_accuracy` and test the mechanism's prediction on sequences with a single earlier pair, against a control without it.
+6. Write a report of at least 80 words: the circuit, the evidence for necessity and sufficiency against the baseline, the prediction, and what the account leaves unexplained.
 
-The autograder checks the schedule, exact resume, the checkpoint contents, that the corruption was flagged within two batches and rolled back to an earlier checkpoint, that the step log is complete and never trained on corrupted data, a final validation loss below **1.70** nats per character that improved on the pre-spike value, and the report.
+The autograder checks the scores on a hand-made pattern, that the model learned the task (loss on the second copy below half that on the first), that the circuit has heads in both layers, that ablating either half of it raises the loss on the second copy above 80% of uniform guessing while ablating every other head raises it less than half as much as ablating the circuit, that patching it restores more than 60% of the metric, that the prediction beats the control's interval, and the report.

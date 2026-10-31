@@ -1,22 +1,32 @@
 import numpy as np
 import sub
 
-
-def test_grad_candidate_probability():
-    for s in [0.2, 0.5, 0.8]:
-        for b, r in [(20, 5), (16, 8)]:
-            num = (sub.candidate_probability(s + 1e-6, b, r) - sub.candidate_probability(s - 1e-6, b, r)) / 2e-6
-            assert abs(sub.dprob_ds(s, b, r) - num) < 1e-6
-
-
-def test_s_curve():
-    assert sub.candidate_probability(0.0, 20, 5) == 0 and sub.candidate_probability(1.0, 20, 5) == 1
-    assert sub.candidate_probability(0.9, 20, 5) > 0.99 and sub.candidate_probability(0.3, 20, 5) < 0.05
-    t = sub.threshold(20, 5)
-    assert abs(sub.candidate_probability(t, 20, 5) - (1 - (1 - 1 / 20) ** 20)) < 1e-12
+rng = np.random.default_rng(1)
+x = rng.normal(size=(4, 6))
+W0 = rng.normal(size=(5, 6))
+A = rng.normal(size=(2, 6))
+B = rng.normal(size=(5, 2))
+dy = rng.normal(size=(4, 5))
 
 
-def test_choose_bands():
-    b, r = sub.choose_bands(128, 0.8)
-    assert b * r == 128 and abs(sub.threshold(b, r) - 0.8) < 0.1
-    assert sub.choose_bands(128, 0.3)[1] < r
+def loss(A_, B_, x_):
+    return np.sum(sub.lora_forward(x_, W0, A_, B_, 4.0) * dy)
+
+
+def test_zero_b_is_the_base_model():
+    assert np.allclose(sub.lora_forward(x, W0, A, np.zeros((5, 2)), 4.0), x @ W0.T)
+
+
+def test_grad_lora():
+    dA, dB, dx = sub.lora_backward(dy, x, W0, A, B, 4.0)
+    for M, G, which in [(A, dA, 0), (B, dB, 1), (x, dx, 2)]:
+        num = np.zeros_like(M)
+        for idx in np.ndindex(M.shape):
+            P = M.copy()
+            P[idx] += 1e-6
+            args = [A, B, x]
+            args[which] = P
+            up = loss(*args)
+            P[idx] -= 2e-6
+            num[idx] = (up - loss(*args)) / 2e-6
+        assert np.allclose(G, num, atol=1e-6)

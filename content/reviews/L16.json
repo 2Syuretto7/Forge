@@ -3,274 +3,226 @@
   "id": "L16/d0/s1",
   "lesson": "L16",
   "kind": "derivation",
-  "prompt": "<p class=\"review-context\">Warm-up</p><p>A corpus of 1.2 million characters with 1.88 characters per token holds about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> tokens.</p>",
-  "answer": "638298|tol=500",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>A matrix with singular values <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>3</mn><mo separator=\"true\">,</mo><mn>1</mn><mo separator=\"true\">,</mo><mn>0.5</mn></mrow><annotation encoding=\"application/x-tex\">3, 1, 0.5</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8389em;vertical-align:-0.1944em;\"></span><span class=\"mord\">3</span><span class=\"mpunct\">,</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">1</span><span class=\"mpunct\">,</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">0.5</span></span></span></span> loses, at rank 1, a relative Frobenius error of <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msqrt><mrow><mo stretchy=\"false\">(</mo><mn>1</mn><mo>+</mo><mn>0.25</mn><mo stretchy=\"false\">)</mo><mi mathvariant=\"normal\">/</mi><mo stretchy=\"false\">(</mo><mn>9</mn><mo>+</mo><mn>1</mn><mo>+</mo><mn>0.25</mn><mo stretchy=\"false\">)</mo></mrow></msqrt><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">\\sqrt{(1 + 0.25)/(9 + 1 + 0.25)} \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.24em;vertical-align:-0.305em;\"></span><span class=\"mord sqrt\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.935em;\"><span class=\"svg-align\" style=\"top:-3.2em;\"><span class=\"pstrut\" style=\"height:3.2em;\"></span><span class=\"mord\" style=\"padding-left:1em;\"><span class=\"mopen\">(</span><span class=\"mord\">1</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord\">0.25</span><span class=\"mclose\">)</span><span class=\"mord\">/</span><span class=\"mopen\">(</span><span class=\"mord\">9</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord\">1</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord\">0.25</span><span class=\"mclose\">)</span></span></span><span style=\"top:-2.895em;\"><span class=\"pstrut\" style=\"height:3.2em;\"></span><span class=\"hide-tail\" style=\"min-width:1.02em;height:1.28em;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400em\" height=\"1.28em\" viewBox=\"0 0 400000 1296\" preserveAspectRatio=\"xMinYMin slice\"><path d=\"M263,681c0.7,0,18,39.7,52,119\nc34,79.3,68.167,158.7,102.5,238c34.3,79.3,51.8,119.3,52.5,120\nc340,-704.7,510.7,-1060.3,512,-1067\nl0 -0\nc4.7,-7.3,11,-11,19,-11\nH40000v40H1012.3\ns-271.3,567,-271.3,567c-38.7,80.7,-84,175,-136,283c-52,108,-89.167,185.3,-111.5,232\nc-22.3,46.7,-33.8,70.3,-34.5,71c-4.7,4.7,-12.3,7,-23,7s-12,-1,-12,-1\ns-109,-253,-109,-253c-72.7,-168,-109.3,-252,-110,-252c-10.7,8,-22,16.7,-34,26\nc-22,17.3,-33.3,26,-34,26s-26,-26,-26,-26s76,-59,76,-59s76,-60,76,-60z\nM1001 80h400000v40h-400000z\"></path></svg></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.305em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "0.349|tol=0.001",
   "answerKind": "expr"
  },
  {
   "id": "L16/d0/s2",
   "lesson": "L16",
   "kind": "derivation",
-  "prompt": "<p class=\"review-context\">Warm-up</p><p>If a third of it is exact copies of the rest, the unique text is <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> million characters.</p>",
-  "answer": "0.8|tol=0.001",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>A <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>4096</mn><mo>×</mo><mn>4096</mn></mrow><annotation encoding=\"application/x-tex\">4096 \\times 4096</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">4096</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">4096</span></span></span></span> weight matrix has <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> entries.</p>",
+  "answer": "16777216",
   "answerKind": "expr"
  },
  {
   "id": "L16/d0/s3",
   "lesson": "L16",
   "kind": "derivation",
-  "prompt": "<p class=\"review-context\">Warm-up</p><p>If every copied document appears exactly twice, one epoch over the corpus shows each of them to the model <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> times, and every other document once.</p>",
-  "answer": "2",
+  "prompt": "<p class=\"review-context\">Warm-up</p><p>Two factors of rank 8 replacing an update of it, <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>8</mn><mo>×</mo><mn>4096</mn></mrow><annotation encoding=\"application/x-tex\">8 \\times 4096</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">8</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">4096</span></span></span></span> and <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>4096</mn><mo>×</mo><mn>8</mn></mrow><annotation encoding=\"application/x-tex\">4096 \\times 8</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">4096</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">8</span></span></span></span>, have <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> entries between them.</p>",
+  "answer": "65536",
   "answerKind": "expr"
  },
  {
   "id": "L16/p1",
   "lesson": "L16",
   "kind": "prediction",
-  "prompt": "<p>You train two identical models with identical compute: one on a raw crawl, one on the same crawl after removing duplicates and junk, which leaves 40% of the text. Which reaches the lower loss on clean held-out text?</p>",
+  "prompt": "<p>You fine-tune all of the model's weights on the instruction examples. Afterwards, compared with the pretrained model, its loss on ordinary text is:</p>",
   "answer": "b",
   "answerKind": "choice",
   "tol": 0,
   "options": [
    {
     "key": "a",
-    "html": "<p>The raw crawl, because it has 2.5 times as much data.</p>"
+    "html": "<p>Lower, because it has seen more data.</p>"
    },
    {
     "key": "b",
-    "html": "<p>The cleaned crawl, because every token it trains on is unique and useful.</p>"
+    "html": "<p>Higher: fine-tuning moves the weights toward the new task and away from what pretraining taught.</p>"
    },
    {
     "key": "c",
-    "html": "<p>They are equal, because compute is equal.</p>"
+    "html": "<p>The same, because the instructions are a small dataset.</p>"
    },
    {
     "key": "d",
-    "html": "<p>It depends only on the model size.</p>"
+    "html": "<p>Undefined, because the model now only answers instructions.</p>"
    }
   ],
-  "explain": "<p>At fixed compute both models see the same number of tokens. On the raw crawl many of those tokens are repeats or junk, so the model effectively trains on less, and on text unlike the held-out set. Deduplication and filtering usually help at equal compute: Lee et al. (2022) found that models trained on deduplicated data matched or beat the originals in fewer steps and emitted memorized training text far less often. The capstone measures the effect on your own corpus.</p>"
+  "explain": "<p>Fine-tuning optimizes only the new objective, so nothing holds the weights near the solution pretraining found. The loss on the original distribution rises, sometimes a little, sometimes catastrophically. The capstone measures it, and this lesson's tools (fewer trainable parameters, replaying pretraining data, staying close to the pretrained weights) keep it small.</p>"
  },
  {
   "id": "L16/p2",
   "lesson": "L16",
   "kind": "prediction",
-  "prompt": "<p>To find near-duplicates by comparing every pair of a billion documents, how many pairs would you compare?</p>",
-  "answer": "5e17",
+  "prompt": "<p>A LoRA adapter of rank 8 is added to a <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>4096</mn><mo>×</mo><mn>4096</mn></mrow><annotation encoding=\"application/x-tex\">4096 \\times 4096</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">4096</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">4096</span></span></span></span> projection. What percentage of that matrix's parameter count does the adapter train?</p>",
+  "answer": "0.39",
   "answerKind": "numeric",
-  "tol": 10000000000000000,
+  "tol": 0.02,
   "options": [],
-  "explain": "<p><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mrow><mo fence=\"true\">(</mo><mfrac linethickness=\"0px\"><msup><mn>10</mn><mn>9</mn></msup><mn>2</mn></mfrac><mo fence=\"true\">)</mo></mrow><mo>=</mo><msup><mn>10</mn><mn>9</mn></msup><mo stretchy=\"false\">(</mo><msup><mn>10</mn><mn>9</mn></msup><mo>−</mo><mn>1</mn><mo stretchy=\"false\">)</mo><mi mathvariant=\"normal\">/</mi><mn>2</mn><mo>≈</mo><mn>5</mn><mo>×</mo><msup><mn>10</mn><mn>17</mn></msup></mrow><annotation encoding=\"application/x-tex\">\\binom{10^9}{2} = 10^9 (10^9 - 1)/2 \\approx 5 \\times 10^{17}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.4179em;vertical-align:-0.35em;\"></span><span class=\"mord\"><span class=\"mopen delimcenter\" style=\"top:0em;\"><span class=\"delimsizing size1\">(</span></span><span class=\"mfrac\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:1.0679em;\"><span style=\"top:-2.355em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">2</span></span></span></span><span style=\"top:-3.144em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">1</span><span class=\"mord mtight\"><span class=\"mord mtight\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8913em;\"><span style=\"top:-2.931em;margin-right:0.0714em;\"><span class=\"pstrut\" style=\"height:2.5em;\"></span><span class=\"katex-sizing reset-size3 size1 mtight\"><span class=\"mord mtight\">9</span></span></span></span></span></span></span></span></span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.345em;\"><span></span></span></span></span></span><span class=\"mclose delimcenter\" style=\"top:0em;\"><span class=\"delimsizing size1\">)</span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">9</span></span></span></span></span></span></span></span><span class=\"mopen\">(</span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">9</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">−</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">1</span><span class=\"mclose\">)</span><span class=\"mord\">/2</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">5</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">17</span></span></span></span></span></span></span></span></span></span></span></span>. At a million comparisons per second that is 16,000 years. MinHash compresses each document into a short signature, and locality-sensitive hashing compares only documents that collide in a bucket: the work becomes roughly linear in the corpus.</p>"
+  "explain": "<p><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>8</mn><mo>⋅</mo><mo stretchy=\"false\">(</mo><mn>4096</mn><mo>+</mo><mn>4096</mn><mo stretchy=\"false\">)</mo><mo>=</mo><mn>65,536</mn></mrow><annotation encoding=\"application/x-tex\">8 \\cdot (4096 + 4096) = 65{,}536</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">8</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\">4096</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">4096</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8389em;vertical-align:-0.1944em;\"></span><span class=\"mord\">65</span><span class=\"mord\"><span class=\"mpunct\">,</span></span><span class=\"mord\">536</span></span></span></span> parameters against <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>4096</mn><mn>2</mn></msup><mo>≈</mo><mn>16.8</mn></mrow><annotation encoding=\"application/x-tex\">4096^2 \\approx 16.8</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">409</span><span class=\"mord\"><span class=\"mord\">6</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">16.8</span></span></span></span> million: about 0.39%. Over a whole model with adapters on only the query and value projections, the fraction of the block parameters is smaller still: about 0.065% for 32 layers of width 4096 (exercise 4).</p>"
  },
  {
   "id": "L16/d1/s1",
   "lesson": "L16",
   "kind": "derivation",
-  "prompt": "<p class=\"review-context\">The cost of junk</p><p>With <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>β</mi><mo>=</mo><mn>0.28</mn></mrow><annotation encoding=\"application/x-tex\">\\beta = 0.28</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8889em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0528em;\">β</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.28</span></span></span></span> and a quarter of the tokens wasted, the data term grows by <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>0.75</mn><mrow><mo>−</mo><mn>0.28</mn></mrow></msup><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">0.75^{-0.28} \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">0.7</span><span class=\"mord\"><span class=\"mord\">5</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">−</span><span class=\"mord mtight\">0.28</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
-  "answer": "1.084|tol=0.001",
-  "answerKind": "expr"
- },
- {
-  "id": "L16/d1/s2",
-  "lesson": "L16",
-  "kind": "derivation",
-  "prompt": "<p class=\"review-context\">The cost of junk</p><p>To recover that loss with more raw data, you need <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>1</mn><mi mathvariant=\"normal\">/</mi><mo stretchy=\"false\">(</mo><mn>1</mn><mo>−</mo><mi>f</mi><mo stretchy=\"false\">)</mo><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">1/(1 - f) =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">1/</span><span class=\"mopen\">(</span><span class=\"mord\">1</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">−</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1076em;\">f</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> times as many raw tokens, and as much more compute.</p>",
-  "answer": "1.333|tol=0.001",
+  "prompt": "<p class=\"review-context\">Where the gradient goes</p><p>With a 30-token prompt and a 10-token response, an unmasked loss spends a fraction <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> of its terms on the response.</p>",
+  "answer": "0.25|tol=0.001",
   "answerKind": "expr"
  },
  {
   "id": "L16/d2/s1",
   "lesson": "L16",
   "kind": "derivation",
-  "prompt": "<p class=\"review-context\">The birthday bound</p><p>With a 64-bit hash and <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>n</mi><mo>=</mo><msup><mn>10</mn><mn>9</mn></msup></mrow><annotation encoding=\"application/x-tex\">n = 10^9</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">n</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">9</span></span></span></span></span></span></span></span></span></span></span> documents, the probability of at least one false collision is about <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mi>n</mi><mn>2</mn></msup><mi mathvariant=\"normal\">/</mi><msup><mn>2</mn><mn>65</mn></msup><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">n^2 / 2^{65} \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">n</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mord\">/</span><span class=\"mord\"><span class=\"mord\">2</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">65</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
-  "answer": "0.0271|tol=0.0005",
+  "prompt": "<p class=\"review-context\">Counting an adapter</p><p>A rank-8 adapter on a <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>4096</mn><mo>×</mo><mn>4096</mn></mrow><annotation encoding=\"application/x-tex\">4096 \\times 4096</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">4096</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">4096</span></span></span></span> matrix trains <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>8</mn><mo>⋅</mo><mo stretchy=\"false\">(</mo><mn>4096</mn><mo>+</mo><mn>4096</mn><mo stretchy=\"false\">)</mo><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">8 \\cdot (4096 + 4096) =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">8</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\">4096</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">+</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mord\">4096</span><span class=\"mclose\">)</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> parameters.</p>",
+  "answer": "65536",
+  "answerKind": "expr"
+ },
+ {
+  "id": "L16/d2/s2",
+  "lesson": "L16",
+  "kind": "derivation",
+  "prompt": "<p class=\"review-context\">Counting an adapter</p><p>That is a fraction <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>65536</mn><mi mathvariant=\"normal\">/</mi><msup><mn>4096</mn><mn>2</mn></msup><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">65536 / 4096^2 \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\">65536/409</span><span class=\"mord\"><span class=\"mord\">6</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">2</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> of the matrix.</p>",
+  "answer": "0.0039|tol=0.0001",
   "answerKind": "expr"
  },
  {
   "id": "L16/d3/s1",
   "lesson": "L16",
   "kind": "derivation",
-  "prompt": "<p class=\"review-context\">MinHash accuracy</p><p>For <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>J</mi><mo>=</mo><mn>0.8</mn></mrow><annotation encoding=\"application/x-tex\">J = 0.8</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0962em;\">J</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.8</span></span></span></span> and <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>k</mi><mo>=</mo><mn>128</mn></mrow><annotation encoding=\"application/x-tex\">k = 128</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0315em;\">k</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">128</span></span></span></span>, the standard deviation of the estimate is <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msqrt><mrow><mn>0.8</mn><mo>⋅</mo><mn>0.2</mn><mi mathvariant=\"normal\">/</mi><mn>128</mn></mrow></msqrt><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">\\sqrt{0.8 \\cdot 0.2/128} \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.24em;vertical-align:-0.305em;\"></span><span class=\"mord sqrt\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.935em;\"><span class=\"svg-align\" style=\"top:-3.2em;\"><span class=\"pstrut\" style=\"height:3.2em;\"></span><span class=\"mord\" style=\"padding-left:1em;\"><span class=\"mord\">0.8</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">⋅</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mord\">0.2/128</span></span></span><span style=\"top:-2.895em;\"><span class=\"pstrut\" style=\"height:3.2em;\"></span><span class=\"hide-tail\" style=\"min-width:1.02em;height:1.28em;\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"400em\" height=\"1.28em\" viewBox=\"0 0 400000 1296\" preserveAspectRatio=\"xMinYMin slice\"><path d=\"M263,681c0.7,0,18,39.7,52,119\nc34,79.3,68.167,158.7,102.5,238c34.3,79.3,51.8,119.3,52.5,120\nc340,-704.7,510.7,-1060.3,512,-1067\nl0 -0\nc4.7,-7.3,11,-11,19,-11\nH40000v40H1012.3\ns-271.3,567,-271.3,567c-38.7,80.7,-84,175,-136,283c-52,108,-89.167,185.3,-111.5,232\nc-22.3,46.7,-33.8,70.3,-34.5,71c-4.7,4.7,-12.3,7,-23,7s-12,-1,-12,-1\ns-109,-253,-109,-253c-72.7,-168,-109.3,-252,-110,-252c-10.7,8,-22,16.7,-34,26\nc-22,17.3,-33.3,26,-34,26s-26,-26,-26,-26s76,-59,76,-59s76,-60,76,-60z\nM1001 80h400000v40h-400000z\"></path></svg></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.305em;\"><span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
-  "answer": "0.0354|tol=0.0005",
-  "answerKind": "expr"
- },
- {
-  "id": "L16/d3/s2",
-  "lesson": "L16",
-  "kind": "derivation",
-  "prompt": "<p class=\"review-context\">MinHash accuracy</p><p>To halve it you need <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> times as many hash functions.</p>",
-  "answer": "4",
-  "answerKind": "expr"
- },
- {
-  "id": "L16/d4/s1",
-  "lesson": "L16",
-  "kind": "derivation",
-  "prompt": "<p class=\"review-context\">An S-curve</p><p>With <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>b</mi><mo>=</mo><mn>16</mn></mrow><annotation encoding=\"application/x-tex\">b = 16</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6944em;\"></span><span class=\"mord mathnormal\">b</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">16</span></span></span></span> bands of <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>r</mi><mo>=</mo><mn>8</mn></mrow><annotation encoding=\"application/x-tex\">r = 8</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0278em;\">r</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">8</span></span></span></span> rows, a pair with <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>s</mi><mo>=</mo><mn>0.8</mn></mrow><annotation encoding=\"application/x-tex\">s = 0.8</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">s</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.8</span></span></span></span> becomes a candidate with probability <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mn>1</mn><mo>−</mo><mo stretchy=\"false\">(</mo><mn>1</mn><mo>−</mo><msup><mn>0.8</mn><mn>8</mn></msup><msup><mo stretchy=\"false\">)</mo><mn>16</mn></msup><mo>≈</mo></mrow><annotation encoding=\"application/x-tex\">1 - (1 - 0.8^8)^{16} \\approx</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">1</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">−</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\">1</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">−</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.0641em;vertical-align:-0.25em;\"></span><span class=\"mord\">0.</span><span class=\"mord\"><span class=\"mord\">8</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">8</span></span></span></span></span></span></span></span><span class=\"mclose\"><span class=\"mclose\">)</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">16</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">≈</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
-  "answer": "0.947|tol=0.001",
-  "answerKind": "expr"
- },
- {
-  "id": "L16/d4/s2",
-  "lesson": "L16",
-  "kind": "derivation",
-  "prompt": "<p class=\"review-context\">An S-curve</p><p>A pair with <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>s</mi><mo>=</mo><mn>0.5</mn></mrow><annotation encoding=\"application/x-tex\">s = 0.5</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">s</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">0.5</span></span></span></span> does so with probability about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
-  "answer": "0.0607|tol=0.0005",
-  "answerKind": "expr"
- },
- {
-  "id": "L16/d4/s3",
-  "lesson": "L16",
-  "kind": "derivation",
-  "prompt": "<p class=\"review-context\">An S-curve</p><p>The threshold <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo stretchy=\"false\">(</mo><mn>1</mn><mi mathvariant=\"normal\">/</mi><mn>16</mn><msup><mo stretchy=\"false\">)</mo><mrow><mn>1</mn><mi mathvariant=\"normal\">/</mi><mn>8</mn></mrow></msup></mrow><annotation encoding=\"application/x-tex\">(1/16)^{1/8}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.138em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\">1/16</span><span class=\"mclose\"><span class=\"mclose\">)</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.888em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">1/8</span></span></span></span></span></span></span></span></span></span></span></span> is about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
-  "answer": "0.7071|tol=0.0005",
-  "answerKind": "expr"
- },
- {
-  "id": "L16/d5/s1",
-  "lesson": "L16",
-  "kind": "derivation",
-  "prompt": "<p class=\"review-context\">Optimal weights</p><p>With <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>c</mi><mo>=</mo><mo stretchy=\"false\">(</mo><mn>4</mn><mo separator=\"true\">,</mo><mn>1</mn><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">c = (4, 1)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\">c</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\">4</span><span class=\"mpunct\">,</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">1</span><span class=\"mclose\">)</span></span></span></span> and <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>β</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">\\beta = 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8889em;vertical-align:-0.1944em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0528em;\">β</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span>, the weights are proportional to <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo stretchy=\"false\">(</mo><msup><mn>4</mn><mrow><mn>1</mn><mi mathvariant=\"normal\">/</mi><mn>2</mn></mrow></msup><mo separator=\"true\">,</mo><mn>1</mn><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">(4^{1/2}, 1)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1.138em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\"><span class=\"mord\">4</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.888em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">1/2</span></span></span></span></span></span></span></span></span><span class=\"mpunct\">,</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">1</span><span class=\"mclose\">)</span></span></span></span>, so the first domain gets <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msub><mi>p</mi><mn>1</mn></msub><mo>=</mo></mrow><annotation encoding=\"application/x-tex\">p_1 =</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.625em;vertical-align:-0.1944em;\"></span><span class=\"mord\"><span class=\"mord mathnormal\">p</span><span class=\"msupsub\"><span class=\"vlist-t vlist-t2\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.3011em;\"><span style=\"top:-2.55em;margin-left:0em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">1</span></span></span></span><span class=\"vlist-s\">​</span></span><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.15em;\"><span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span></span></span></span> <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
-  "answer": "0.667|tol=0.001",
-  "answerKind": "expr"
- },
- {
-  "id": "L16/d5/s2",
-  "lesson": "L16",
-  "kind": "derivation",
-  "prompt": "<p class=\"review-context\">Optimal weights</p><p>A domain of 20 billion tokens with weight 0.1 in a run of a trillion tokens is repeated for <span class=\"blank\" data-blank=\"0\">[ 1 ]</span> epochs.</p>",
-  "answer": "5",
+  "prompt": "<p class=\"review-context\">Softening</p><p>For logits <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo stretchy=\"false\">(</mo><mn>2</mn><mo separator=\"true\">,</mo><mn>1</mn><mo separator=\"true\">,</mo><mn>0</mn><mo stretchy=\"false\">)</mo></mrow><annotation encoding=\"application/x-tex\">(2, 1, 0)</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:1em;vertical-align:-0.25em;\"></span><span class=\"mopen\">(</span><span class=\"mord\">2</span><span class=\"mpunct\">,</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">1</span><span class=\"mpunct\">,</span><span class=\"mspace\" style=\"margin-right:0.1667em;\"></span><span class=\"mord\">0</span><span class=\"mclose\">)</span></span></span></span> at <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>T</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding=\"application/x-tex\">T = 1</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6833em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.1389em;\">T</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">1</span></span></span></span>, the largest probability is about <span class=\"blank\" data-blank=\"0\">[ 1 ]</span>.</p>",
+  "answer": "0.665|tol=0.002",
   "answerKind": "expr"
  },
  {
   "id": "L16/p3",
   "lesson": "L16",
   "kind": "prediction",
-  "prompt": "<p>A quality classifier is trained to separate Wikipedia articles (label 1) from random crawl pages (label 0), and you keep pages scoring above 0.5. Which good text is most at risk of being removed?</p>",
+  "prompt": "<p>You distill a teacher with a vocabulary of 50,000 tokens over a corpus of 10 billion tokens, storing the teacher's probabilities as 16-bit numbers. Storing the full distributions would take about:</p>",
   "answer": "c",
   "answerKind": "choice",
   "tol": 0,
   "options": [
    {
     "key": "a",
-    "html": "<p>Well-edited encyclopedic text.</p>"
+    "html": "<p>1 GB.</p>"
    },
    {
     "key": "b",
-    "html": "<p>Spam.</p>"
+    "html": "<p>100 GB.</p>"
    },
    {
     "key": "c",
-    "html": "<p>Good writing in styles absent from Wikipedia, such as dialogue, poetry or informal forums.</p>"
+    "html": "<p>1 PB (a million GB).</p>"
    },
    {
     "key": "d",
-    "html": "<p>Nothing: a classifier with high accuracy only removes junk.</p>"
+    "html": "<p>1 TB.</p>"
    }
   ],
-  "explain": "<p>The classifier learns what the reference looks like, not what quality is. Text far from the reference in style or dialect scores low however good it is, so aggressive classifier filtering narrows the distribution. Combine classifiers with rules, keep documents stochastically rather than by a hard cutoff, and check what was removed.</p>"
+  "explain": "<p><span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><msup><mn>10</mn><mn>10</mn></msup><mo>×</mo><mn>5</mn><mo>×</mo><msup><mn>10</mn><mn>4</mn></msup><mo>×</mo><mn>2</mn></mrow><annotation encoding=\"application/x-tex\">10^{10} \\times 5 \\times 10^4 \\times 2</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">10</span></span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.7278em;vertical-align:-0.0833em;\"></span><span class=\"mord\">5</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8974em;vertical-align:-0.0833em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\">4</span></span></span></span></span></span></span></span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span><span class=\"mbin\">×</span><span class=\"mspace\" style=\"margin-right:0.2222em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.6444em;\"></span><span class=\"mord\">2</span></span></span></span> bytes <span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mo>=</mo><msup><mn>10</mn><mn>15</mn></msup></mrow><annotation encoding=\"application/x-tex\">= 10^{15}</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.3669em;\"></span><span class=\"mrel\">=</span><span class=\"mspace\" style=\"margin-right:0.2778em;\"></span></span><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.8141em;\"></span><span class=\"mord\">1</span><span class=\"mord\"><span class=\"mord\">0</span><span class=\"msupsub\"><span class=\"vlist-t\"><span class=\"vlist-r\"><span class=\"vlist\" style=\"height:0.8141em;\"><span style=\"top:-3.063em;margin-right:0.05em;\"><span class=\"pstrut\" style=\"height:2.7em;\"></span><span class=\"katex-sizing reset-size6 size3 mtight\"><span class=\"mord mtight\"><span class=\"mord mtight\">15</span></span></span></span></span></span></span></span></span></span></span></span> bytes: a petabyte. Keeping only the top few probabilities per token (exercise 10), or distilling online with the teacher running next to the student, are the practical options.</p>"
  },
  {
   "id": "L16/p4",
   "lesson": "L16",
   "kind": "prediction",
-  "prompt": "<p>A 4-gram model and a bigram model are trained on a corpus that, unknown to you, contains the evaluation documents. The text comes from a process where only the previous word matters. Which looks better on the evaluation set?</p>",
+  "prompt": "<p>A LoRA fine-tune with rank 1 plateaus at a training loss well above full fine-tuning's, while rank 16 matches it. What is the best explanation?</p>",
   "answer": "a",
   "answerKind": "choice",
   "tol": 0,
   "options": [
    {
     "key": "a",
-    "html": "<p>The 4-gram model, by a wide margin.</p>"
+    "html": "<p>The update the task needs has more than one important direction, and a rank-1 adapter can only represent one.</p>"
    },
    {
     "key": "b",
-    "html": "<p>The bigram model, because it matches the process.</p>"
+    "html": "<p>Rank 1 needs a larger learning rate, and nothing else.</p>"
    },
    {
     "key": "c",
-    "html": "<p>They look the same.</p>"
+    "html": "<p>Rank 1 overfits.</p>"
    },
    {
     "key": "d",
-    "html": "<p>Neither: the leak makes both scores infinite.</p>"
+    "html": "<p>The adapter was initialized wrongly.</p>"
    }
   ],
-  "explain": "<p>The 4-gram model memorizes the exact sequences it saw, including the leaked evaluation text, so its evaluation loss collapses. On fresh text the bigram model is better. Contamination does not just inflate a score; it can pick the wrong model. Exercise 11 measures both.</p>"
+  "explain": "<p>A rank-<span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>r</mi></mrow><annotation encoding=\"application/x-tex\">r</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0278em;\">r</span></span></span></span> adapter can only produce rank-<span class=\"katex\"><span class=\"katex-mathml\"><math xmlns=\"http://www.w3.org/1998/Math/MathML\"><semantics><mrow><mi>r</mi></mrow><annotation encoding=\"application/x-tex\">r</annotation></semantics></math></span><span class=\"katex-html\" aria-hidden=\"true\"><span class=\"katex-base\"><span class=\"katex-strut\" style=\"height:0.4306em;\"></span><span class=\"mord mathnormal\" style=\"margin-right:0.0278em;\">r</span></span></span></span> updates; by Eckart-Young its best possible loss is set by the singular values it cannot reach. More steps cannot fix that. Raise the rank, or adapt more matrices, and compare against full fine-tuning to see how much is left.</p>"
  },
  {
   "id": "L16/concept1",
   "lesson": "L16",
   "kind": "concept",
-  "prompt": "Why does MinHash estimate Jaccard similarity?",
-  "answer": "For a random hash, the minimum over the union of two sets is equally likely to be any element, and the two minima agree exactly when it lies in the intersection, which has probability |A and B| / |A or B|.",
+  "prompt": "Why is the prompt masked out of the fine-tuning loss?",
+  "answer": "The model's job is the response; training on prompt tokens spends the gradient on reproducing inputs and teaches the model to generate prompts.",
   "answerKind": "text"
  },
  {
   "id": "L16/concept2",
   "lesson": "L16",
   "kind": "concept",
-  "prompt": "What does banding a MinHash signature achieve?",
-  "answer": "Two documents become candidates if any band of r rows matches, with probability 1 - (1 - s^r)^b: an S-curve, so only likely near-duplicates are compared.",
+  "prompt": "What does LoRA train?",
+  "answer": "A low-rank update (alpha / r) B A added to each frozen weight, with B starting at zero; it trains r (d_in + d_out) parameters per matrix and can be merged into the weight afterwards.",
   "answerKind": "text"
  },
  {
   "id": "L16/concept3",
   "lesson": "L16",
   "kind": "concept",
-  "prompt": "What is train-test contamination, and how is it detected?",
-  "answer": "Evaluation text present in the training data; it is found by n-gram overlap, such as shared 13-word sequences, and removed or reported separately.",
+  "prompt": "Why is a low-rank update usually enough for fine-tuning?",
+  "answer": "Fine-tuning updates have quickly decaying singular values, so by Eckart-Young a truncated SVD of low rank captures most of the update.",
   "answerKind": "text"
  },
  {
   "id": "L16/concept4",
   "lesson": "L16",
   "kind": "concept",
-  "prompt": "How is a data loader made exactly resumable?",
-  "answer": "Derive every shuffle from the seed and epoch so the state is a position, and save any stateful part, such as a shuffle buffer and its generator, in the checkpoint.",
+  "prompt": "What is catastrophic forgetting, and how is it limited?",
+  "answer": "The loss on the pretraining distribution rises as fine-tuning moves the weights; small learning rates, replaying pretraining data, a penalty toward the pretrained weights and training fewer parameters limit it.",
   "answerKind": "text"
  },
  {
   "id": "L16/concept5",
   "lesson": "L16",
   "kind": "concept",
-  "prompt": "How many epochs does a domain get under mixture weights?",
-  "answer": "A domain sampled with weight p in a run of T tokens is repeated p T / size times.",
+  "prompt": "Why does distillation use a temperature, and why the T squared factor?",
+  "answer": "Softening both distributions exposes the teacher's small probabilities on wrong answers; the gradient of the softened KL scales as 1/T, so T squared keeps its size independent of T.",
   "answerKind": "text"
  },
  {
   "id": "L16/concept6",
   "lesson": "L16",
   "kind": "concept",
-  "prompt": "What is the risk of filtering with a quality classifier?",
-  "answer": "It learns what its reference text looks like, so it can remove good text in other styles or dialects and narrow the training distribution.",
+  "prompt": "How do you pack several examples into one sequence correctly?",
+  "answer": "Use an attention mask that only lets positions attend within their own example, and restart the position ids at each example.",
   "answerKind": "text"
  },
  {
-  "id": "L16/kata/e02",
+  "id": "L16/kata/e01",
   "lesson": "L16",
   "kind": "kata",
-  "prompt": "MinHash signatures",
+  "prompt": "The SFT loss, masked",
   "answer": "",
   "answerKind": "code",
-  "exercise": "e02"
+  "exercise": "e01"
  },
  {
   "id": "L16/kata/e03",
   "lesson": "L16",
   "kind": "kata",
-  "prompt": "Locality-sensitive hashing: the S-curve",
+  "prompt": "A LoRA layer",
   "answer": "",
   "answerKind": "code",
   "exercise": "e03"
  },
  {
-  "id": "L16/kata/e09",
+  "id": "L16/kata/e07",
   "lesson": "L16",
   "kind": "kata",
-  "prompt": "Finding contamination",
+  "prompt": "Distillation",
   "answer": "",
   "answerKind": "code",
-  "exercise": "e09"
+  "exercise": "e07"
  }
 ]

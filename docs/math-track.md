@@ -8,8 +8,8 @@ The track is 38 lessons and 428 hours, taking a learner from arithmetic and esti
 
 - **Fits Forge as it is built.** Every lesson uses the existing eight-movement player (recall, puzzle, derivation, build, scale, break it, Feynman, capstone), the existing directives, the review queue and the AI Feynman grader. Every lesson is 10 or 12 hours and exactly 50 percent theory, 50 percent practice by the validator's own counting.
 - **A true graph, not a list.** Six strands (number and information, algebra and proof, linear algebra, calculus, probability, optimization) run through six stages. 120 new edges: 74 vertical prerequisites, 27 horizontal links between strands at the same stage, and 19 long-range edges that carry an idea years forward. The longest prerequisite chain is 13 lessons.
-- **Runs the full height of the site.** The track no longer stops at Foundations. Math lessons sit beside the core, architecture, systems and LLM lessons at every stage and link to them horizontally (M29 beside L09, M34 beside L13, M35 beside L15, M36 beside L21).
-- **Self-contained.** Every math lesson builds only on earlier math lessons, starting from M01, and the L lessons build on the track: M12 and M25 lead to L05, M19 to L07 and L08, M25 and M27 to L06, M27 to L14, and M28 to L09.
+- **Runs the full height of the site.** The track no longer stops at Foundations. Math lessons sit beside the core, architecture, systems and LLM lessons at every stage and link to them horizontally (M29 beside L05, M34 beside L09, M35 beside L11, M36 beside L17).
+- **Self-contained.** Every math lesson builds only on earlier math lessons, starting from M01, and the L lessons build on the track: M12 and M25 lead to L01, M19 to L03 and L04, M25 and M27 to L02, M27 to L10, and M28 to L05.
 
 The graph was checked with the same rules as Forge's validator: vertical edges form a DAG and never point backwards in stage; horizontal edges stay within one stage and cross strands; every lesson has an inbound edge, an outbound edge and at least one horizontal or long-range edge.
 
@@ -71,28 +71,28 @@ The track is a grid: strands run across, stages run down, and Forge's own lesson
 
 &#91;embedded content: math track · 6 strands x 6 stages · 38 lessons\]
 
-Prerequisites run down a column or diagonally between columns; horizontal edges tie strands within one band (M19 to M27, M14 to M23); long-range edges skip bands, such as M07 to L13 or M01 to M35.
+Prerequisites run down a column or diagonally between columns; horizontal edges tie strands within one band (M19 to M27, M14 to M23); long-range edges skip bands, such as M07 to L09 or M01 to M35.
 
 | Edge type | Count | Rule | Example |
 | --- | --- | --- | --- |
 | Vertical | 74 | Prerequisite; forms a DAG; never points to an earlier stage | M18 to M19: the multivariable chain rule becomes reverse-mode autodiff |
 | Horizontal | 27 | Same stage, different strand or track | M12 to M25: least squares is maximum likelihood under Gaussian noise |
-| Long-range | 19 | Different stages; an idea planted early returns later | M14 to L20: SVD returns as the low-rank update in LoRA |
+| Long-range | 19 | Different stages; an idea planted early returns later | M14 to L16: SVD returns as the low-rank update in LoRA |
 
-**How past and future meet.** Each edge is used in both directions. Forward, it is a hook at the end of the earlier lesson and an edge chip at the paragraph where the idea will return. Backward, it is the later lesson's reuse, which seeds its Recall movement with review cards from the earlier one, and a retro-annotation that Forge writes into the earlier lesson once the later one is complete. A learner rereading M07 after L13 sees, beside the rotation derivation, a note that this is how rotary position embeddings work.
+**How past and future meet.** Each edge is used in both directions. Forward, it is a hook at the end of the earlier lesson and an edge chip at the paragraph where the idea will return. Backward, it is the later lesson's reuse, which seeds its Recall movement with review cards from the earlier one, and a retro-annotation that Forge writes into the earlier lesson once the later one is complete. A learner rereading M07 after L09 sees, beside the rotation derivation, a note that this is how rotary position embeddings work.
 
 **Threads.** Eight objects recur so often that they work as long arcs of their own; each return adds one level of depth.
 
 | Thread | Lessons, in order of return |
 | --- | --- |
-| Softmax | M06 defined, M19 Jacobian, M26 made stable, M27 cross-entropy gradient, M30 maximum-entropy optimum, M34 saturation and 1/sqrt(d), M36 policy, then L05, L13, L21 |
+| Softmax | M06 defined, M19 Jacobian, M26 made stable, M27 cross-entropy gradient, M30 maximum-entropy optimum, M34 saturation and 1/sqrt(d), M36 policy, then L01, L09, L17 |
 | The Gaussian | M17 integral, M20 n-dimensional normalizer, M22, M23 conditioning, M24 central limit, M25 MLE, M34 concentration, M37 diffusion |
-| Least squares | M02 two unknowns, M12 projection, M14 pseudo-inverse, M25 likelihood, M35 nonlinear fits, L05 |
+| Least squares | M02 two unknowns, M12 projection, M14 pseudo-inverse, M25 likelihood, M35 nonlinear fits, L01 |
 | Condition number | M02 near-singular systems, M11 pivoting, M14 singular values, M26 stability, M28 valley shape, M29 rate of descent, M33 preconditioning |
-| Logarithm | M01 magnitudes, M06, M26 log-sum-exp, M27 nats and bits, M35 log-log fits, L14 perplexity |
+| Logarithm | M01 magnitudes, M06, M26 log-sum-exp, M27 nats and bits, M35 log-log fits, L10 perplexity |
 | Eigenvectors | M13, M14, M18 Hessian, M23 covariance ellipses, M28, M29 momentum, M32 stationary distributions |
-| Variance of sums | M22 initialization, M24 standard error, M31 Hoeffding, M34 random directions, M36 estimator variance, L10 |
-| Rotation | M07 plane and complex numbers, M10 matrices, M14 SVD as rotate-stretch-rotate, L13 rotary embeddings |
+| Variance of sums | M22 initialization, M24 standard error, M31 Hoeffding, M34 random directions, M36 estimator variance, L06 |
+| Rotation | M07 plane and complex numbers, M10 matrices, M14 SVD as rotate-stretch-rotate, L09 rotary embeddings |
 
 ## Stage 0: Prelude
 
@@ -149,7 +149,7 @@ Planted for the future: M31 (quantifiers and proof by contradiction return in ge
 
 Algebra and proof · 10 hours · builds on M02 · unlocks M05, M06, M07, M09
 
-Planted for the future: L07 (sums of shifted ReLUs return as one-hidden-layer networks).
+Planted for the future: L03 (sums of shifted ReLUs return as one-hidden-layer networks).
 
 - **Puzzle:** Stack two ReLU-shaped pieces and you get a bump. How many pieces do you need to draw a smooth hill to within 0.01? Sketch before you compute.
 - **Derive:** Function as a machine with domain and codomain; graphs; composition and its order; inverses and when they exist; linear, affine, quadratic, polynomial, rational, piecewise; transformations (shift, scale, reflect) as composition with affine maps.
@@ -196,7 +196,7 @@ Linear algebra · 10 hours · builds on M04 · unlocks M09
 
 Across: M06 (e to the i theta joins growth and rotation).
 
-Planted for the future: L13 (planar rotations return as rotary position embeddings).
+Planted for the future: L09 (planar rotations return as rotary position embeddings).
 
 - **Puzzle:** Rotate a point by 30 degrees, then by 45. Is that the same as rotating by 75? Now do it with complex multiplication and see the angles add by themselves.
 - **Derive:** Pythagoras by rearrangement; the unit circle; sine and cosine as coordinates; radians; angle-addition formulas; polar coordinates; complex numbers as points, multiplication as rotate-and-scale; Euler's formula e^(i theta) as a definition that keeps every rule working.
@@ -226,7 +226,7 @@ Planted for the future: M31 (counting returns as the union bound and growth func
 
 ## Stage 1: Foundations
 
-Twenty lessons, 228 hours, build the undergraduate core in four parallel strands (linear algebra, calculus, probability, numerics and information) that meet at convexity in M28. L05 to L09 open only once their math prerequisites here are complete.
+Twenty lessons, 228 hours, build the undergraduate core in four parallel strands (linear algebra, calculus, probability, numerics and information) that meet at convexity in M28. L01 to L05 open only once their math prerequisites here are complete.
 
 ### M09 Vectors and the dot product
 
@@ -247,7 +247,7 @@ Planted for the future: M34 (The dot product returns as near-orthogonality in hi
 
 Linear algebra · 10 hours · builds on M09 · unlocks M11, M18
 
-Planted for the future: L13 (Matrix products are the whole of attention's compute).
+Planted for the future: L09 (Matrix products are the whole of attention's compute).
 
 - **Puzzle:** A 2x2 grid of numbers turns a square into a slanted parallelogram. Which numbers say where the corners go? Predict the image of (1,0) and (0,1).
 - **Derive:** Linearity; a matrix is what it does to basis vectors; matrix-vector product as a combination of columns; composition is the matrix product (and why it is not commutative); identity, inverse, transpose; the determinant as signed area scaling; block matrices; batch matmul shapes.
@@ -275,7 +275,7 @@ Across: M26 (Pivoting is a stability choice, not only an algebra step).
 
 ### M12 Orthogonality, projections and least squares
 
-Linear algebra · 12 hours · builds on M11 · unlocks M13, L05
+Linear algebra · 12 hours · builds on M11 · unlocks M13, L01
 
 Across: M25 (Least squares is maximum likelihood under Gaussian noise); M22 (Variance is a squared length; covariance an inner product).
 
@@ -313,7 +313,7 @@ Linear algebra · 12 hours · builds on M13 · unlocks M33, M34
 
 Across: M23 (PCA is the eigen-decomposition of the covariance matrix).
 
-Planted for the future: L20 (SVD returns as the low-rank update in LoRA).
+Planted for the future: L16 (SVD returns as the low-rank update in LoRA).
 
 - **Puzzle:** Two thousand 768-dimensional embeddings, yet three directions carry most of the variance. How do you find those directions and how many you need?
 - **Derive:** SVD from the eigen-decomposition of A^T A; geometry: rotate, stretch, rotate; Eckart-Young theorem; low-rank approximation; PCA as SVD of centred data; pseudo-inverse; condition number as the ratio of extreme singular values.
@@ -386,7 +386,7 @@ Across: M13 (Hessian eigenvalues decide minimum, maximum or saddle).
 
 ### M19 Matrix calculus and automatic differentiation
 
-Calculus · 12 hours · builds on M18 · unlocks L07, L08
+Calculus · 12 hours · builds on M18 · unlocks L03, L04
 
 Across: M27 (The cross-entropy gradient through softmax is p minus y); M26 (Finite differences fail at tiny steps; autodiff does not).
 
@@ -478,11 +478,11 @@ Planted for the future: M36 (Monte Carlo returns as gradient estimation).
 
 ### M25 Inference: likelihood, MLE, MAP and the bootstrap
 
-Probability · 12 hours · builds on M24, M16 · unlocks M31, M35, L05, L06
+Probability · 12 hours · builds on M24, M16 · unlocks M31, M35, L01, L02
 
 Across: M12 (Least squares is maximum likelihood under Gaussian noise); M27 (Maximizing likelihood is minimizing cross-entropy); M28 (Negative log-likelihoods of exponential families are convex).
 
-Planted for the future: L23 (The bootstrap returns as confidence intervals on evals).
+Planted for the future: L19 (The bootstrap returns as confidence intervals on evals).
 
 - **Puzzle:** A coin lands heads 7 times in 10. What is your best estimate of its bias, and how sure should you be? Two schools give two answers.
 - **Derive:** Estimators, bias and variance; likelihood; MLE for Bernoulli, Gaussian, Poisson; Fisher information sketch; Bayesian posterior; conjugate priors; MAP as regularized MLE; the bootstrap; confidence versus credible intervals.
@@ -499,7 +499,7 @@ Number and information · 10 hours · builds on M06, M15 · unlocks M33
 
 Across: M11 (Pivoting is a stability choice, not only an algebra step); M19 (Finite differences fail at tiny steps; autodiff does not); M24 (Summing a million samples needs compensated summation).
 
-Planted for the future: L17 (Machine epsilon returns as the limits of bf16 and fp8).
+Planted for the future: L13 (Machine epsilon returns as the limits of bf16 and fp8).
 
 - **Puzzle:** In float32, 16,777,216 + 1 = 16,777,216. Predict which ordinary-looking loss computation will silently suffer the same fate.
 - **Derive:** Binary representation; sign, exponent, mantissa; rounding and machine epsilon; catastrophic cancellation; forward and backward error; condition number of a problem versus stability of an algorithm; stable log-sum-exp, softmax and log-sigmoid; compensated summation.
@@ -512,11 +512,11 @@ Planted for the future: L17 (Machine epsilon returns as the limits of bf16 and f
 
 ### M27 Information theory: entropy, cross-entropy, KL
 
-Number and information · 10 hours · builds on M22, M06 · unlocks M30, M36, L06, L14
+Number and information · 10 hours · builds on M22, M06 · unlocks M30, M36, L02, L10
 
 Across: M19 (The cross-entropy gradient through softmax is p minus y); M21 (Surprise of an event is minus the log of its probability); M25 (Maximizing likelihood is minimizing cross-entropy).
 
-Planted for the future: L21 (KL divergence returns as the RLHF penalty).
+Planted for the future: L17 (KL divergence returns as the RLHF penalty).
 
 - **Puzzle:** A language model reports a loss of 1.5. In what units, and what does 1.5 mean about guessing the next character?
 - **Derive:** Surprisal; entropy; source coding intuition; cross-entropy; KL divergence and Gibbs' inequality via Jensen; mutual information; maximizing likelihood equals minimizing cross-entropy; perplexity.
@@ -529,7 +529,7 @@ Planted for the future: L21 (KL divergence returns as the RLHF penalty).
 
 ### M28 Convexity and the geometry of optimization
 
-Optimization · 12 hours · builds on M18, M13 · unlocks M29, M30, L09
+Optimization · 12 hours · builds on M18, M13 · unlocks M29, M30, L05
 
 Across: M25 (Negative log-likelihoods of exponential families are convex).
 
@@ -550,7 +550,7 @@ Ten lessons, 120 hours, sit beside the core, architecture, systems and LLM lesso
 
 Optimization · Learning stage · 12 hours · builds on M28, M24 · unlocks M35, M36
 
-Across: L09 (Proved rates meet the practical optimizers); M32 (Constant-step SGD is a Markov chain with a stationary distribution).
+Across: L05 (Proved rates meet the practical optimizers); M32 (Constant-step SGD is a Markov chain with a stationary distribution).
 
 Returning from the past: M05 (Geometric series return as linear convergence rates); M13 (Eigenvalues of the Hessian set momentum's optimal value); M16 (The second-order Taylor term returns as the step-size limit 2/L).
 
@@ -567,9 +567,9 @@ Returning from the past: M05 (Geometric series return as linear convergence rate
 
 Optimization · Learning stage · 12 hours · builds on M28, M27 · unlocks M38
 
-Across: L05 (Ridge regression is a Lagrangian with a norm constraint).
+Across: L01 (Ridge regression is a Lagrangian with a norm constraint).
 
-Planted for the future: L21 (The KL-regularized optimum returns as the basis of DPO).
+Planted for the future: L17 (The KL-regularized optimum returns as the basis of DPO).
 
 - **Puzzle:** Among all distributions with a given expected reward, which has the highest entropy? Predict the shape and you have predicted softmax.
 - **Derive:** Lagrangian; inequality constraints and KKT conditions; weak and strong duality; the support vector machine and its dual; projected gradient descent; entropy-regularized maximization yields softmax (Gibbs); KL-regularized optimum as reweighted reference.
@@ -584,7 +584,7 @@ Planted for the future: L21 (The KL-regularized optimum returns as the basis of 
 
 Probability · Learning stage · 12 hours · builds on M24, M25 · unlocks M34
 
-Across: L06 (Concentration bounds put numbers on the generalization gap).
+Across: L02 (Concentration bounds put numbers on the generalization gap).
 
 Returning from the past: M03 (Quantifiers and proof by contradiction return in generalization bounds); M08 (Counting returns as the union bound and growth functions).
 
@@ -618,7 +618,7 @@ Returning from the past: M13 (A stationary distribution is an eigenvector with e
 
 Number and information · Models and GPUs stage · 12 hours · builds on M14, M26 · unlocks M38
 
-Across: L11 (Arithmetic intensity places each kernel on the roofline); M34 (Randomized SVD works because random projections preserve geometry).
+Across: L07 (Arithmetic intensity places each kernel on the roofline); M34 (Randomized SVD works because random projections preserve geometry).
 
 - **Puzzle:** A 4096 x 4096 matmul takes 137 billion floating-point operations. Why can a smart order of loops make it ten times faster with the same arithmetic?
 - **Derive:** FLOP and byte counts; arithmetic intensity; blocked algorithms; conjugate gradient and Krylov subspaces; preconditioning; randomized range finders and randomized SVD with error bounds; sketching.
@@ -633,7 +633,7 @@ Across: L11 (Arithmetic intensity places each kernel on the roofline); M34 (Rand
 
 Linear algebra · Models and GPUs stage · 12 hours · builds on M31, M14 · unlocks M38
 
-Across: L13 (Near-orthogonality explains the 1/sqrt(d) in attention); L10 (Variance preservation is what initialization and normalization protect); M33 (Randomized SVD works because random projections preserve geometry).
+Across: L09 (Near-orthogonality explains the 1/sqrt(d) in attention); L06 (Variance preservation is what initialization and normalization protect); M33 (Randomized SVD works because random projections preserve geometry).
 
 Returning from the past: M09 (The dot product returns as near-orthogonality in high dimension).
 
@@ -650,7 +650,7 @@ Returning from the past: M09 (The dot product returns as near-orthogonality in h
 
 Probability · Scale stage · 12 hours · builds on M29, M25 · unlocks M38
 
-Across: L15 (Your fitting machinery produces the scaling-law fit).
+Across: L11 (Your fitting machinery produces the scaling-law fit).
 
 Returning from the past: M01 (Orders of magnitude return as compute budgets on log-log axes).
 
@@ -667,7 +667,7 @@ Returning from the past: M01 (Orders of magnitude return as compute budgets on l
 
 Optimization · Frontier stage · 12 hours · builds on M29, M27 · unlocks M38
 
-Across: L21 (REINFORCE is the policy-gradient estimator behind RLHF).
+Across: L17 (REINFORCE is the policy-gradient estimator behind RLHF).
 
 Returning from the past: M24 (Monte Carlo returns as gradient estimation).
 
@@ -699,7 +699,7 @@ Returning from the past: M20 (Change of variables returns as density transport i
 
 All strands · Frontier stage · 12 hours · builds on M30, M33, M34, M35, M36, M37 · final lesson of the track
 
-Across: L24 (The paper audit method is applied to your capstone model).
+Across: L20 (The paper audit method is applied to your capstone model).
 
 - **Puzzle:** Pick one of three provided ML papers. Before reading its method section, predict which lessons of this track it will lean on.
 - **Derive:** Re-derive every equation of the chosen paper (for example DPO from the KL-regularized objective, LoRA's low-rank argument, or Adam's update) step by step, flagging each lesson it draws on.
@@ -718,21 +718,21 @@ The track drops into the existing repo with two small schema changes, one valida
 
 | L lesson | Prerequisites from the track | Linked across or from earlier |
 | --- | --- | --- |
-| L05 | M12, M25 | M30 |
-| L06 | M25, M27 | M31 |
-| L07 | M19 | M04 |
-| L08 | M19 | none |
-| L09 | M28 | M29 |
-| L10 | none | M34 |
-| L11 | none | M33 |
-| L13 | none | M34, M07, M10 |
-| L14 | M27 | none |
-| L15 | none | M35 |
-| L17 | none | M26 |
-| L20 | none | M14 |
-| L21 | none | M36, M27, M30 |
-| L23 | none | M25 |
-| L24 | none | M38 |
+| L01 | M12, M25 | M30 |
+| L02 | M25, M27 | M31 |
+| L03 | M19 | M04 |
+| L04 | M19 | none |
+| L05 | M28 | M29 |
+| L06 | none | M34 |
+| L07 | none | M33 |
+| L09 | none | M34, M07, M10 |
+| L10 | M27 | none |
+| L11 | none | M35 |
+| L13 | none | M26 |
+| L16 | none | M14 |
+| L17 | none | M36, M27, M30 |
+| L19 | none | M25 |
+| L20 | none | M38 |
 
 Progress made under an earlier curriculum is reset once, when the new curriculum first loads.
 
@@ -765,5 +765,5 @@ Authoring follows the graph so that every lesson's recall and edge chips can poi
 2. Prelude, M01 to M08, with their eight widgets. The learner can start here while the rest is written.
 3. Foundations linear algebra and calculus, M09 to M20.
 4. Foundations probability and numerics, M21 to M28.
-5. Learning stage, M29 to M32, with horizontal chips into L05, L06 and L09.
+5. Learning stage, M29 to M32, with horizontal chips into L01, L02 and L05.
 6. M33 to M37 beside their L-lesson partners; then M38 and the retro-annotations that every M lesson places into its predecessors.

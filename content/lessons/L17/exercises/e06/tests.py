@@ -1,21 +1,15 @@
+import numpy as np
 import sub
 
+p = np.array([0.5, 0.3, 0.15, 0.05])
+q = np.array([0.25, 0.25, 0.25, 0.25])
+rng = np.random.default_rng(7)
+ys = rng.choice(4, size=200000, p=p)
 
-def test_backoff_and_skip():
-    s = sub.DynamicLossScaler(scale=1024.0, interval=3)
-    assert s.update(True) is False and s.scale == 512.0
-    assert s.update(False) is True and s.scale == 512.0
 
-
-def test_growth():
-    s = sub.DynamicLossScaler(scale=8.0, interval=3)
-    results = [s.update(False) for _ in range(3)]
-    assert results == [True] * 3 and s.scale == 16.0
-    s.update(False)
-    s.update(True)
-    assert s.scale == 8.0
-    for _ in range(2):
-        s.update(False)
-    assert s.scale == 8.0
-    s.update(False)
-    assert s.scale == 16.0
+def test_unbiased_and_nonnegative():
+    k1, k3 = sub.kl_estimators(np.log(p[ys]), np.log(q[ys]))
+    true = sub.exact_kl(p, q)
+    assert abs(k1.mean() - true) < 0.01 and abs(k3.mean() - true) < 0.01
+    assert np.all(k3 >= 0) and np.any(k1 < 0)
+    assert k3.var() < k1.var()

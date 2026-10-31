@@ -1,154 +1,287 @@
-import numpy as np
+# %% [markdown]
+# # L10 capstone: a GPT with its own tokenizer
+#
+# Choose **Runtime, Change runtime type, T4 GPU**, then run the cells in order. You will train a
+# byte-level BPE tokenizer on Shakespeare, encode the corpus, train a small GPT on the tokens, measure
+# its validation loss in bits per character (comparable across tokenizers), and sample from it with
+# temperature, top-k and top-p. The last cell is the autograder.
 
-GLYPHS = [
-    ["..####..", ".##..##.", ".##..##.", ".##..##.", ".##..##.", ".##..##.", ".##..##.", "..####.."],
-    ["...##...", "..###...", ".####...", "...##...", "...##...", "...##...", "...##...", ".######."],
-    ["..####..", ".##..##.", ".....##.", "....##..", "...##...", "..##....", ".##.....", ".######."],
-    ["..####..", ".##..##.", ".....##.", "...###..", ".....##.", ".....##.", ".##..##.", "..####.."],
-    ["....##..", "...###..", "..####..", ".##.##..", ".######.", "....##..", "....##..", "....##.."],
-    [".######.", ".##.....", ".##.....", ".#####..", ".....##.", ".....##.", ".##..##.", "..####.."],
-    ["..####..", ".##.....", ".##.....", ".#####..", ".##..##.", ".##..##.", ".##..##.", "..####.."],
-    [".######.", ".....##.", "....##..", "...##...", "..##....", "..##....", "..##....", "..##...."],
-    ["..####..", ".##..##.", ".##..##.", "..####..", ".##..##.", ".##..##.", ".##..##.", "..####.."],
-    ["..####..", ".##..##.", ".##..##.", ".##..##.", "..#####.", ".....##.", ".....##.", "..####.."],
-]
-TEMPLATES = np.array([[[1.0 if c == "#" else 0.0 for c in row] for row in g] for g in GLYPHS])
+# %%
+import hashlib
+import math
+import os
+import pathlib
+import re
+import time
+import urllib.request
 
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-def make_digits(n, seed):
-    """Noisy, shifted 8x8 renderings of ten glyphs. Returns X (n, 64) and y (n,). Do not change."""
-    rng = np.random.default_rng(seed)
-    y = rng.integers(0, 10, size=n)
-    X = np.zeros((n, 8, 8))
-    for i in range(n):
-        img = TEMPLATES[y[i]]
-        dx, dy = rng.integers(-1, 2, size=2)
-        img = np.roll(np.roll(img, dy, axis=0), dx, axis=1)
-        img = img * rng.uniform(0.7, 1.0) * (rng.uniform(size=(8, 8)) > 0.1)
-        X[i] = img + 0.25 * rng.normal(size=(8, 8))
-    return X.reshape(n, 64), y
+SMALL = os.environ.get("SMALL") == "1"
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+torch.manual_seed(0)
 
+CORPUS_URL = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
+CORPUS_SHA256 = "86c4e6aa9db7c042ec79f339dcb96d42b0075e16b8fc2e86bf0ca57e2dc565ed"
+# Inside a checkout of the Forge repository the file is already there; in Colab it is downloaded.
+local = [p for p in (pathlib.Path("data/tinyshakespeare.txt"), pathlib.Path("../data/tinyshakespeare.txt")) if p.exists()]
+raw = local[0].read_bytes() if local else urllib.request.urlopen(CORPUS_URL, timeout=60).read()
+assert hashlib.sha256(raw).hexdigest() == CORPUS_SHA256, "unexpected corpus contents"
+text = raw.decode("utf-8")
+if SMALL:
+    text = text[:60_000]
+split_at = int(0.9 * len(text))
+train_text, val_text = text[:split_at], text[split_at:]
+print(f"{len(text):,} characters; device {DEVICE}")
 
-def layernorm_forward(x, gamma, beta, eps=1e-5):
-    """Normalize each example (row) over its features, then scale and shift. Return (y, cache)."""
-    mu = x.mean(axis=1, keepdims=True)
-    var = x.var(axis=1, keepdims=True)
-    r = 1.0 / np.sqrt(var + eps)
-    xh = (x - mu) * r
-    return gamma * xh + beta, (xh, r, gamma)
+# %% [markdown]
+# ## 1. A byte-level BPE tokenizer
+#
+# Split the text into chunks with the pattern below (words keep their leading space), count each
+# distinct chunk once with its frequency, and learn merges of the most frequent adjacent pair within
+# chunks, starting from the 256 byte values. Encode by applying merges in the order they were learned.
 
-
-def layernorm_backward(dy, cache):
-    """Return (dx, dgamma, dbeta)."""
-    xh, r, gamma = cache
-    d = dy.shape[1]
-    dgamma = (dy * xh).sum(axis=0)
-    dbeta = dy.sum(axis=0)
-    dxh = dy * gamma
-    dx = r / d * (d * dxh - dxh.sum(axis=1, keepdims=True) - xh * (dxh * xh).sum(axis=1, keepdims=True))
-    return dx, dgamma, dbeta
-
-
-def adam_init(p):
-    return {"t": 0, "m": {k: np.zeros_like(v) for k, v in p.items()}, "v": {k: np.zeros_like(v) for k, v in p.items()}}
+# %%
+PATTERN = re.compile(r"'s|'t|'re|'ve|'m|'ll|'d| ?[^\W\d_]+| ?\d+| ?[^\s\w]+|\s+(?!\S)|\s+")
+VOCAB_SIZE = 300 if SMALL else 512
 
 
-def adam_step(p, g, state, lr, b1=0.9, b2=0.999, eps=1e-8):
-    state["t"] += 1
-    t = state["t"]
-    for k in p:
-        state["m"][k] = b1 * state["m"][k] + (1 - b1) * g[k]
-        state["v"][k] = b2 * state["v"][k] + (1 - b2) * g[k] ** 2
-        p[k] -= lr * (state["m"][k] / (1 - b1 ** t)) / (np.sqrt(state["v"][k] / (1 - b2 ** t)) + eps)
+def merge(ids, pair, new_id):
+    out, i = [], 0
+    while i < len(ids):
+        if i + 1 < len(ids) and ids[i] == pair[0] and ids[i + 1] == pair[1]:
+            out.append(new_id)
+            i += 2
+        else:
+            out.append(ids[i])
+            i += 1
+    return out
 
 
-
-DEPTH = 30
-WIDTH = 48
-
-
-def init_model(depth, width, seed=0, d_in=64, d_out=10):
-    """Pre-norm residual MLP: h = X Win; h <- h + relu(LN(h) W_l) per layer; logits = LN(h) Wout."""
-    rng = np.random.default_rng(seed)
-    p = {"Win": rng.normal(size=(d_in, width)) * np.sqrt(1.0 / d_in)}
-    for l in range(depth):
-        p[f"W{l}"] = rng.normal(size=(width, width)) * np.sqrt(2.0 / width)
-        p[f"g{l}"], p[f"b{l}"] = np.ones(width), np.zeros(width)
-    p["gf"], p["bf"] = np.ones(width), np.zeros(width)
-    p["Wout"] = rng.normal(size=(width, d_out)) * np.sqrt(1.0 / width)
-    return p
-
-
-def _depth(p):
-    return sum(1 for k in p if k[0] == "W" and k[1:].isdigit())
-
-
-def _forward(p, X):
-    h = X @ p["Win"]
-    caches = []
-    for l in range(_depth(p)):
-        u, c = layernorm_forward(h, p[f"g{l}"], p[f"b{l}"])
-        z = u @ p[f"W{l}"]
-        caches.append((u, z, c))
-        h = h + np.maximum(z, 0.0)
-    hf, cf = layernorm_forward(h, p["gf"], p["bf"])
-    return hf @ p["Wout"], hf, caches, cf
+def train_bpe(text, vocab_size):
+    """Return the merges {(a, b): new_id} in the order learned."""
+    # BEGIN SOLUTION
+    freq = {}
+    for c in PATTERN.findall(text):
+        freq[c] = freq.get(c, 0) + 1
+    words = {c: list(c.encode("utf-8")) for c in freq}
+    merges = {}
+    for new_id in range(256, vocab_size):
+        counts = {}
+        for c, ids in words.items():
+            for p in zip(ids, ids[1:]):
+                counts[p] = counts.get(p, 0) + freq[c]
+        if not counts:
+            break
+        best = max(counts, key=counts.get)
+        if counts[best] < 2:
+            break
+        words = {c: (merge(ids, best, new_id) if len(ids) > 1 else ids) for c, ids in words.items()}
+        merges[best] = new_id
+    return merges
+    # END SOLUTION
 
 
-def loss_and_grads(params, X, y):
-    logits, hf, caches, cf = _forward(params, X)
-    B = X.shape[0]
-    Z = logits - logits.max(axis=1, keepdims=True)
-    logp = Z - np.log(np.exp(Z).sum(axis=1, keepdims=True))
-    loss = -float(np.mean(logp[np.arange(B), y]))
-    G = np.exp(logp)
-    G[np.arange(B), y] -= 1.0
-    G /= B
-    g = {"Wout": hf.T @ G}
-    dh, g["gf"], g["bf"] = layernorm_backward(G @ params["Wout"].T, cf)
-    for l in range(len(caches) - 1, -1, -1):
-        u, z, c = caches[l]
-        dz = dh * (z > 0)
-        g[f"W{l}"] = u.T @ dz
-        du, g[f"g{l}"], g[f"b{l}"] = layernorm_backward(dz @ params[f"W{l}"].T, c)
-        dh = dh + du
-    g["Win"] = X.T @ dh
-    return loss, g
+class Tokenizer:
+    def __init__(self, merges):
+        self.merges = merges
+        self.vocab = {i: bytes([i]) for i in range(256)}
+        for (a, b), i in merges.items():
+            self.vocab[i] = self.vocab[a] + self.vocab[b]
+        self.cache = {}
+
+    def encode_chunk(self, chunk):
+        if chunk not in self.cache:
+            # BEGIN SOLUTION
+            ids = list(chunk.encode("utf-8"))
+            while len(ids) >= 2:
+                pairs = set(zip(ids, ids[1:]))
+                best = min(pairs, key=lambda p: self.merges.get(p, float("inf")))
+                if best not in self.merges:
+                    break
+                ids = merge(ids, best, self.merges[best])
+            self.cache[chunk] = ids
+            # END SOLUTION
+        return self.cache[chunk]
+
+    def encode(self, text):
+        return [i for chunk in PATTERN.findall(text) for i in self.encode_chunk(chunk)]
+
+    def decode(self, ids):
+        return b"".join(self.vocab[i] for i in ids).decode("utf-8", errors="replace")
 
 
-def train(seed=0, steps=250, lr=1e-2, batch=50):
-    X, y = make_digits(2000, 0)
-    p = init_model(DEPTH, WIDTH, seed)
-    state = adam_init(p)
-    rng = np.random.default_rng(seed)
-    losses = []
-    t = 0
-    while t < steps:
-        perm = rng.permutation(X.shape[0])
-        for i in range(0, X.shape[0] - batch + 1, batch):
-            if t == steps:
-                break
-            t += 1
-            idx = perm[i:i + batch]
-            loss, g = loss_and_grads(p, X[idx], y[idx])
-            losses.append(loss)
-            adam_step(p, g, state, lr * 0.5 * (1.0 + np.cos(np.pi * t / steps)))
-    return p, losses
+t0 = time.time()
+tok = Tokenizer(train_bpe(train_text, VOCAB_SIZE))
+train_ids = torch.tensor(tok.encode(train_text), dtype=torch.long)
+val_ids = torch.tensor(tok.encode(val_text), dtype=torch.long)
+chars_per_token = len(val_text) / len(val_ids)
+print(f"tokenizer trained in {time.time() - t0:.0f} s; {chars_per_token:.2f} characters per token on validation text")
+print([tok.vocab[i] for i in range(256, 266)])
+
+# %% [markdown]
+# ## 2. The model
+#
+# The same pre-norm GPT as in L09 (paste your own if you prefer), with the output layer tied to the
+# token embedding.
+
+# %%
+class Block(nn.Module):
+    def __init__(self, d, n_head):
+        super().__init__()
+        self.n_head = n_head
+        self.ln1, self.ln2 = nn.LayerNorm(d), nn.LayerNorm(d)
+        self.qkv, self.proj = nn.Linear(d, 3 * d), nn.Linear(d, d)
+        self.mlp = nn.Sequential(nn.Linear(d, 4 * d), nn.GELU(), nn.Linear(4 * d, d))
+
+    def attn(self, x):
+        B, T, d = x.shape
+        q, k, v = self.qkv(x).split(d, dim=2)
+        q, k, v = (t.view(B, T, self.n_head, d // self.n_head).transpose(1, 2) for t in (q, k, v))
+        y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        return self.proj(y.transpose(1, 2).reshape(B, T, d))
+
+    def forward(self, x):
+        x = x + self.attn(self.ln1(x))
+        return x + self.mlp(self.ln2(x))
 
 
-def evaluate(params, X, y):
-    return float(np.mean(_forward(params, X)[0].argmax(axis=1) == y))
+class GPT(nn.Module):
+    def __init__(self, vocab, ctx, d, n_layer, n_head):
+        super().__init__()
+        self.ctx = ctx
+        self.tok = nn.Embedding(vocab, d)
+        self.pos = nn.Embedding(ctx, d)
+        self.blocks = nn.ModuleList([Block(d, n_head) for _ in range(n_layer)])
+        self.ln_f = nn.LayerNorm(d)
+        # Small embeddings (as in GPT-2): with tied weights, N(0, 1) entries would make the initial
+        # logits huge.
+        nn.init.normal_(self.tok.weight, std=0.02)
+        nn.init.normal_(self.pos.weight, std=0.02)
+
+    def forward(self, idx):
+        x = self.tok(idx) + self.pos(torch.arange(idx.shape[1], device=idx.device))
+        for b in self.blocks:
+            x = b(x)
+        return self.ln_f(x) @ self.tok.weight.T
 
 
-REPORT = """
-The model has 30 pre-norm residual blocks of width 48: each block adds relu(LN(h) W) to the
-stream h, and a final layer norm sits before the output layer. The residual connections give the
-backward pass an identity path, so the gradient reaching the first block is not a product of 30
-Jacobians; at initialization the per-layer weight gradients stay within a factor of about seven of
-each other. Layer norm inside each branch keeps every branch input at unit scale throughout
-training, and putting it before the branch (pre-norm) leaves the skip path untouched, so no warmup
-is needed. The stream still grows with depth, which the final norm corrects. Weights use He
-initialization, so each branch starts with roughly the scale of its input. Adam at a learning rate
-of 0.01 with cosine decay over 250 steps of batch 50 reaches about 0.87 test accuracy, while a
-20-layer stack without residual connections or normalization stalls near a training loss of 1.2.
+# %% [markdown]
+# ## 3. Training with evaluation
+#
+# Write `estimate_loss`, the mean cross-entropy (nats per token) over `batches` random validation
+# windows drawn with a fixed seed, in evaluation mode and without gradients.
+
+# %%
+CFG = dict(ctx=128, d=192, n_layer=4, n_head=6, batch=32, steps=1500, lr=2e-3, warmup=100)
+if SMALL:
+    CFG.update(ctx=32, d=32, n_layer=1, n_head=2, batch=8, steps=120, lr=3e-3, warmup=10)
+
+
+def get_batch(ids, gen):
+    ix = torch.randint(len(ids) - CFG["ctx"] - 1, (CFG["batch"],), generator=gen)
+    x = torch.stack([ids[i:i + CFG["ctx"]] for i in ix])
+    y = torch.stack([ids[i + 1:i + CFG["ctx"] + 1] for i in ix])
+    return x.to(DEVICE), y.to(DEVICE)
+
+
+@torch.no_grad()
+def estimate_loss(model, ids, batches=20, seed=1):
+    # BEGIN SOLUTION
+    model.eval()
+    g = torch.Generator().manual_seed(seed)
+    total = 0.0
+    for _ in range(batches):
+        x, y = get_batch(ids, g)
+        total += F.cross_entropy(model(x).flatten(0, 1), y.flatten()).item()
+    model.train()
+    return total / batches
+    # END SOLUTION
+
+
+model = GPT(len(tok.vocab), CFG["ctx"], CFG["d"], CFG["n_layer"], CFG["n_head"]).to(DEVICE)
+opt = torch.optim.AdamW(model.parameters(), lr=CFG["lr"], weight_decay=0.1)
+gen = torch.Generator().manual_seed(0)
+history = []
+t0 = time.time()
+for step in range(1, CFG["steps"] + 1):
+    lr = CFG["lr"] * min(1.0, step / CFG["warmup"]) * 0.5 * (1.0 + math.cos(math.pi * step / CFG["steps"]))
+    for group in opt.param_groups:
+        group["lr"] = lr
+    x, y = get_batch(train_ids, gen)
+    loss = F.cross_entropy(model(x).flatten(0, 1), y.flatten())
+    opt.zero_grad(set_to_none=True)
+    loss.backward()
+    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+    opt.step()
+    if step == 1 or step % max(1, CFG["steps"] // 10) == 0:
+        history.append((step, loss.item(), estimate_loss(model, val_ids, batches=5)))
+        print(f"step {step}: train {history[-1][1]:.3f}, val {history[-1][2]:.3f} nats/token ({time.time() - t0:.0f} s)")
+
+val_nats_per_token = estimate_loss(model, val_ids)
+val_bits_per_char = val_nats_per_token / chars_per_token / math.log(2)
+print(f"validation: {val_nats_per_token:.3f} nats per token = {val_bits_per_char:.3f} bits per character")
+
+# %% [markdown]
+# ## 4. Sampling
+#
+# Write `filter_logits(logits, top_k, top_p)` for a 1-D tensor of logits: keep the `top_k` largest
+# (if given), then the smallest set of tokens, in order of probability, whose total probability reaches
+# `top_p` (if given), setting everything else to `-inf`. `generate` applies the temperature first.
+
+# %%
+def filter_logits(logits, top_k=None, top_p=None):
+    # BEGIN SOLUTION
+    logits = logits.clone()
+    if top_k is not None and top_k < logits.numel():
+        cut = torch.topk(logits, top_k).values[-1]
+        logits[logits < cut] = float("-inf")
+    if top_p is not None:
+        probs, order = torch.sort(torch.softmax(logits, dim=-1), descending=True)
+        keep = int(torch.searchsorted(torch.cumsum(probs, dim=-1), torch.tensor(top_p, device=probs.device))) + 1
+        drop = order[keep:]
+        logits[drop] = float("-inf")
+    return logits
+    # END SOLUTION
+
+
+@torch.no_grad()
+def generate(prompt, n_tokens, temperature=1.0, top_k=None, top_p=None, seed=0):
+    model.eval()
+    g = torch.Generator(device=DEVICE).manual_seed(seed)
+    idx = torch.tensor([tok.encode(prompt)], device=DEVICE)
+    for _ in range(n_tokens):
+        logits = model(idx[:, -CFG["ctx"]:])[0, -1] / temperature
+        probs = torch.softmax(filter_logits(logits, top_k, top_p), dim=-1)
+        idx = torch.cat([idx, torch.multinomial(probs, 1, generator=g)[None]], dim=1)
+    model.train()
+    return tok.decode(idx[0].tolist())
+
+
+samples = {T: generate("ROMEO:\n", 120, temperature=T, top_p=0.9) for T in (0.5, 1.0)}
+for T, s in samples.items():
+    print(f"--- temperature {T}, top-p 0.9 ---\n{s}\n")
+
+# %% [markdown]
+# ## 5. Report
+#
+# At least 80 words: your tokenizer's vocabulary size and characters per token, the model and training
+# settings, the validation loss in nats per token and in bits per character, and what changes in the
+# samples between the two temperatures.
+
+# %%
+# BEGIN SOLUTION -> REPORT = """Write your report here."""
+REPORT = f"""
+The tokenizer is byte-level BPE with a vocabulary of {len(tok.vocab)} (256 bytes and {len(tok.merges)}
+merges learned within whitespace-delimited chunks), and it averages {chars_per_token:.2f} characters per
+token on the validation text. The model is a pre-norm GPT with {CFG['n_layer']} layers of width {CFG['d']},
+{CFG['n_head']} heads, a context of {CFG['ctx']} tokens and tied input and output embeddings, trained with
+AdamW at a peak learning rate of {CFG['lr']} with warmup and cosine decay for {CFG['steps']} steps of
+{CFG['batch']} windows. Its validation loss is {val_nats_per_token:.3f} nats per token, which is
+{val_bits_per_char:.3f} bits per character once divided by the characters per token. At temperature 0.5
+the samples are conservative and repeat common names and phrases; at temperature 1.0 with top-p 0.9 they
+use more varied words but drift into invented ones and lose the thread sooner.
 """
+# END SOLUTION

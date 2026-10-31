@@ -1,23 +1,21 @@
 import numpy as np
 import sub
 
-
-def _data(seed):
-    rng = np.random.default_rng(seed)
-    return rng.normal(size=(50, 1000)), rng.integers(0, 2, size=50)
-
-
-def test_top_k():
-    X, y = _data(0)
-    X[:, 7] = y + 0.01 * np.arange(50) / 50
-    assert 7 in sub.top_k_features(X, y, 5)
+rng = np.random.default_rng(10)
+x = rng.normal(size=8)
+A = rng.normal(size=(15, 8))
+B = rng.normal(size=(15, 8)) * 3 + 1
 
 
-def test_leaky_selection_inflates_accuracy():
-    accs = [sub.cv_accuracy(*_data(s), k=20, folds=5, seed=s, leaky=True) for s in range(5)]
-    assert np.mean(accs) > 0.7, accs
+def test_batch_norm_depends_on_the_batch():
+    assert sub.batch_dependence("batch", x, A, B) > 0.3
 
 
-def test_proper_selection_is_at_chance():
-    accs = [sub.cv_accuracy(*_data(s), k=20, folds=5, seed=s, leaky=False) for s in range(5)]
-    assert 0.3 < np.mean(accs) < 0.7, accs
+def test_layer_norm_does_not():
+    assert sub.batch_dependence("layer", x, A, B) < 1e-12
+
+
+def test_noise_scales_like_inverse_sqrt():
+    n = [sub.batch_mean_noise(b) for b in (1, 4, 16, 64)]
+    for b, v in zip((1, 4, 16, 64), n):
+        assert abs(v * np.sqrt(b) - 1) < 0.06, (b, v)

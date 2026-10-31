@@ -1,18 +1,18 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(6)
-grads = rng.normal(size=(10, 3))
-counts = [4, 4, 2]
-sums = [grads[:4].sum(0), grads[4:8].sum(0), grads[8:].sum(0)]
+rng = np.random.default_rng(4)
+W = rng.normal(size=(16, 32)) * 0.05
+W[:, 3] *= 30
+X = rng.normal(size=(64, 32))
+X[:, 3] *= 20
 
 
-def test_correct():
-    assert np.allclose(sub.correct_average(sums, counts), grads.mean(0))
+def err(Wq):
+    return np.mean((X @ W.T - X @ Wq.T) ** 2)
 
 
-def test_bugs():
-    assert not np.allclose(sub.mean_of_means(sums, counts), grads.mean(0))
-    equal = [grads[:5].sum(0), grads[5:].sum(0)]
-    assert np.allclose(sub.mean_of_means(equal, [5, 5]), grads.mean(0))
-    assert np.allclose(sub.sum_of_means(equal, [5, 5]), 2 * grads.mean(0))
+def test_outliers_hurt_and_mixed_precision_fixes():
+    assert err(sub.per_tensor_int8(W)) > 100 * err(sub.mixed_precision_int8(W, X, 1))
+    Wm = sub.mixed_precision_int8(W, X, 1)
+    assert np.array_equal(Wm[:, 3], W[:, 3])

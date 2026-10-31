@@ -1,14 +1,15 @@
-# Train and test curves
+# Running statistics for evaluation
 
-For the target $f(x) = \sin(\pi x)$ with Gaussian noise, compute training and test error for a range of polynomial degrees.
+Complete `BatchNorm.forward(x)`. In training mode (`self.training = True`) normalize with the batch statistics, as in exercise 1, and update the running averages with momentum $m$:
 
-- `curves(x_tr, y_tr, x_te, y_te, degrees)`: two arrays `(train_mse, test_mse)` of the same length as `degrees`.
-- `best_degree(degrees, test_mse)`.
+$$
+\text{running\_mean} \leftarrow (1 - m)\,\text{running\_mean} + m\,\mu_B, \qquad \text{running\_var} \leftarrow (1 - m)\,\text{running\_var} + m\,\sigma^2_B \tfrac{N}{N - 1}.
+$$
 
-The tests check the classical shape: training error never increases with degree, and test error falls, then rises.
+In evaluation mode, normalize with the running statistics and do not update them. This matches PyTorch's `BatchNorm1d`, which normalizes with the biased batch variance but stores the unbiased one.
 
 ## Hints
 
-1. Reuse the polynomial fit from exercise 1 (copy it in; each exercise is its own module).
-2. Test error is measured against the noisy test targets.
-3. `degrees[np.argmin(test_mse)]`.
+1. `x.var(axis=0)` is the biased variance; multiply by `n / (n - 1)` for the running estimate.
+2. Compute `mu, var` in each branch, then share the final line `gamma * (x - mu) / sqrt(var + eps) + beta`.
+3. In evaluation mode each example's output depends only on itself.

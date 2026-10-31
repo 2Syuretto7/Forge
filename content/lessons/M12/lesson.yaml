@@ -12,7 +12,7 @@ movements:
   - {file: m6-feynman.md,    mode: theory,   minutes: 45}
   - {file: m7-capstone.md,   mode: practice, minutes: 75}
 hooks:
-  - {to: L05, text: "Linear regression is this least-squares problem; L05 derives the squared loss from Gaussian noise."}
+  - {to: L01, text: "Linear regression is this least-squares problem; L01 derives the squared loss from Gaussian noise."}
   - {to: M13, text: "Projections and orthonormal bases return as the eigenvectors of symmetric matrices."}
   - {to: M25, text: "Least squares is maximum likelihood when the noise is Gaussian."}
 reuses:

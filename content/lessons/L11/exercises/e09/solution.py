@@ -1,24 +1,25 @@
-def summarize(events):
-    """events: dicts with "name", "start" and "dur" (microseconds) for kernels on one GPU stream.
-    Return {name: (count, total_us)} sorted by total time, largest first."""
-    out = {}
-    for e in events:
-        c, t = out.get(e["name"], (0, 0.0))
-        out[e["name"]] = (c + 1, t + e["dur"])
-    return dict(sorted(out.items(), key=lambda kv: -kv[1][1]))
+import numpy as np
 
 
-def gpu_idle_fraction(events):
-    """Fraction of the span from the first kernel's start to the last kernel's end with no kernel
-    running (kernels on one stream do not overlap)."""
-    ev = sorted(events, key=lambda e: e["start"])
-    start, end = ev[0]["start"], max(e["start"] + e["dur"] for e in ev)
-    busy = sum(e["dur"] for e in ev)
-    return 1.0 - busy / (end - start)
+def law(N, D, E, A, B, alpha, beta):
+    """The parametric loss L(N, D) = E + A N^-alpha + B D^-beta."""
+    return E + A * N ** -alpha + B * D ** -beta
 
 
-def top_fraction(events, k=1):
-    """Share of all kernel time taken by the k most expensive kernel names."""
-    s = summarize(events)
-    total = sum(t for _, t in s.values())
-    return sum(t for _, t in list(s.values())[:k]) / total
+def tokens_needed(N, target, E, A, B, alpha, beta):
+    """Training tokens a model of N parameters needs to reach the target loss; inf if it cannot."""
+    gap = target - E - A * N ** -alpha
+    return (B / gap) ** (1 / beta) if gap > 0 else np.inf
+
+
+def cheapest_model(target, inference_tokens, E, A, B, alpha, beta):
+    """Among models that reach the target loss, minimize training plus inference FLOPs,
+    6 N D + 2 N inference_tokens, over N on 4001 log-spaced sizes from 1e6 to 1e13.
+    Return (N, D, total FLOPs)."""
+    best = (np.inf, None, None)
+    for N in np.logspace(6, 13, 4001):
+        D = tokens_needed(N, target, E, A, B, alpha, beta)
+        cost = 6 * N * D + 2 * N * inference_tokens
+        if cost < best[0]:
+            best = (cost, N, D)
+    return best[1], best[2], best[0]

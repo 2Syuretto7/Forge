@@ -1,161 +1,107 @@
-# Derivation: the multi-layer perceptron and its backward pass
+# Derivation: GPUs, memory and the roofline
 
-You will write down a multi-layer perceptron (MLP), see why it can represent far more than a linear model, derive the backward pass of every layer it uses, assemble them into backpropagation, count the cost, and look at the training loop and the ways initialization can make it fail before it starts.
+## 1. How a GPU executes a kernel
 
-## 1. The forward pass
+A GPU is many simple processors. The T4 has 40 **streaming multiprocessors** (SMs), each with 64 fp32 cores and 8 tensor cores. A kernel launch creates a grid of **thread blocks**; each block runs on one SM, and its threads execute in groups of 32 called **warps**, which issue the same instruction together. An SM holds many warps at once (up to 32 on the T4) and switches between them every cycle, so while one warp waits for memory, another computes. Keeping many warps resident, high **occupancy**, is how a GPU hides memory latency.
 
-An MLP with two hidden layers maps a batch $X \in \mathbb{R}^{B \times d}$ to logits:
+::::derivation{id=d1 title="Peak throughput"}
+:::step
+A warp has [[32]] threads. An SM with 32 resident warps therefore runs 1024 threads at once, and the whole T4 [[40960]].
+:::
+:::step
+Peak fp32 throughput is SMs times cores per SM times clock times 2 FLOPs per fused multiply-add: $40 \cdot 64 \cdot 1.59 \times 10^9 \cdot 2 \approx$ [[8.14|tol=0.05]] TFLOP/s.
+:::
+::::
 
+## 2. The memory hierarchy
+
+Data lives at several levels, each smaller and faster than the next:
+
+| Level | T4 size | Shared by |
+| --- | --- | --- |
+| Registers | 64K 32-bit registers per SM | one thread |
+| Shared memory and L1 | up to 64 KB of shared memory per SM | one thread block |
+| L2 cache | 4 MB | the whole GPU |
+| Device memory (GDDR6) | 16 GB at 320 GB/s | the whole GPU |
+| Host memory over PCIe 3.0 x16 | the machine's RAM, about 16 GB/s at best | the GPU and the CPU |
+
+A kernel's inputs start in device memory and its outputs end there. Everything a kernel does in between, in registers and shared memory, is cheap by comparison.
+
+## 3. Arithmetic intensity and the roofline
+
+A kernel that performs $F$ FLOPs and moves $B$ bytes between device memory and the SMs cannot finish faster than either limit allows:
 $$
-\begin{aligned}
-Z_1 &= XW_1 + \mathbf 1 b_1^\top, & H_1 &= \phi(Z_1), \\
-Z_2 &= H_1W_2 + \mathbf 1 b_2^\top, & H_2 &= \phi(Z_2), \\
-Z_3 &= H_2W_3 + \mathbf 1 b_3^\top, & L &= \operatorname{CE}\big(\operatorname{softmax}(Z_3), y\big).
-\end{aligned}
+t \;\ge\; \max\!\left(\frac{F}{P_{\text{peak}}},\; \frac{B}{\text{BW}}\right).
 $$
+Divide by $t$: the attainable throughput is $\min(P_{\text{peak}},\ \text{BW} \cdot I)$, where $I = F/B$ is the **arithmetic intensity** in FLOP per byte. On a log-log plot of throughput against intensity, this is a slanted line (the memory roof) meeting a flat line (the compute roof) at the **ridge point** $I^\star = P_{\text{peak}}/\text{BW}$. Kernels to the left are **memory-bound**; to the right, **compute-bound**.
 
-$\phi$ is applied elementwise: $\operatorname{ReLU}(z) = \max(0, z)$ or $\tanh(z)$. Without $\phi$ the composition would collapse into a single linear map, $X(W_1W_2W_3)$, no more expressive than L05's model. The nonlinearity is what lets layers build new features.
-
-::::derivation{id=d1 title="Counting parameters"}
+::::derivation{id=d2 title="Ridge points of the T4"}
 :::step
-Layer sizes $64 \to 64 \to 32 \to 10$. The first layer has $64 \times 64$ weights and $64$ biases: [[4160]] parameters.
+With tensor cores, $I^\star = 65 \times 10^{12} / 320 \times 10^9 \approx$ [[203.1|tol=0.5]] FLOP/byte.
 :::
 :::step
-The whole network has $4160 + (64 \cdot 32 + 32) + (32 \cdot 10 + 10) =$ [[6570]] parameters.
-:::
-:::step
-Remove both nonlinearities and the network computes $X W_1 W_2 W_3$ plus a bias: a linear map from 64 inputs to 10 logits, which needs only $64 \cdot 10 + 10 =$ [[650]] parameters to represent.
+In fp32, $I^\star = 8.1 \times 10^{12} / 320 \times 10^9 \approx$ [[25.3|tol=0.2]] FLOP/byte. Half precision raises the compute roof eightfold but the memory roof only twofold (half the bytes per number).
 :::
 ::::
 
-## 2. Why one hidden layer can approximate anything
+## 4. Counting FLOPs and bytes
 
-In one dimension, a hidden ReLU unit $\max(0, w x + b)$ is a hinge: flat on one side of $x = -b/w$, linear on the other. A sum of $k$ hinges plus a bias is a **piecewise linear** function with at most $k$ kinks, so at most $k + 1$ linear pieces. Placing kinks at chosen points and choosing the output weights as slope changes reproduces any piecewise linear interpolation of a target function.
-
-::::derivation{id=d2 title="Building a function out of hinges"}
-:::step
-To interpolate a curve at knots $t_0 < t_1 < \dots < t_k$ with slopes $m_1, \dots, m_k$ on the pieces between them, start with value $f(t_0)$ and slope $m_1$, then add a hinge $\max(0, x - t_j)$ at each interior knot $t_j$ with output weight equal to the change in slope, $m_{j+1} - m_j$. If the slope goes from $2$ to $-1$ at $t_1$, that weight is [[-3]].
-:::
-:::step
-With knots spaced $h$ apart, linear interpolation of a smooth $f$ has error at most $\tfrac18 h^2 \max|f''|$. For $f(x) = \sin(\pi x)$ on $[-1, 1]$ with 20 equal pieces ($h = 0.1$), the bound is $\tfrac18 \cdot 0.01 \cdot \pi^2 \approx$ [[0.01234]].
-:::
-:::step
-Halving $h$ divides that error bound by [[4]], so accuracy improves steadily with width. The **universal approximation theorem** says the same holds in any dimension and for any non-polynomial activation: a wide enough single hidden layer approximates any continuous function on a bounded region. It says nothing about how many units are needed or whether gradient descent finds them, which is why depth and good training matter in practice.
-:::
-::::
-
-## 3. The backward pass of each layer
-
-Reverse mode (M19) needs, for each layer, the map from the gradient at its output to the gradients at its input and its parameters. Write $G = \partial L/\partial(\text{output})$.
-
-**Linear layer** $Y = XW + \mathbf 1 b^\top$:
-
-$$
-\frac{\partial L}{\partial X} = G W^\top, \qquad \frac{\partial L}{\partial W} = X^\top G, \qquad \frac{\partial L}{\partial b} = G^\top \mathbf 1 .
-$$
-
-The bias gradient sums $G$ over the batch because $b$ is added to every row.
-
-**Elementwise activation** $Y = \phi(Z)$: the Jacobian is diagonal, so $\partial L/\partial Z = G \odot \phi'(Z)$. For ReLU, $\phi'(z) = [z > 0]$: the gradient passes where the unit was active and is blocked where it was not. For $\tanh$, $\phi'(z) = 1 - \tanh^2(z) = 1 - Y^2$, conveniently computed from the saved output.
-
-**Softmax cross-entropy**, averaged over a batch of $B$ examples: $\partial L/\partial Z_3 = (P - Y_{\text{onehot}})/B$ (M27).
-
-::::derivation{id=d3 title="Shapes and values in a backward pass"}
-:::step
-With a batch of $B = 32$, hidden width 64 and 10 classes, the output-layer gradient $\partial L/\partial Z_3$ has shape $32 \times 10$, and $\partial L/\partial W_3 = H_2^\top\,\partial L/\partial Z_3$ has as many rows as $H_2$ has columns. For $H_2$ of width 32, that is [[32]] rows.
-:::
-:::step
-A ReLU unit with pre-activation $z = -0.4$ receives upstream gradient $g = 1.5$. The gradient passed to $z$ is [[0]].
-:::
-:::step
-A tanh unit with output $y = 0.8$ receives upstream gradient $g = 2$. The gradient passed to its input is $2(1 - 0.64) =$ [[0.72]].
-:::
-:::step
-The bias gradient of a layer is the sum of $G$ over the batch. If the four rows of a one-column $G$ are $0.1, -0.2, 0.3, 0.05$, it equals [[0.25]].
-:::
-::::
-
-## 4. Backpropagation
-
-Chain the layer VJPs from the loss back to the input:
-
-1. Forward pass: compute and **save** $X, Z_1, H_1, Z_2, H_2, Z_3$.
-2. $G_3 = (P - Y)/B$; then $\nabla W_3 = H_2^\top G_3$, $\nabla b_3 = G_3^\top\mathbf 1$.
-3. $G_2 = (G_3 W_3^\top) \odot \phi'(Z_2)$; then $\nabla W_2 = H_1^\top G_2$, $\nabla b_2 = G_2^\top\mathbf 1$.
-4. $G_1 = (G_2 W_2^\top) \odot \phi'(Z_1)$; then $\nabla W_1 = X^\top G_1$, $\nabla b_1 = G_1^\top \mathbf 1$.
-
-That is all of backpropagation for an MLP: one rule per layer type, applied in reverse order, using activations saved from the forward pass. Every gradient can and must be checked with central differences (M15, M18), one layer at a time.
-
-:::edge{from=M19 text="vector-Jacobian products and the matmul VJP"}
-:::
-
-:::edge{from=L05 text="softmax regression and its gradient"}
-:::
-
-## 5. What it costs
-
-A linear layer's forward pass is one matrix product: about $2 B n_{\text{in}} n_{\text{out}}$ floating-point operations. Its backward pass is two: $GW^\top$ and $X^\top G$. Elementwise layers are negligible.
-
-::::derivation{id=d4 title="The cost ratio"}
-:::step
-A layer with $B = 128$, $n_{\text{in}} = 512$ and $n_{\text{out}} = 512$ costs $2 \cdot 128 \cdot 512 \cdot 512 \approx$ [[67108864]] FLOPs forward.
-:::
-:::step
-The backward pass costs [[2]] times as much as the forward pass for that layer (the first layer can skip $\partial L/\partial X$ and costs only one product).
-:::
-:::step
-So one training step costs about $1 + 2 = 3$ forward passes. The forward pass for one token of a model with $N$ parameters costs about $2N$ FLOPs, so a training step costs about [[6]] FLOPs per parameter per token. This is the $C \approx 6ND$ rule of L15.
-:::
-::::
-
-Memory is the other cost: every saved activation must stay alive until the backward pass reaches it. For an MLP that is $B \times (\text{sum of layer widths})$ numbers; for a large transformer it dominates training memory (L18).
-
-## 6. Training: minibatch stochastic gradient descent
-
-The full-data gradient averages over all $n$ examples. A **minibatch** of $B$ randomly chosen examples gives an unbiased estimate whose variance shrinks like $1/B$, at a cost proportional to $B$. Training loops repeat: shuffle, split into batches, and for each batch run forward, backward and an update $\theta \leftarrow \theta - \eta \nabla_\theta L$. One pass through the data is an **epoch**.
-
-::::derivation{id=d5 title="Minibatch noise"}
-:::step
-If one example's gradient has variance $v$ (per coordinate) and examples are sampled independently, a minibatch average of $B$ of them has variance [[v/B]].
-:::
-:::step
-Going from batch size 32 to 128 cuts the standard deviation of the gradient estimate by a factor of [[2]], at four times the compute per step.
-:::
-::::
-
-## 7. Initialization: three ways to fail before training starts
-
-**Symmetry.** If all weights in a layer start equal, all its units compute the same function and receive identical gradients, so they remain equal forever. Initialize weights randomly; biases can start at zero.
-
-**Dead units.** A ReLU unit whose pre-activation is negative on every input outputs zero and receives zero gradient: it never recovers. Large negative biases or a huge learning-rate step that pushes weights into that region kill units permanently.
-
-**Exploding or vanishing activations.** Each layer multiplies the scale of its input by roughly $\sqrt{n_{\text{in}}}$ times the standard deviation of its weights (with a factor $1/\sqrt2$ for ReLU, which zeroes half its inputs). Over many layers the scale grows or shrinks geometrically.
-
-::::derivation{id=d6 title="Activation scale through depth"}
-:::step
-For ReLU layers of width $n$ with weights of standard deviation $s$, the root mean square of the activations is multiplied by about $s\sqrt{n/2}$ per layer. With $n = 256$ and $s = 1$, that factor is $\sqrt{128} \approx$ [[11.31]].
-:::
-:::step
-After 10 such layers the activations are larger by about $128^{5} \approx 3.4 \times 10^{10}$. Choosing $s = \sqrt{2/n}$ makes the factor exactly [[1]]: this is He initialization, derived properly in L09.
-:::
-::::
-
-:::widget{name=ActivationStats depth=10 init=unit act=relu}
-:::
-
-Switch the initialization in the widget between $\mathcal N(0, 1)$, Xavier and He and watch the activation scale across layers.
-
-:::edge{to=L09 text="Xavier and He initialization derived from variance preservation; momentum, Adam and schedules."}
-:::
-
-:::edge{to=L21 text="The output-layer gradient p - onehot(y) returns as the score function in policy gradients."}
-:::
-
-## Summary
-
-| Layer | Forward | Backward to input | Backward to parameters |
+| Operation | FLOPs | Minimum bytes ($b$ per number) | Intensity |
 | --- | --- | --- | --- |
-| Linear | $XW + b$ | $GW^\top$ | $X^\top G$, $\sum_{\text{batch}} G$ |
-| ReLU | $\max(0, Z)$ | $G \odot [Z > 0]$ | none |
-| tanh | $\tanh Z$ | $G \odot (1 - Y^2)$ | none |
-| Softmax CE | $-\log p_y$ | $(P - Y)/B$ | none |
+| $C = AB$, $m \times k$ by $k \times n$ | $2mnk$ | $b(mk + kn + mn)$ | grows with size |
+| elementwise op on $N$ values, $r$ inputs | a few per value | $b(r + 1)N$ | constant, below 1 |
+| softmax over $N$ values | about $5N$ | $2bN$ | constant |
+
+For square matrices, $I = 2n^3 / (3n^2 b) = 2n/(3b)$: large matrix products are compute-bound, and nothing else in a network is. A training step through linear layers costs the forward FLOPs plus twice that for the backward pass (gradients for inputs and for weights), which gives the rule of thumb of about **6 FLOPs per parameter per token**.
+
+## 5. Tiling: how a matmul actually reaches high intensity
+
+The minimum-bytes count assumes every input value is read from device memory once. A naive kernel, with each thread computing one output from a row of $A$ and a column of $B$, reads each value $n$ times. **Tiling** fixes this: a thread block computes a $T \times T$ block of $C$, streaming $T$-wide strips of $A$ and $B$ through shared memory, so each value it loads is reused $T$ times.
+
+::::derivation{id=d3 title="Intensity of a tiled matmul"}
+:::step
+For $n \times n \times n$ with $T \times T$ output blocks, there are $(n/T)^2$ blocks, each reading $2nT$ values. Ignoring the output, the traffic is $2n^3/T$ values, so the intensity is $2n^3/(2n^3 b / T) = T/b$. In fp16 with $T = 64$ that is [[32]] FLOP/byte.
+:::
+:::step
+To reach the fp16 ridge of about 203 FLOP/byte from device memory alone would need $T \approx 406$, and two $512 \times 512$ fp16 tiles occupy [[1048576]] bytes, sixteen times a T4 SM's 64 KB of shared memory.
+:::
+::::
+
+Real matrix-multiplication libraries close the gap with reuse at other levels: blocks that run at the same time read overlapping strips, which the L2 cache serves, and each thread keeps a small tile of results in registers. The principle is the one derived here: reuse every value you load as many times as possible.
+
+:::edge{to=L08 text="Tiling, shared memory and fusion become kernels you write in Triton."}
+:::
+
+## 6. Launch overhead, synchronization and transfers
+
+The CPU issues kernels to the GPU through a queue. In eager PyTorch each operation costs on the order of ten microseconds of CPU time to dispatch and launch, so a kernel whose GPU work takes less than that is **launch-bound**: the GPU sits idle waiting for the next one. Normally the CPU runs ahead and the queue keeps the GPU busy, but any operation that needs a GPU result on the CPU, such as `.item()`, `print(loss)` or `if loss < x`, **synchronizes**: the CPU waits until the queue drains, and the overlap is lost.
+
+Data also has to reach the GPU. A copy from ordinary host memory goes through a staging buffer; from **pinned** (page-locked) memory it can go directly and asynchronously with `non_blocking=True`, overlapping the next batch's copy with this batch's compute.
+
+::::derivation{id=d4 title="Overheads"}
+:::step
+1000 kernels that each need 2 microseconds of GPU time, each launched with 10 microseconds of overhead, take about [[10]] ms rather than 2.
+:::
+:::step
+A step needs 3 ms of CPU time to issue and 5 ms of GPU time. Overlapped, a step costs 5 ms; with a `.item()` at the end of every step it costs [[8]] ms.
+:::
+:::step
+Copying 64 MiB ($64 \cdot 2^{20}$ bytes) at 12 GB/s takes about [[5.59|tol=0.05]] ms.
+:::
+::::
+
+:::edge{to=L09 text="Attention's cost, read on this roofline: the score matrix is memory-bound."}
+:::
+
+:::edge{to=L13 text="Lower precision moves fewer bytes and unlocks the tensor cores."}
+:::
+
+:::edge{to=L14 text="Interconnect bandwidth plays the role of memory bandwidth when training spans GPUs."}
+:::
+
+:::edge{from=L04 text="the operations an autograd engine records and replays"}
+:::
+
+## 7. Measuring
+
+Time GPU work only after synchronizing (`torch.cuda.synchronize()` or CUDA events), skip the first few warm-up calls, and report a median. `torch.profiler` records both the CPU operations and the GPU kernels, with their durations and counts: the tool for finding where a training step's time goes. The capstone notebook does all of this on a T4.

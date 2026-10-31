@@ -1,14 +1,19 @@
-def bytes_per_param(optimizer="adam", mixed=True):
-    """Training memory per parameter, without activations. Mixed precision with Adam: fp16 weights
-    and gradients (2 + 2) plus fp32 master weights, first and second moments (4 + 4 + 4). Plain fp32
-    with Adam: weights, gradients and two moments in fp32. SGD without momentum keeps no moments."""
+import re
+import numpy as np
+
+
+def extract_answer(text):
+    """The last integer in the text (with an optional minus sign), or None."""
     raise NotImplementedError
 
 
-def training_memory_gb(n_params, optimizer="adam", mixed=True):
+def reward(text, answer, want_format=True):
+    """1 if the extracted answer equals the true one, else 0; when want_format, a correct answer
+    must also appear as "Answer: <n>" (a format check), or it earns 0.5."""
     raise NotImplementedError
 
 
-def inference_memory_gb(n_params, bytes_per_weight=2):
-    """Weights only, in the serving precision."""
+def group_advantages(rewards, eps=1e-6):
+    """GRPO-style advantages for a group of samples answering the same prompt: subtract the group
+    mean and divide by the group standard deviation (plus eps)."""
     raise NotImplementedError

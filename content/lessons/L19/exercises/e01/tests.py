@@ -1,17 +1,13 @@
 import numpy as np
 import sub
 
-
-def test_norm_and_clip():
-    g = [np.array([3.0, 0.0]), np.array([[4.0]])]
-    assert sub.global_norm(g) == 5.0
-    clipped, norm = sub.clip_by_global_norm(g, 1.0)
-    assert norm == 5.0 and abs(sub.global_norm(clipped) - 1.0) < 1e-12
-    assert np.allclose(clipped[0], [0.6, 0.0]) and np.allclose(clipped[1], [[0.8]])
+rng = np.random.default_rng(0)
+c = (rng.random(400) < 0.7).astype(float)
 
 
-def test_small_gradients_untouched():
-    g = [np.array([0.1, 0.2])]
-    clipped, norm = sub.clip_by_global_norm(g, 1.0)
-    assert np.array_equal(clipped[0], g[0]) and abs(norm - np.sqrt(0.05)) < 1e-12
-    assert np.array_equal(sub.clip_by_global_norm([np.zeros(3)], 1.0)[0][0], np.zeros(3))
+def test_interval():
+    acc, lo, hi = sub.accuracy_ci(c)
+    assert acc == c.mean() and lo < acc < hi
+    se = sub.standard_error(acc, len(c))
+    assert abs((hi - lo) / (2 * 1.96 * se) - 1) < 0.15
+    assert abs(sub.standard_error(0.5, 100) - 0.05) < 1e-12

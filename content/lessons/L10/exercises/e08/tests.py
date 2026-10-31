@@ -1,20 +1,27 @@
 import numpy as np
 import sub
 
-Xte, yte = sub.make_digits(1000, 1)
+L = np.array([2.0, 1.0, 0.0, -1.0])
 
 
-def test_reproducible_and_warmup():
-    _, a = sub.train(3, 16, "pre", 3e-3, 20)
-    _, b = sub.train(3, 16, "pre", 3e-3, 20)
-    assert len(a) == 20 and a == b
-    _, c = sub.train(3, 16, "pre", 3e-3, 20, warmup=10)
-    assert c[0] == a[0] and c[5] != a[5]
+def test_temperature():
+    assert np.isclose(sub.softmax_t(np.array([2.0, 1.0, 0.0]))[0], 0.6652, atol=1e-4)
+    assert np.isclose(sub.softmax_t(np.array([2.0, 1.0, 0.0]), 0.5)[0], 0.8668, atol=1e-4)
+    assert sub.softmax_t(L, 1e-3)[0] > 0.999
 
 
-def test_depth_20_plain_versus_pre_norm():
-    _, plain = sub.train(20, 32, "plain", 3e-3, 300)
-    p, pre = sub.train(20, 32, "pre", 3e-3, 300)
-    assert np.mean(plain[-30:]) > 0.9, np.mean(plain[-30:])
-    assert np.mean(pre[-30:]) < 0.4, np.mean(pre[-30:])
-    assert sub.evaluate(p, Xte, yte, 20, "pre") > 0.75
+def test_filters():
+    k = sub.top_k_filter(L, 2)
+    assert np.isfinite(k).tolist() == [True, True, False, False]
+    probs = sub.softmax_t(L)
+    p = sub.top_p_filter(L, 0.9)
+    kept = np.isfinite(p).sum()
+    assert probs[:kept - 1].sum() < 0.9 <= probs[:kept].sum()
+    assert np.isfinite(sub.top_p_filter(L, 0.5)).sum() == 1
+
+
+def test_sample():
+    rng = np.random.default_rng(0)
+    draws = [sub.sample(L, rng, T=1.0, k=2) for _ in range(300)]
+    assert set(draws) <= {0, 1} and 0.6 < np.mean(np.array(draws) == 0) < 0.85
+    assert all(sub.sample(L, rng, T=1e-4) == 0 for _ in range(20))

@@ -1,20 +1,18 @@
 import numpy as np
 import sub
 
-rng0 = np.random.default_rng(12)
-V = 30
-P = rng0.dirichlet(np.full(V, 0.3), size=V)
+rng = np.random.default_rng(6)
+grads = rng.normal(size=(10, 3))
+counts = [4, 4, 2]
+sums = [grads[:4].sum(0), grads[4:8].sum(0), grads[8:].sum(0)]
 
 
-def test_cold_loops_hot_rambles():
-    cold = sub.generate(P, 0, 300, 0.05, np.random.default_rng(1))
-    warm = sub.generate(P, 0, 300, 1.0, np.random.default_rng(1))
-    hot = sub.generate(P, 0, 300, 5.0, np.random.default_rng(1))
-    assert len(cold) == 301
-    assert sub.distinct_ratio(cold) < 0.2 < sub.distinct_ratio(warm)
-    assert sub.model_nll(cold, P) < sub.model_nll(warm, P) < sub.model_nll(hot, P)
+def test_correct():
+    assert np.allclose(sub.correct_average(sums, counts), grads.mean(0))
 
 
-def test_distinct_ratio():
-    assert sub.distinct_ratio([1, 2, 1, 2, 1, 2], 2) == 2 / 5
-    assert sub.distinct_ratio(list(range(10))) == 1.0
+def test_bugs():
+    assert not np.allclose(sub.mean_of_means(sums, counts), grads.mean(0))
+    equal = [grads[:5].sum(0), grads[5:].sum(0)]
+    assert np.allclose(sub.mean_of_means(equal, [5, 5]), grads.mean(0))
+    assert np.allclose(sub.sum_of_means(equal, [5, 5]), 2 * grads.mean(0))

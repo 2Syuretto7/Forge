@@ -1,35 +1,38 @@
 id: L05
-hours: 8
-capstone: "Multi-class softmax classifier on a provided tabular dataset reaching at least 87 percent test accuracy, with a calibration analysis"
-teaser: "Least squares and logistic regression derived from noise models, solved three ways, evaluated honestly."
+hours: 9
+capstone: "An optimizer bake-off on the L03 digit task, tuned on a validation split, with a recipe that reaches at least 92 percent test accuracy"
+teaser: "Derive why gradient descent crawls in narrow valleys, then build momentum, Adam, AdamW, schedules and initialization from scratch and race them."
 movements:
-  - {file: m0-recall.md,     mode: theory,   minutes: 20}
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
   - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
-  - {file: m2-derivation.md, mode: theory,   minutes: 150}
-  - {file: m3-build.md,      mode: practice, minutes: 110}
-  - {file: m4-scale.md,      mode: practice, minutes: 60}
-  - {file: m5-break.md,      mode: both,     minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 170}
+  - {file: m3-build.md,      mode: practice, minutes: 130}
+  - {file: m4-scale.md,      mode: practice, minutes: 80}
+  - {file: m5-break.md,      mode: both,     minutes: 45}
   - {file: m6-feynman.md,    mode: theory,   minutes: 20}
-  - {file: m7-capstone.md,   mode: practice, minutes: 40}
+  - {file: m7-capstone.md,   mode: practice, minutes: 30}
 hooks:
-  - {to: L06, text: "You fit models here and measure them on held-out data; L06 asks why the held-out error behaves as it does."}
-  - {to: L07, text: "A neural network is logistic regression on features it learns itself."}
-  - {to: L13, text: "The softmax you train here returns as the attention weights of a transformer."}
+  - {to: L06, text: "Initialization keeps activations at unit scale only at the start; normalization layers keep them there during training."}
+  - {to: L11, text: "Scaling-law fits assume a tuned learning rate and schedule for every model size; L11 asks how they change with scale."}
+  - {to: L15, text: "Warmup, decay and the learning-rate peak return when a large run spikes and has to be rewound."}
 reuses:
-  - {from: M12, concept: "least squares and the normal equations"}
-  - {from: M25, concept: "maximum likelihood and Gaussian priors"}
+  - {from: M28, concept: "eigendecomposition of symmetric matrices and the condition number"}
+  - {from: L03, concept: "the MLP, its backward pass and the minibatch SGD loop"}
+  - {from: L04, concept: "parameters and gradients exposed by an autograd engine"}
 annotations:
-  - {target: M12, movement: m2-derivation, anchor: "Projection onto a subspace", text: "Least squares is maximum likelihood when the noise is Gaussian; ridge regression adds a Gaussian prior (L05)."}
-  - {target: M25, anchor: "Gaussian prior", text: "L05 turns this into ridge regression and weight decay: the MAP estimate of a linear model."}
+  - {target: L03, movement: m2-derivation, anchor: "Training: minibatch stochastic gradient descent", text: "L05 replaces this fixed step with momentum, Adam and schedules, and shows that the largest curvature limits the step size."}
+  - {target: L01, movement: m2-derivation, anchor: "Optimization in practice", text: "Standardizing lowers the condition number of the Hessian, which L05 shows sets the convergence rate of gradient descent."}
 concepts:
-  - q: "Why is squared error the right loss for linear regression?"
-    a: "If y = w^T x + Gaussian noise, the negative log-likelihood is a constant plus the sum of squared residuals divided by 2 sigma^2, so maximum likelihood is least squares."
-  - q: "What is the gradient of the mean logistic loss with respect to the weights?"
-    a: "X^T (sigmoid(Xw + b) - y) / n: features weighted by prediction error."
-  - q: "What does L2 regularization correspond to in Bayesian terms?"
-    a: "A zero-mean Gaussian prior on the weights; the penalty strength is the noise variance divided by the prior variance."
-  - q: "Why do unregularized logistic regression weights diverge on separable data?"
-    a: "Scaling up a separating weight vector always lowers the loss toward zero, so the loss has no finite minimizer and gradient descent keeps growing the norm."
-  - q: "What does it mean for a classifier to be calibrated?"
-    a: "Among the examples where it predicts probability p, a fraction p are actually positive; a reliability diagram plots predicted against observed frequencies."
-katas: [e04, e06, e09]
+  - q: "What is the largest stable learning rate for gradient descent on a quadratic with Hessian eigenvalues between mu and L?"
+    a: "2/L. Each eigen-direction is multiplied by (1 - eta lambda) per step, which must stay inside (-1, 1) for the largest eigenvalue."
+  - q: "How many steps does gradient descent need on a quadratic with condition number kappa, compared with heavy-ball momentum?"
+    a: "About kappa/2 times ln(1/epsilon) for gradient descent, about sqrt(kappa)/2 times ln(1/epsilon) for optimally tuned momentum."
+  - q: "Why does Adam need bias correction?"
+    a: "Its moving averages start at zero, so early on they underestimate the gradient moments by factors 1 - beta^t; with beta2 close to 1 the second moment is underestimated far more, so uncorrected early steps are several times too large."
+  - q: "What is the difference between L2 regularization and decoupled weight decay in Adam?"
+    a: "L2 adds lambda theta to the gradient, which Adam then divides by sqrt(v), so weights with large gradients decay less; AdamW shrinks the weights directly by eta lambda theta, at the same rate for every weight."
+  - q: "Where does He initialization come from?"
+    a: "Keeping the second moment of activations constant through a ReLU layer: Var(z) = n_in s^2 E[x^2] and ReLU halves the second moment, so s^2 = 2/n_in."
+  - q: "Why warm up the learning rate?"
+    a: "Early in training the curvature is high and Adam's second-moment estimates are based on few gradients, so large steps are unstable; ramping the rate up over the first steps avoids early divergence."
+katas: [e02, e05, e06]

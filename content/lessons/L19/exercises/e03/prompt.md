@@ -1,13 +1,10 @@
-# Attention logits and QK-layernorm
+# How many items?
 
-When queries and keys grow during training, attention logits $q \cdot k / \sqrt{d}$ grow with them, the softmax collapses onto one key, and training stalls or diverges. Normalizing $q$ and $k$ with a layer norm before the product bounds the logits.
-
-1. `layer_norm(x, eps=1e-5)` over the last axis (no gain or bias), returning $y$ and a cache.
-2. `layer_norm_backward(dy, cache)`: the gradient with respect to $x$.
-3. `max_attention_logit(q, k, qk_norm)`: the largest $|q_i \cdot k_j|/\sqrt{d}$, with the rows of $q$ and $k$ layer-normalized first when `qk_norm`.
+1. `items_needed(p, half_width, z=1.96)`: the items needed for an interval of $\pm$ `half_width` around an accuracy near $p$: $n = z^2 p (1 - p) / h^2$, rounded up.
+2. `detectable_difference(p, n, z=1.96)`: roughly the smallest difference between two independent evaluations of $n$ items each that a 95% test detects, $z\sqrt{2p(1-p)/n}$.
 
 ## Hints
 
-1. With $\hat x = (x - \mu)\,r$, $r = 1/\sqrt{\sigma^2 + \epsilon}$: $\partial x = r\,(\partial \hat x - \overline{\partial \hat x} - \hat x\, \overline{\partial \hat x \odot \hat x})$, the means taken over the last axis.
-2. A normalized row has norm about $\sqrt{d}$, so by Cauchy-Schwarz $|q \cdot k|/\sqrt d \le \sqrt d$.
-3. With a learned gain the bound scales with the gain, which grows far more slowly than raw activations.
+1. Halving the interval needs four times the items.
+2. Accuracies near 50% need the most items.
+3. Many leaderboard gaps of a point or two on benchmarks of a few hundred items are within noise.

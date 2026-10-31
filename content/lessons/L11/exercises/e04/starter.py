@@ -1,17 +1,13 @@
-# Per-SM limits of NVIDIA Turing GPUs (compute capability 7.5), the T4's architecture.
-TURING = {"max_threads": 1024, "max_warps": 32, "max_blocks": 16, "registers": 65536, "smem": 65536, "warp": 32}
+import numpy as np
 
 
-def peak_flops(sms, cores_per_sm, clock_hz, flops_per_core_cycle=2):
-    """Each core retires one fused multiply-add (2 FLOPs) per cycle."""
+def huber(r, delta):
+    """Elementwise Huber loss and its derivative: r^2 / 2 for |r| <= delta, linear beyond."""
     raise NotImplementedError
 
 
-def blocks_per_sm(threads_per_block, regs_per_thread, smem_per_block, lim=TURING):
-    """Resident blocks per SM: the tightest of the thread, warp, block, register and shared-memory limits."""
-    raise NotImplementedError
-
-
-def occupancy(threads_per_block, regs_per_thread, smem_per_block, lim=TURING):
-    """Active warps per SM as a fraction of the maximum."""
+def hoffmann_objective(theta, N, D, L, delta=1e-3):
+    """theta = (a, b, e, alpha, beta), with A = exp(a), B = exp(b), E = exp(e). The predicted log
+    loss is LSE(a - alpha log N, b - beta log D, e); return the sum over runs of
+    huber(predicted - log L, delta) and its gradient with respect to theta."""
     raise NotImplementedError

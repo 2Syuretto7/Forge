@@ -1,29 +1,24 @@
+import numpy as np
 import sub
 
-train = sub.make_docs(300, seed=1)
-evals = sub.make_docs(30, seed=2)
-V = 401
+rng = np.random.default_rng(6)
+V = 20
 
 
-def test_counts():
-    ctx, full = sub.train_counts(["a b a b"], 2)
-    assert ctx[("<s>",)] == 1 and ctx[("a",)] == 2 and ctx[("b",)] == 1
-    assert full[("a", "b")] == 2 and full[("<s>", "a")] == 1
+def make(prompt_len, n=300):
+    tokens, mask = [], []
+    for _ in range(n):
+        tokens += rng.integers(0, 10, prompt_len).tolist() + rng.integers(10, 20, 5).tolist()
+        mask += [0] * prompt_len + [1] * 5
+    return np.array(tokens), np.array(mask)
 
 
-def score(n, docs, extra=()):
-    return sub.avg_logloss(sub.train_counts(train + list(extra), n), docs, n, V, k=0.01)
-
-
-def test_leak_inflates_the_score():
-    clean, leaked = score(3, evals), score(3, evals, evals)
-    assert leaked < 0.6 * clean
-    # On documents that did not leak, the leaked model is no better.
-    assert abs(score(3, sub.make_docs(30, seed=3), evals) - clean) < 0.15 * clean
-
-
-def test_leak_reverses_model_selection():
-    # The chain is first order: on clean evaluation the bigram model is best...
-    assert score(2, evals) < score(4, evals)
-    # ...but with the evaluation set in training, the memorizing 4-gram model looks best.
-    assert score(4, evals, evals) < score(2, evals, evals)
+def test_masking_matters_more_with_long_prompts():
+    gaps = []
+    for L in [5, 50]:
+        t, m = make(L)
+        masked = sub.response_ce(sub.fit_unigram(t, m, V), t, m)
+        unmasked = sub.response_ce(sub.fit_unigram(t, np.ones_like(m), V), t, m)
+        assert masked < unmasked
+        gaps.append(unmasked - masked)
+    assert gaps[1] > gaps[0] + 1.0

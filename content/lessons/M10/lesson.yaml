@@ -14,7 +14,7 @@ movements:
 hooks:
   - {to: M11, text: "Solving Ax = b asks which input a matrix sends to b; elimination answers it and rank says when it cannot."}
   - {to: M18, text: "The derivative of a function of many variables is a matrix, the best linear map near a point."}
-  - {to: L13, text: "Attention is a handful of batched matrix products; their shapes and FLOP counts are the ones you compute here."}
+  - {to: L09, text: "Attention is a handful of batched matrix products; their shapes and FLOP counts are the ones you compute here."}
 reuses:
   - {from: M09, concept: "vectors, the dot product and linear combinations"}
 annotations:

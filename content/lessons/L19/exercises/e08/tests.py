@@ -1,19 +1,18 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(6)
+rng = np.random.default_rng(1)
+F = rng.normal(size=(12, 8))
+F /= np.linalg.norm(F, axis=1, keepdims=True)
+X = sub.make_activations(F, 3000, 0.05, seed=2)
 
 
-def test_finds_corrupted_examples():
-    x = rng.normal(2.0, 0.1, 64)
-    x[[5, 40]] = [9.0, 7.5]
-    assert sub.outlier_examples(x) == [5, 40]
-    assert sub.outlier_examples(rng.normal(2.0, 0.1, 64)) == []
+def test_recovers_most_features():
+    P = sub.train_sae(X, 24, 0.1)
+    assert sub.recovered(F, P[2]) >= 9
+    assert np.allclose(np.linalg.norm(P[2], axis=1), 1)
 
 
-def test_robust_where_mean_and_std_fail():
-    x = rng.normal(2.0, 0.1, 20)
-    x[:4] = 20.0
-    naive = np.flatnonzero(x > x.mean() + 3 * x.std())
-    assert len(naive) == 0
-    assert sub.outlier_examples(x) == [0, 1, 2, 3]
+def test_sparsity_is_needed():
+    dense = sub.train_sae(X, 24, 0.01)
+    assert sub.recovered(F, dense[2]) <= 5

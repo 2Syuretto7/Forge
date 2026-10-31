@@ -1,22 +1,13 @@
-# A 30-layer stack in five variants
+# A bigram baseline, perplexity and bits per character
 
-The L07 digits and your layer norm are provided, with `init_stack(depth, width, ...)`, which creates `Win`, per-layer `W{l}`, `g{l}`, `b{l}`, a final `gf`, `bf` and `Wout`. With $F(u) = \operatorname{relu}(u W_l)$ and LN the layer norm with $g_l, b_l$, the variants are:
+1. `bigram_probs(ids, V, alpha=1.0)`: the add-$\alpha$ smoothed table $P[a, b] = (c_{ab} + \alpha)/(c_a + \alpha V)$, where $c_{ab}$ counts $a$ followed by $b$ in `ids`.
+2. `cross_entropy(ids, P)`: mean of $-\ln P[x_t, x_{t+1}]$ over the sequence.
+3. `perplexity(nats_per_token)` and `bits_per_char(nats_per_token, n_tokens, n_chars)`.
 
-| mode | layer |
-| --- | --- |
-| `plain` | $h \leftarrow F(h)$ |
-| `plain_ln` | $h \leftarrow F(\operatorname{LN}(h))$ |
-| `res` | $h \leftarrow h + F(h)$ |
-| `pre` | $h \leftarrow h + F(\operatorname{LN}(h))$, and a final LN with `gf`, `bf` before `Wout` |
-| `post` | $h \leftarrow \operatorname{LN}(h + F(h))$ |
-
-The input is `h = X @ Win` and the logits are `h @ Wout`.
-
-1. `stack_forward(p, X, depth, mode)` returns `(logits, hidden, caches)`, where `hidden` is what multiplies `Wout`.
-2. `stack_loss_and_grads(p, X, y, depth, mode)` returns the mean softmax cross-entropy and a gradient for **every** key of `p` (zeros for parameters a variant does not use).
+Every language model should beat this baseline; the tests check the formulas on a small example.
 
 ## Hints
 
-1. Cache, per layer, the input to the matrix product `u`, the pre-activation `z`, and the layer-norm cache.
-2. In the backward pass, a residual variant adds the branch's input gradient to the stream's: `dh = dh + du`. Post-norm goes through the norm first.
-3. Gradient-check each variant on a 3-layer, width-8 stack before trusting it at depth 30.
+1. `np.add.at(C, (a, b), 1)` counts with repeated indices.
+2. Each row of `P` sums to 1.
+3. Total nats is `nats_per_token * n_tokens`; divide by characters, then by $\ln 2$.

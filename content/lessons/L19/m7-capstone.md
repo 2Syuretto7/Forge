@@ -1,8 +1,8 @@
-# Capstone: a pretraining run that survives its own failures
+# Capstone: find a circuit and prove it
 
-You write the pieces of a real training script (the schedule, atomic checkpoints with every piece of state, the spike check, and an evaluation harness with bootstrap intervals), check exact resume on a tiny model, and run the nanoGPT-sized character model (6 layers, width 384, 10.7 million parameters) for 5,000 steps on Tiny Shakespeare. At data position 3,000 the stream turns into random characters for ten batches; your detector must catch it, restore the checkpoint from before, skip the data and continue. On a T4 the run takes roughly 15 to 25 minutes: Tiny Shakespeare supports no longer run without overfitting. The same script runs for hours on a larger corpus, and with checkpoints on Google Drive it resumes after a disconnected session.
+The notebook trains a two-layer, attention-only transformer on sequences of random tokens in which one block repeats. It learns to continue the second copy, and the question is how. You compute each head's previous-token and induction scores from its attention pattern and pick the candidate circuit; mean-ablate them and compare with ablating every other head; patch their clean outputs into a corrupted run, in which the first copy is replaced, and measure how much of the behaviour they restore; and test a prediction the mechanism makes about inputs the model never saw, a single earlier pair instead of a block, with a bootstrap interval. The notebook runs on a T4 in a few minutes, and on a CPU runtime in a little longer.
 
-The autograder checks the schedule, bitwise exact resume, the checkpoint contents, that the spike was flagged within two batches of the corruption and rolled back to a checkpoint before it, that the logged steps are complete and contain no corrupted data, a final validation loss below **1.70** that is lower than before the spike, and the report.
+The autograder checks the score function on a hand-made attention pattern, that the model learned the task, that the circuit has a previous-token head in layer 0 and an induction head in layer 1, that ablating its previous-token heads, or its induction heads, sends the loss on the second copy close to uniform guessing while ablating every other head does less than half as much damage, that patching it restores most of the behaviour, that the prediction holds well above the control, and the report.
 
 :::exercise{ref=capstone}
 :::
@@ -12,7 +12,7 @@ The autograder checks the schedule, bitwise exact resume, the checkpoint content
 
 ## When you finish
 
-You have run a pretraining job the way large ones are run, at small scale. L20 starts from a pretrained model and adapts it with fine-tuning; L24 runs the whole pipeline end to end.
+You have measured a model honestly and found a mechanism inside one. L20 brings every stage together: data, pretraining, fine-tuning, RL, evaluation and serving.
 
-:::edge{to=L20 text="Fine-tuning the pretrained model."}
+:::edge{to=L20 text="Evaluating every stage of the final pipeline."}
 :::

@@ -1,15 +1,12 @@
-# Recall bridge: dot products, softmax, backprop and residual blocks
+# Recall bridge: tensor cores and the roofline
 
-Five earlier lessons meet here. From M09 and M10, a dot product measures how much two vectors point the same way. From L05, the softmax turns scores into probabilities, with Jacobian $\operatorname{diag}(p) - pp^\top$. From L07, a matrix product $Y = XW$ sends gradients $G W^\top$ and $X^\top G$. From L10, a pre-norm residual block computes $x + F(\operatorname{LN}(x))$. From L11, an operation's speed is set by its arithmetic intensity. Reviews due from those lessons appear above.
+From L07: a T4 multiplies matrices at 8.1 TFLOP/s in fp32 and 65 TFLOP/s in fp16 on its tensor cores, and memory-bound operations run at the speed of bytes. Halving the bytes per number halves their time; switching matrix products to fp16 multiplies their roof by eight. The price is numerical: fewer bits for the exponent and the mantissa. Reviews due from L07 appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step
-The dot product of $(1, 2, 0)$ and $(3, -1, 4)$ is [[1]].
+The T4's fp16 tensor-core peak is $65/8.1 \approx$ [[8.02|tol=0.02]] times its fp32 peak.
 :::
 :::step
-The softmax of the scores $(0, \ln 3)$ puts weight [[0.75]] on the second entry.
-:::
-:::step
-For $Y = XW$ with $X$ of shape $10 \times 4$ and $W$ of shape $4 \times 4$, the gradient with respect to $W$, $X^\top G$, has [[16]] entries.
+A memory-bound kernel that moves 4 bytes per value in fp32 moves [[2]] in fp16.
 :::
 ::::

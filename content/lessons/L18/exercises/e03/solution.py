@@ -1,16 +1,24 @@
-def collective_time(op, n_bytes, P, alpha, bandwidth):
-    """Ring collectives under the alpha-beta model: every step costs a latency alpha, and each rank
-    sends (P - 1) / P of the data per pass at `bandwidth` bytes per second. reduce_scatter and
-    all_gather take P - 1 steps and one pass; all_reduce is both: 2 (P - 1) steps and two passes.
-    One rank (P = 1) costs nothing."""
-    if P == 1:
-        return 0.0
-    passes = {"reduce_scatter": 1, "all_gather": 1, "all_reduce": 2}[op]
-    return passes * ((P - 1) * alpha + (P - 1) / P * n_bytes / bandwidth)
+import numpy as np
 
 
-def dp_step_time(n_params, P, alpha, bandwidth, compute_seconds, overlap):
-    """One data-parallel step: the compute, plus the all-reduce of 2-byte gradients. With
-    overlap, communication hides behind compute and the step takes the longer of the two."""
-    comm = collective_time("all_reduce", 2 * n_params, P, alpha, bandwidth)
-    return max(compute_seconds, comm) if overlap else compute_seconds + comm
+def softmax(z):
+    e = np.exp(z - z.max(axis=-1, keepdims=True))
+    return e / e.sum(axis=-1, keepdims=True)
+
+
+def full_attention(Q, K, V):
+    """Causal single-head attention over a whole sequence (T, d)."""
+    T, d = Q.shape
+    s = Q @ K.T / np.sqrt(d)
+    s = np.where(np.triu(np.ones((T, T), dtype=bool), 1), -np.inf, s)
+    return softmax(s) @ V
+
+
+def cached_attention(q, k, v, cache):
+    """Attention for one new position: append k and v (shape (d,)) to cache["K"] and cache["V"]
+    (lists), then attend from q over every cached position. Return the output (d,)."""
+    cache["K"].append(k)
+    cache["V"].append(v)
+    K, V = np.array(cache["K"]), np.array(cache["V"])
+    w = softmax(K @ q / np.sqrt(len(q)))
+    return w @ V

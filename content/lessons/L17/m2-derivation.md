@@ -1,83 +1,103 @@
-# Derivation: floating-point formats and mixed-precision training
+# Derivation: policy gradients, RLHF, DPO and verifiable rewards
 
-## 1. IEEE formats
+## 1. A language model is a policy
 
-A binary floating-point number with $e$ exponent bits and $m$ mantissa bits stores a sign $s$, a biased exponent $E$ and a fraction $f$:
+Given a prompt $x$, the model samples a response $y$ token by token, $\pi_\theta(y \mid x) = \prod_t \pi_\theta(y_t \mid x, y_{<t})$, and receives one reward $r(x, y)$ for the whole response. The objective is the expected reward,
 $$
-x = (-1)^s \cdot \left(1 + \frac{f}{2^m}\right) \cdot 2^{E - \text{bias}}, \qquad \text{bias} = 2^{e-1} - 1,
+J(\theta) = \mathbb{E}_{x}\, \mathbb{E}_{y \sim \pi_\theta(\cdot \mid x)} \bigl[r(x, y)\bigr],
 $$
-for $E$ from 1 to $2^e - 2$. $E = 0$ encodes **subnormals**, $(f/2^m) \cdot 2^{1 - \text{bias}}$, which fill the gap down to zero; $E = 2^e - 1$ encodes infinities and NaN. The mantissa sets the precision, the **machine epsilon** $2^{-m}$ (the gap after 1); the exponent sets the range.
+which cannot be differentiated through the sampling directly.
 
-| Format | Exponent, mantissa bits | Largest | Smallest normal | Epsilon |
-| --- | --- | --- | --- | --- |
-| fp32 | 8, 23 | $3.4 \times 10^{38}$ | $1.2 \times 10^{-38}$ | $1.2 \times 10^{-7}$ |
-| bf16 | 8, 7 | $3.4 \times 10^{38}$ | $1.2 \times 10^{-38}$ | $7.8 \times 10^{-3}$ |
-| fp16 | 5, 10 | 65504 | $6.1 \times 10^{-5}$ | $9.8 \times 10^{-4}$ |
-| fp8 E4M3 | 4, 3 | 448 | $1.6 \times 10^{-2}$ | 0.125 |
-| fp8 E5M2 | 5, 2 | 57344 | $6.1 \times 10^{-5}$ | 0.25 |
+## 2. The policy gradient
 
-::::derivation{id=d1 title="The fp16 range"}
+Since $\nabla \pi = \pi \nabla \log \pi$,
+$$
+\nabla_\theta J = \mathbb{E}_{y \sim \pi_\theta}\bigl[r(x, y)\, \nabla_\theta \log \pi_\theta(y \mid x)\bigr] = \mathbb{E}\Bigl[r(x, y) \sum_t \nabla_\theta \log \pi_\theta(y_t \mid x, y_{<t})\Bigr]:
+$$
+sample responses, and push up the log-probability of each in proportion to its reward. This is REINFORCE. For a softmax over logits, $\nabla \log \pi(a) = \text{onehot}(a) - p$: the same $p - y$ as L03's cross-entropy gradient, with the sign flipped and weighted by the reward. Supervised learning is the special case where every sampled action is the correct one with reward 1.
+
+:::edge{from=L03 text="the gradient p - y of softmax cross-entropy"}
+:::
+
+## 3. Baselines and advantages
+
+Because $\mathbb{E}[\nabla \log \pi] = \sum_y \nabla \pi(y) = \nabla 1 = 0$, subtracting any baseline $b$ that does not depend on the sampled response leaves the gradient unbiased, $\mathbb{E}[(r - b) \nabla \log \pi] = \nabla J$, and a good baseline (the expected reward) shrinks its variance enormously. The weight $r - b$ is the **advantage**: how much better than expected this response was. PPO learns a value function as the baseline and smooths it over steps with generalized advantage estimation; **GRPO** samples a group of responses to the same prompt and uses the group's mean reward as the baseline, normalized by its standard deviation, with no value network at all.
+
+::::derivation{id=d1 title="Group advantages"}
 :::step
-fp16 has bias $2^4 - 1 = 15$. The largest exponent field for finite numbers is 30, so the largest value is $(2 - 2^{-10}) \cdot 2^{15} =$ [[65504]].
+A group of four responses earns rewards $(1, 0, 0, 0)$. The mean is 0.25 and the standard deviation $\sqrt{0.1875} \approx 0.433$, so the correct response's advantage is $0.75/0.433 \approx$ [[1.732|tol=0.002]].
 :::
 :::step
-The smallest normal number is $2^{1 - 15} = 2^{-14} \approx$ [[0.000061|tol=0.000001]], and the smallest subnormal $2^{-24} \approx 6 \times 10^{-8}$.
+Each wrong one gets [[-0.577|tol=0.002]].
 :::
 ::::
 
-## 2. Rounding and spacing
+## 4. PPO
 
-Results are rounded to the nearest representable value, with ties going to the one with an even last bit. Around $x$ the representable numbers are $\text{ulp}(x) = 2^{\lfloor \log_2 |x| \rfloor - m}$ apart, so the relative error of a rounding is at most $2^{-m-1}$.
+Generating responses is expensive, so PPO takes several gradient steps on each batch. The batch was sampled from the old policy, so each response is reweighted by $\rho = \pi_\theta(y)/\pi_\text{old}(y)$, and the objective is clipped so that one batch cannot move the policy far:
+$$
+L^\text{CLIP} = \mathbb{E}\bigl[\min\bigl(\rho A,\; \operatorname{clip}(\rho, 1 - \epsilon, 1 + \epsilon)\, A\bigr)\bigr].
+$$
+For a good response ($A > 0$) the gain stops at $\rho = 1 + \epsilon$; for a bad one it stops at $1 - \epsilon$.
 
-::::derivation{id=d2 title="Spacing"}
+## 5. The KL-regularized objective
+
+RLHF maximizes the reward while staying close to a reference policy $\pi_\text{ref}$, the fine-tuned model:
+$$
+\max_\pi\; \mathbb{E}_{y \sim \pi}[r(y)] - \beta\, \mathrm{KL}(\pi \,\|\, \pi_\text{ref}).
+$$
+Over distributions on a set of responses this has a closed-form maximum. Writing the objective as $-\beta\,\mathrm{KL}\bigl(\pi \,\|\, \pi_\text{ref} e^{r/\beta}/Z\bigr) + \beta \log Z$, it is largest when the KL term vanishes:
+$$
+\pi^*(y) = \frac{1}{Z}\, \pi_\text{ref}(y)\, e^{r(y)/\beta}, \qquad Z = \sum_y \pi_\text{ref}(y)\, e^{r(y)/\beta}.
+$$
+Small $\beta$ lets the policy chase the reward; large $\beta$ keeps it near the reference.
+
+::::derivation{id=d2 title="The tilted policy"}
 :::step
-In fp16, the spacing between 2048 and the next number is $2^{11 - 10} =$ [[2]], so $2048 + 1$ rounds back to 2048.
+With a reference $(0.5, 0.5)$, rewards $(0, 1)$ and $\beta = 1$, the optimum puts $e/(1 + e) \approx$ [[0.731|tol=0.002]] on the second response.
 :::
 :::step
-In bf16, the spacing just above 1 is $2^{-7} \approx$ [[0.0078|tol=0.0001]]: an update of 0.001 to a weight of 1 rounds away.
+With $\beta = 0.5$ it puts $e^2/(1 + e^2) \approx$ [[0.881|tol=0.002]] there.
 :::
 ::::
 
-## 3. Accumulation
-
-Adding many small numbers into a large running sum fails once the sum's spacing exceeds twice the addend: each addition rounds back to the old sum. Summing $10^4$ copies of 0.01 in fp16, the sum stops growing at 32, where the spacing is $2^{-5} = 0.03125$. Remedies: accumulate in fp32 (what tensor cores do inside a matrix product), sum pairwise, or carry the rounding error forward (Kahan summation).
-
-## 4. Mixed-precision training
-
-The standard recipe (Micikevicius et al., 2018):
-
-- keep **fp32 master weights**; cast a half-precision copy for the forward and backward passes;
-- run matrix products in half precision with fp32 accumulation; keep reductions (softmax, normalization, the loss) in fp32. PyTorch's `autocast` applies these per-operation rules;
-- with fp16, use **loss scaling**: multiply the loss by $S$ before the backward pass, so that gradients smaller than fp16's subnormal range survive, then divide the gradients by $S$ before the update. **Dynamic** scaling starts large, halves $S$ and skips the step when any gradient is infinite or NaN, and doubles it after a run of good steps;
-- with bf16, which has fp32's range, loss scaling is unnecessary, but its 7-bit mantissa makes master weights essential.
-
-::::derivation{id=d3 title="Loss scaling"}
-:::step
-A gradient of $10^{-8}$ underflows to 0 in fp16. Scaled by $S = 2^{16} = 65536$, it becomes about [[0.000655|tol=0.000005]], comfortably representable.
+:::edge{from=M27 text="the KL divergence as a leash"}
 :::
+
+## 6. Reward models from preferences
+
+People judge "A is better than B" more consistently than they assign scores. The **Bradley-Terry** model links preferences to a scalar reward: $P(A \succ B) = \sigma(r(A) - r(B))$. A reward model is a language model with a scalar head trained on preference pairs by minimizing $-\log \sigma(r(y_w) - r(y_l))$. The classic RLHF pipeline (InstructGPT, 2022) is: supervised fine-tuning, then a reward model from human comparisons, then PPO against it with a KL penalty.
+
+::::derivation{id=d3 title="Bradley-Terry"}
 :::step
-After [[2000]] consecutive good steps, PyTorch's default `GradScaler` doubles the scale.
+If $r(A) - r(B) = 1$, the model predicts $A$ is preferred with probability $\sigma(1) \approx$ [[0.731|tol=0.002]].
 :::
 ::::
 
-**Memory.** Mixed precision with Adam stores fp16 weights and gradients (2 + 2 bytes per parameter) plus fp32 master weights and two moments (12 bytes): 16 bytes per parameter, the same as fp32 Adam. The savings are in activations, which are stored in half precision, and in time.
+## 7. DPO: preferences without a reward model
 
-## 5. Stochastic rounding
+Invert the optimum of section 5: $r(y) = \beta \log \frac{\pi^*(y)}{\pi_\text{ref}(y)} + \beta \log Z$. In the Bradley-Terry probability only reward differences appear, so $Z$ cancels:
+$$
+P(y_w \succ y_l) = \sigma\Bigl(\beta \log \frac{\pi(y_w)}{\pi_\text{ref}(y_w)} - \beta \log \frac{\pi(y_l)}{\pi_\text{ref}(y_l)}\Bigr).
+$$
+Fitting this likelihood to preference data trains the policy directly, with no reward model, no sampling and no RL (Rafailov et al., 2023). Its optimum is the same KL-regularized policy: exercise 8 checks it numerically.
 
-Round $x$, between grid points $\ell$ and $\ell + \delta$, up with probability $(x - \ell)/\delta$ and down otherwise. The expected result is exactly $x$, so repeated tiny updates accumulate on average instead of vanishing. Some low-precision training methods use it in place of master weights.
+::::derivation{id=d4 title="One DPO term"}
+:::step
+With $\beta = 0.1$ and a log-ratio difference of 2 in favour of the preferred response, the loss is $-\log \sigma(0.2) \approx$ [[0.598|tol=0.002]].
+:::
+::::
 
-## 6. fp8
+## 8. Verifiable rewards
 
-Two 8-bit formats are used in training on recent GPUs: **E4M3** (more precision, range up to 448) for weights and activations, **E5M2** (more range, up to 57344) for gradients. With so little range, each tensor carries its own **scale factor**, chosen from the largest magnitude seen recently, so that its values fill the representable range.
+When correctness can be checked (a math answer, a program's tests), the reward needs no model and cannot be flattered: 1 if the final answer is right, 0 otherwise, often with a small reward for the required format. RL with such rewards, using group advantages, trained the reasoning of models like DeepSeek-R1. It needs a policy that is already sometimes right: a group where every answer is wrong has all-zero advantages and teaches nothing, which is why RL comes after supervised fine-tuning.
 
-:::edge{from=L11 text="tensor cores and the roofline"}
+## 9. What goes wrong
+
+**Reward hacking.** The policy finds what the reward rewards, not what was meant: length, flattery, an answer format that fools the checker. **Overoptimization.** True quality peaks and falls as KL grows; watch it with held-out human or gold evaluations. **Collapse.** Without the KL penalty the policy concentrates on a few responses, its entropy goes to zero and it stops exploring.
+
+:::edge{to=L19 text="Evaluating what the trained model actually learned."}
 :::
 
-:::edge{to=L14 text="Train the GPT in reduced precision."}
-:::
-
-:::edge{to=L18 text="Sixteen bytes per parameter is the budget distributed training splits across GPUs."}
-:::
-
-:::edge{to=L22 text="Low-precision weights and caches at inference."}
+:::edge{to=L20 text="The final capstone aligns its own model."}
 :::

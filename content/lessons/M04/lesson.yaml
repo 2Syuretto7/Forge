@@ -16,7 +16,7 @@ hooks:
   - {to: M06, text: "The exponential and the logarithm are a function and its inverse."}
   - {to: M07, text: "Sine and cosine are functions of an angle, and rotation is a function of the plane."}
   - {to: M09, text: "A vector-valued function is a list of functions, one per coordinate."}
-  - {to: L07, text: "A sum of shifted ReLUs is a one-hidden-layer neural network; training chooses the knots and weights."}
+  - {to: L03, text: "A sum of shifted ReLUs is a one-hidden-layer neural network; training chooses the knots and weights."}
 reuses:
   - {from: M02, concept: "expressions and solving equations"}
 annotations:

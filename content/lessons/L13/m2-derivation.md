@@ -1,139 +1,83 @@
-# Derivation: attention, heads, positions and the transformer block
+# Derivation: floating-point formats and mixed-precision training
 
-## 1. Attention as a soft lookup
+## 1. IEEE formats
 
-Stack a sequence of $n$ vectors as the rows of $X$ ($n \times d$). Three learned projections give **queries** $Q = XW_Q$, **keys** $K = XW_K$ and **values** $V = XW_V$. The scores, weights and output are
+A binary floating-point number with $e$ exponent bits and $m$ mantissa bits stores a sign $s$, a biased exponent $E$ and a fraction $f$:
 $$
-S = \frac{QK^\top}{\sqrt{d_k}}, \qquad P = \operatorname{softmax}_{\text{rows}}(S), \qquad O = PV.
+x = (-1)^s \cdot \left(1 + \frac{f}{2^m}\right) \cdot 2^{E - \text{bias}}, \qquad \text{bias} = 2^{e-1} - 1,
 $$
-Row $i$ of $O$ is a weighted average of the values, with weights from how well query $i$ matches every key.
+for $E$ from 1 to $2^e - 2$. $E = 0$ encodes **subnormals**, $(f/2^m) \cdot 2^{1 - \text{bias}}$, which fill the gap down to zero; $E = 2^e - 1$ encodes infinities and NaN. The mantissa sets the precision, the **machine epsilon** $2^{-m}$ (the gap after 1); the exponent sets the range.
 
-:::edge{from=M10 text="dot products as similarity and matrix products"}
-:::
+| Format | Exponent, mantissa bits | Largest | Smallest normal | Epsilon |
+| --- | --- | --- | --- | --- |
+| fp32 | 8, 23 | $3.4 \times 10^{38}$ | $1.2 \times 10^{-38}$ | $1.2 \times 10^{-7}$ |
+| bf16 | 8, 7 | $3.4 \times 10^{38}$ | $1.2 \times 10^{-38}$ | $7.8 \times 10^{-3}$ |
+| fp16 | 5, 10 | 65504 | $6.1 \times 10^{-5}$ | $9.8 \times 10^{-4}$ |
+| fp8 E4M3 | 4, 3 | 448 | $1.6 \times 10^{-2}$ | 0.125 |
+| fp8 E5M2 | 5, 2 | 57344 | $6.1 \times 10^{-5}$ | 0.25 |
 
-:::edge{from=L05 text="the softmax and its Jacobian"}
-:::
-
-## 2. Why divide by the square root of the dimension
-
-If the entries of $q$ and $k$ are independent with mean 0 and variance 1, then $q \cdot k = \sum_{j=1}^{d} q_j k_j$ has mean 0 and variance $d$.
-
-::::derivation{id=d1 title="The scale of a dot product"}
+::::derivation{id=d1 title="The fp16 range"}
 :::step
-For $d_k = 64$, the score $q \cdot k$ has variance [[64]] and standard deviation [[8]].
+fp16 has bias $2^4 - 1 = 15$. The largest exponent field for finite numbers is 30, so the largest value is $(2 - 2^{-10}) \cdot 2^{15} =$ [[65504]].
 :::
 :::step
-After dividing by $\sqrt{64}$, its variance is [[1]], whatever the dimension.
+The smallest normal number is $2^{1 - 15} = 2^{-14} \approx$ [[0.000061|tol=0.000001]], and the smallest subnormal $2^{-24} \approx 6 \times 10^{-8}$.
 :::
 ::::
 
-Why it matters: the softmax's Jacobian is $\operatorname{diag}(p) - pp^\top$. When one weight approaches 1, every entry of that matrix approaches 0, and so does the gradient reaching the scores.
+## 2. Rounding and spacing
 
-::::derivation{id=d2 title="A saturated softmax"}
+Results are rounded to the nearest representable value, with ties going to the one with an even last bit. Around $x$ the representable numbers are $\text{ulp}(x) = 2^{\lfloor \log_2 |x| \rfloor - m}$ apart, so the relative error of a rounding is at most $2^{-m-1}$.
+
+::::derivation{id=d2 title="Spacing"}
 :::step
-For two scores $(0, 8)$, the softmax puts weight $e^8/(1 + e^8) \approx$ [[0.99966|tol=0.00002]] on the second.
+In fp16, the spacing between 2048 and the next number is $2^{11 - 10} =$ [[2]], so $2048 + 1$ rounds back to 2048.
 :::
 :::step
-The derivative of that weight with respect to its own score is $p(1 - p) \approx$ [[0.000335|tol=0.00001]], against 0.25 when the two scores are equal.
+In bf16, the spacing just above 1 is $2^{-7} \approx$ [[0.0078|tol=0.0001]]: an update of 0.001 to a weight of 1 rounds away.
 :::
 ::::
 
-## 3. The causal mask
+## 3. Accumulation
 
-A language model predicts token $t + 1$ from tokens $1, \dots, t$. Set the scores of every key after the query to $-\infty$ before the softmax: those weights become exactly 0, and position $i$ sees only positions $1, \dots, i$. Because no position sees its own future, one forward pass over a sequence of $n$ tokens yields $n$ valid next-token predictions, all trained at once.
+Adding many small numbers into a large running sum fails once the sum's spacing exceeds twice the addend: each addition rounds back to the old sum. Summing $10^4$ copies of 0.01 in fp16, the sum stops growing at 32, where the spacing is $2^{-5} = 0.03125$. Remedies: accumulate in fp32 (what tensor cores do inside a matrix product), sum pairwise, or carry the rounding error forward (Kahan summation).
 
-## 4. Multiple heads
+## 4. Mixed-precision training
 
-One softmax can only form one weighted average per position. **Multi-head attention** splits the $d$ dimensions into $h$ heads of $d/h$ dimensions, runs attention independently in each, concatenates the $h$ outputs and mixes them with an output projection $W_O$. Each head can attend to a different position for a different reason (one to the previous token, another to the subject of the sentence) at the same cost as a single head of width $d$.
+The standard recipe (Micikevicius et al., 2018):
 
-::::derivation{id=d3 title="Counting"}
+- keep **fp32 master weights**; cast a half-precision copy for the forward and backward passes;
+- run matrix products in half precision with fp32 accumulation; keep reductions (softmax, normalization, the loss) in fp32. PyTorch's `autocast` applies these per-operation rules;
+- with fp16, use **loss scaling**: multiply the loss by $S$ before the backward pass, so that gradients smaller than fp16's subnormal range survive, then divide the gradients by $S$ before the update. **Dynamic** scaling starts large, halves $S$ and skips the step when any gradient is infinite or NaN, and doubles it after a run of good steps;
+- with bf16, which has fp32's range, loss scaling is unnecessary, but its 7-bit mantissa makes master weights essential.
+
+::::derivation{id=d3 title="Loss scaling"}
 :::step
-With a causal mask over $n = 6$ positions, the number of query-key pairs that are not masked is $n(n + 1)/2 =$ [[21]].
+A gradient of $10^{-8}$ underflows to 0 in fp16. Scaled by $S = 2^{16} = 65536$, it becomes about [[0.000655|tol=0.000005]], comfortably representable.
 :::
 :::step
-A model of width $d = 512$ with $h = 8$ heads gives each head [[64]] dimensions.
+After [[2000]] consecutive good steps, PyTorch's default `GradScaler` doubles the scale.
 :::
 ::::
 
-## 5. Positions
+**Memory.** Mixed precision with Adam stores fp16 weights and gradients (2 + 2 bytes per parameter) plus fp32 master weights and two moments (12 bytes): 16 bytes per parameter, the same as fp32 Adam. The savings are in activations, which are stored in half precision, and in time.
 
-Attention treats its input as a set. Permute the rows of $X$ and, without a mask, the rows of the output are permuted the same way: attention is **permutation-equivariant**. Word order has to be supplied.
+## 5. Stochastic rounding
 
-**Sinusoidal encodings** add to the input a vector $\text{PE}_{p}$ with $\text{PE}_{p, 2i} = \sin(p\,\omega_i)$ and $\text{PE}_{p, 2i+1} = \cos(p\,\omega_i)$, with frequencies $\omega_i = 10000^{-2i/d}$. Learned position embeddings (used in the capstone) are a table of trainable vectors instead.
+Round $x$, between grid points $\ell$ and $\ell + \delta$, up with probability $(x - \ell)/\delta$ and down otherwise. The expected result is exactly $x$, so repeated tiny updates accumulate on average instead of vanishing. Some low-precision training methods use it in place of master weights.
 
-**Rotary embeddings** (RoPE) rotate each pair of query and key coordinates $(2i, 2i + 1)$ by the angle $p\,\theta_i$. Rotations compose: $R(m\theta)^\top R(n\theta) = R((n - m)\theta)$, so
-$$
-\big(R(m\theta)\,q\big)^\top \big(R(n\theta)\,k\big) = q^\top R((n - m)\theta)\, k,
-$$
-and the score depends only on the **relative** position $n - m$.
+## 6. fp8
 
-::::derivation{id=d4 title="Positions"}
-:::step
-At position 0, the sinusoidal encoding's even coordinates are all [[0]] and its odd coordinates are all [[1]].
-:::
-:::step
-With $\theta = 0.1$, a query at position 3 and a key at position 7 interact through a rotation by [[0.4]] radians.
-:::
-::::
+Two 8-bit formats are used in training on recent GPUs: **E4M3** (more precision, range up to 448) for weights and activations, **E5M2** (more range, up to 57344) for gradients. With so little range, each tensor carries its own **scale factor**, chosen from the largest magnitude seen recently, so that its values fill the representable range.
 
-## 6. The backward pass of attention
-
-With $c = 1/\sqrt{d_k}$, $O = PV$, $P = \operatorname{softmax}(S)$ and $S = cQK^\top$, and $\partial L/\partial O = \text{d}O$:
-$$
-\begin{aligned}
-\text{d}V &= P^\top \text{d}O, \qquad \text{d}P = \text{d}O\, V^\top, \\
-\text{d}S &= P \odot \big(\text{d}P - \operatorname{rowsum}(\text{d}P \odot P)\big), \\
-\text{d}Q &= c\,\text{d}S\, K, \qquad \text{d}K = c\,\text{d}S^\top Q.
-\end{aligned}
-$$
-The middle formula is L05's softmax Jacobian applied row by row.
-
-::::derivation{id=d5 title="One query, two positions"}
-:::step
-A query attends to two positions with weights $P = (0.25, 0.75)$ and scalar values $v = (2, 6)$. Its output is [[5]].
-:::
-:::step
-With $\text{d}O = 1$, the gradient reaching the second value is [[0.75]].
-:::
-:::step
-$\text{d}P = (2, 6)$, and $\text{d}S = P \odot (\text{d}P - 5)$, so the gradient of the first score is [[-0.75]]: raising it would move weight toward the smaller value.
-:::
-::::
-
-:::edge{from=L07 text="backpropagation through matrix products"}
+:::edge{from=L07 text="tensor cores and the roofline"}
 :::
 
-## 7. The decoder block
-
-A transformer decoder stacks $L$ identical **pre-norm residual blocks** (L10), each with two branches:
-$$
-x \leftarrow x + \operatorname{MHA}(\operatorname{LN}_1(x)), \qquad x \leftarrow x + \operatorname{MLP}(\operatorname{LN}_2(x)),
-$$
-where the MLP maps $d \to 4d \to d$ with a GELU. Attention moves information between positions; the MLP processes each position on its own. Token and position embeddings feed the first block; a final layer norm and a linear layer to vocabulary logits follow the last.
-
-**Parameters.** Attention has four $d \times d$ matrices ($4d^2$), the MLP two $d \times 4d$ matrices ($8d^2$): about $12d^2$ per block. **FLOPs.** About 2 per parameter per token in the forward pass, plus the attention itself: scores and weighted values cost $2nd$ each per layer, per token, for context length $n$.
-
-::::derivation{id=d6 title="Sizes"}
-:::step
-At $d = 768$ (GPT-2 small), one block has about $12 \cdot 768^2 =$ [[7077888]] parameters.
-:::
-:::step
-The attention term $4nd$ per layer equals the weight term $24d^2$ when the context length is $n = 6d$: for $d = 768$, [[4608]] tokens.
-:::
-::::
-
-:::edge{from=L10 text="pre-norm residual blocks"}
+:::edge{to=L10 text="Train the GPT in reduced precision."}
 :::
 
-## 8. Attention on the roofline
-
-The score matrix has $n^2$ entries per head. Computing it, applying the mask and softmax, and multiplying by $V$ in separate steps writes and reads that matrix through device memory several times, and the softmax in between is memory-bound. For long contexts this, not the FLOPs, is what makes naive attention slow, which is the problem FlashAttention solves in L12.
-
-:::edge{from=L11 text="arithmetic intensity and the roofline"}
+:::edge{to=L14 text="Sixteen bytes per parameter is the budget distributed training splits across GPUs."}
 :::
 
-:::edge{to=L12 text="Fuse scores, mask, softmax and weighted sum into one kernel: FlashAttention."}
-:::
-
-:::edge{to=L22 text="At inference, cache past keys and values instead of recomputing them."}
+:::edge{to=L18 text="Low-precision weights and caches at inference."}
 :::

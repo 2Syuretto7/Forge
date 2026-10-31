@@ -1,6 +1,6 @@
 # Preconditioning: rescale before you descend
 
-Badly scaled features make a badly conditioned problem: if one feature is in metres and another in millimetres, the loss surface is a long thin valley. Rescaling the coordinates changes the condition number, and the simplest rescaling, dividing by the square root of the Hessian's diagonal (**Jacobi preconditioning**), often removes most of it. Standardizing features before regression (L05) is this idea.
+Badly scaled features make a badly conditioned problem: if one feature is in metres and another in millimetres, the loss surface is a long thin valley. Rescaling the coordinates changes the condition number, and the simplest rescaling, dividing by the square root of the Hessian's diagonal (**Jacobi preconditioning**), often removes most of it. Standardizing features before regression (L01) is this idea.
 
 - `jacobi(A)`: the matrix $D^{-1/2} A D^{-1/2}$ with $D = \operatorname{diag}(A)$.
 - `kappa(A)`: the condition number from the eigenvalues.

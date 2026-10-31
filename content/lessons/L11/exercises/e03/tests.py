@@ -1,19 +1,28 @@
+import numpy as np
 import sub
 
-
-def test_traffic():
-    assert sub.tiled_matmul_bytes(1024, 64) == 2 * ((1024 // 64) ** 2 * 2 * 1024 * 64 + 1024 ** 2)
-    assert sub.tiled_matmul_bytes(8, 8, bytes_per=4) == 4 * (2 * 8 * 8 + 64)
-
-
-def test_intensity_close_to_tile_over_bytes():
-    i = sub.tiled_intensity(4096, 64)
-    assert 31 < i < 32
+rng = np.random.default_rng(3)
+x = np.logspace(1, 4, 9)
+y = 7.0 * x ** -0.3 * np.exp(0.05 * rng.standard_normal(9))
 
 
-def test_min_tile_and_shared_memory():
-    t = sub.min_tile_for_compute_bound(65e12, 320e9)
-    assert t == 512
-    assert sub.tile_smem_bytes(t) == 1 << 20
-    assert sub.min_tile_for_compute_bound(8.1e12, 320e9, bytes_per=4) == 128
-    assert sub.tile_smem_bytes(64) <= 64 * 1024
+def test_grad_log_mse():
+    theta = np.array([1.3, 0.2])
+    _, g = sub.log_mse(theta, x, y)
+    num = []
+    for i in range(2):
+        e = np.zeros(2)
+        e[i] = 1e-6
+        num.append((sub.log_mse(theta + e, x, y)[0] - sub.log_mse(theta - e, x, y)[0]) / 2e-6)
+    assert np.allclose(g, num, atol=1e-8)
+
+
+def test_fit_recovers_exact_data():
+    k, a = sub.fit_power_law(x, 7.0 * x ** -0.3)
+    assert abs(k - 7.0) < 1e-9 and abs(a - 0.3) < 1e-12
+
+
+def test_fit_is_the_minimum():
+    k, a = sub.fit_power_law(x, y)
+    _, g = sub.log_mse(np.array([np.log(k), a]), x, y)
+    assert np.allclose(g, 0, atol=1e-10)

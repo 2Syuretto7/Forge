@@ -1,38 +1,20 @@
 import numpy as np
 
 
-def softmax(z):
-    e = np.exp(z - z.max(axis=-1, keepdims=True))
-    return e / e.sum(axis=-1, keepdims=True)
+def quantize_int8(W):
+    """Symmetric per-output-channel quantization: each row's scale is its largest absolute value
+    divided by 127; values round to the nearest integer in [-127, 127]. Return (int8 array,
+    scales)."""
+    scale = np.abs(W).max(axis=1, keepdims=True) / 127
+    scale = np.where(scale == 0, 1.0, scale)
+    q = np.clip(np.round(W / scale), -127, 127).astype(np.int8)
+    return q, scale[:, 0]
 
 
-def attention(x, Wq, Wk, Wv, Wo, heads):
-    """Dense causal multi-head attention for one sequence x of shape (T, d)."""
-    T, d = x.shape
-    hd = Wq.shape[1] // heads
-    mask = np.triu(np.ones((T, T), dtype=bool), 1)
-    outs = []
-    for h in range(heads):
-        sl = slice(h * hd, (h + 1) * hd)
-        s = (x @ Wq[:, sl]) @ (x @ Wk[:, sl]).T / np.sqrt(hd)
-        outs.append(softmax(np.where(mask, -np.inf, s)) @ (x @ Wv[:, sl]))
-    return np.concatenate(outs, axis=1) @ Wo
+def dequantize(q, scale):
+    return q.astype(np.float64) * scale[:, None]
 
 
-def shard_attention(Wq, Wk, Wv, Wo, heads, tp):
-    """Split the weights over tp ranks by heads: rank r gets the columns of Wq, Wk, Wv for heads
-    r * heads / tp .. (r + 1) * heads / tp - 1, and the matching rows of Wo. Return a list of tp
-    tuples (Wq_r, Wk_r, Wv_r, Wo_r)."""
-    hd = Wq.shape[1] // heads
-    per = heads // tp
-    out = []
-    for r in range(tp):
-        sl = slice(r * per * hd, (r + 1) * per * hd)
-        out.append((Wq[:, sl], Wk[:, sl], Wv[:, sl], Wo[sl, :]))
-    return out
-
-
-def tp_attention(x, shards, heads_per_rank):
-    """Every rank runs attention over its own heads and multiplies by its rows of Wo; one
-    all-reduce (a sum) of the partial outputs gives the full result."""
-    return sum(attention(x, Wq, Wk, Wv, Wo, heads_per_rank) for Wq, Wk, Wv, Wo in shards)
+def int8_matmul(x, q, scale):
+    """x W^T with the int8 weights: multiply by the integers, then scale each output column."""
+    return (x @ q.astype(np.float64).T) * scale[None, :]

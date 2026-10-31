@@ -1,14 +1,27 @@
-def pipelined_time(steps, cpu_s, gpu_s):
-    """The CPU issues work for step i + 1 while the GPU runs step i: after the first step, each step
-    costs the slower of the two."""
+import numpy as np
+
+
+def sweep_loss(N, lr):
+    """A model of a learning-rate sweep: the best loss for size N is 1.7 + 30 N^-0.25, reached at
+    lr*(N) = 3e-3 (N / 1e6)^-0.5; away from lr* the loss grows with the squared log ratio."""
+    best_lr = 3e-3 * (N / 1e6) ** -0.5
+    return 1.7 + 30 * N ** -0.25 + 0.08 * np.log(lr / best_lr) ** 2
+
+
+LRS = 3e-3 * 2.0 ** np.arange(-6, 3)
+SIZES = np.array([1e6, 3e6, 1e7, 3e7, 1e8])
+
+
+def tuned_losses(sizes, lrs):
+    """For each size, the best loss over the learning rates in the sweep, and that rate."""
     raise NotImplementedError
 
 
-def synced_time(steps, cpu_s, gpu_s):
-    """A .item() (or print of a GPU value) at the end of every step makes the CPU wait for the GPU,
-    so nothing overlaps."""
+def fixed_lr_losses(sizes, lr):
+    """The loss of each size trained at one learning rate."""
     raise NotImplementedError
 
 
-def sync_slowdown(steps, cpu_s, gpu_s):
+def fitted_exponent(sizes, losses, E):
+    """The exponent a in L - E = k N^-a, by a log-log line."""
     raise NotImplementedError

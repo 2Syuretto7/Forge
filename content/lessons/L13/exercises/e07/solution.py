@@ -1,15 +1,23 @@
 import numpy as np
 
 
-def rope(X, positions, base=10000.0):
-    """Rotate each pair of features (2i, 2i+1) of row p by the angle p * theta_i, with
-    theta_i = base^(-2i/d). X has shape (n, d) with d even; positions has shape (n,)."""
-    n, d = X.shape
-    theta = base ** (-2 * np.arange(d // 2) / d)
-    ang = np.asarray(positions, dtype=float)[:, None] * theta[None, :]
-    c, s = np.cos(ang), np.sin(ang)
-    x0, x1 = X[:, 0::2], X[:, 1::2]
-    out = np.empty_like(X, dtype=float)
-    out[:, 0::2] = x0 * c - x1 * s
-    out[:, 1::2] = x0 * s + x1 * c
-    return out
+def round_down_up(x, step):
+    """The two grid points around x on a grid of spacing `step`."""
+    lo = np.floor(x / step) * step
+    return lo, lo + step
+
+
+def stochastic_round(x, step, rng):
+    """Round x to lo or hi = lo + step, choosing hi with probability (x - lo) / step."""
+    lo, hi = round_down_up(x, step)
+    return np.where(rng.random(np.shape(x)) < (x - lo) / step, hi, lo)
+
+
+def accumulate(w0, update, n, step, mode, rng=None):
+    """Apply w <- round(w + update) n times on a grid of spacing `step`, with round-to-nearest or
+    stochastic rounding."""
+    w = w0
+    for _ in range(n):
+        v = w + update
+        w = float(np.round(v / step) * step) if mode == "nearest" else float(stochastic_round(v, step, rng))
+    return w

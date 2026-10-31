@@ -1,11 +1,12 @@
-# The backward pass costs twice the forward
+# The compute-optimal allocation
 
-1. `matmul_backward(dY, X, W)`: for $Y = XW$, return $(\partial L/\partial X, \partial L/\partial W)$.
-2. `step_flops(batch_tokens, layer_shapes)`: FLOPs of one training step through linear layers with the given `(n_in, n_out)` shapes: $2 \cdot \text{tokens} \cdot n_{\text{in}} n_{\text{out}}$ per layer forward, and two matrix products of that size per layer backward.
-3. `flops_per_token_per_param()`: the constant $c$ in "training costs about $c$ FLOPs per token per parameter".
+`law` is provided.
+
+1. `optimal_allocation(C, E, A, B, alpha, beta)`: the model size $N^*$ and token count $D^* = C/6N^*$ minimizing $L(N, D)$ subject to $6ND = C$, and the loss there, from the closed form you derived.
+2. `dloss_dlogN(N, C, E, A, B, alpha, beta)`: the derivative of $L(N, C/6N)$ with respect to $\log N$ at fixed $C$.
 
 ## Hints
 
-1. $\partial L/\partial X = (\partial L/\partial Y) W^\top$ and $\partial L/\partial W = X^\top (\partial L/\partial Y)$.
-2. Each backward product has the same size as the forward one.
-3. Divide `step_flops` by tokens times parameters to find the constant.
+1. $N^* = G\,(C/6)^{\beta/(\alpha+\beta)}$ with $G = \bigl(\alpha A / (\beta B)\bigr)^{1/(\alpha+\beta)}$.
+2. Increasing $\log N$ by $\epsilon$ multiplies $N$ by $e^\epsilon$ and divides $D$ by it, so $\frac{d}{d \log N} = -\alpha A N^{-\alpha} + \beta B D^{-\beta}$.
+3. At the optimum the two terms balance: $\alpha A N^{-\alpha} = \beta B D^{-\beta}$.

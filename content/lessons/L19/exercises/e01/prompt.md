@@ -1,10 +1,12 @@
-# Clipping by the global norm
+# Accuracy with an error bar
 
-1. `global_norm(grads)`: the L2 norm of all gradient arrays together, as if flattened into one vector.
-2. `clip_by_global_norm(grads, max_norm)`: scale every gradient by $\min(1, \text{max\_norm}/\|g\|)$, and return the clipped list and the norm before clipping.
+A benchmark score is an average over items, a sample from the space of possible questions. Report it with an interval.
+
+1. `accuracy_ci(correct, n_boot=2000, seed=0, level=0.95)`: the accuracy over items (0/1) and a percentile bootstrap interval that resamples items (M25).
+2. `standard_error(p, n)`: $\sqrt{p(1-p)/n}$.
 
 ## Hints
 
-1. $\|g\| = \sqrt{\sum_i \sum g_i^2}$ over all arrays.
-2. One factor for all arrays keeps the update's direction; clipping each array separately would change it.
-3. Log the norm before clipping every step: its spikes come before the loss spikes.
+1. Draw all resamples at once: `c[rng.integers(0, n, (n_boot, n))]`.
+2. For accuracies not near 0 or 1, the bootstrap interval is close to $p \pm 1.96$ standard errors.
+3. Items, not tokens or runs, are the unit to resample: they are what the benchmark sampled.

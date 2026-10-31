@@ -1,11 +1,11 @@
-# Explain it plainly: training a model too big for one GPU
+# Explain it plainly: serving a language model
 
-Explain to a software engineer why a large model cannot be trained on one GPU and the main ways of splitting the work across many.
+Explain to a backend engineer why serving a language model is limited by memory, and the main techniques that make it fast.
 
 - Write 150 to 400 words.
-- Account for where the memory goes.
-- Explain data parallelism, ZeRO sharding, tensor parallelism and pipeline parallelism, each in a sentence or two, with its main cost.
-- Mention one thing that makes a distributed job hang.
+- Explain prefill versus decode and why decode is memory-bound.
+- Explain the KV cache and batching, including continuous batching.
+- Explain weight quantization and speculative decoding, and why the latter does not change the output distribution.
 
-:::feynman{id=f1 prompt="Explain why large models cannot be trained on one GPU and how data parallelism, ZeRO sharding, tensor parallelism and pipeline parallelism split the work, including the main cost of each." key_points="Mixed-precision Adam needs about 16 bytes per parameter of model states, plus activations that grow with batch, sequence length and depth|Data parallelism splits the batch and averages gradients with an all-reduce, but keeps a full copy of the model on every GPU|ZeRO shards optimizer states, gradients and weights across the data-parallel GPUs, trading memory for extra gathers|Tensor parallelism splits weight matrices across GPUs with all-reduces inside every layer, so it needs fast links within a server|Pipeline parallelism splits the layers into stages and streams micro-batches, paying an idle bubble while the pipeline fills and drains|Every GPU must call the same collectives in the same order, or the job hangs"}
+:::feynman{id=f1 prompt="Explain why serving a language model is limited by memory bandwidth and how the KV cache, continuous batching, weight quantization and speculative decoding make it faster, including why speculative decoding preserves the output distribution." key_points="Decoding one token reads every weight once while doing about two operations per weight, so it is limited by memory bandwidth, unlike prefill|The KV cache stores each earlier token's keys and values so each step only processes the new token, and its size limits the batch|Batching shares each weight read among many sequences, and continuous batching admits and retires sequences at every step|Weight-only quantization stores weights in 8 or 4 bits with scales, cutting the bytes read and so the step time|Speculative decoding lets a small draft propose tokens that the large model verifies in one pass, accepting with probability min(1, p/q) and resampling from the residual, which leaves the distribution exactly the large model's"}
 :::

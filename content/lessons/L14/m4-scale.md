@@ -1,22 +1,29 @@
-# Scale and measure: sampling and losses
+# Scale it: pipelines, checkpointing and real plans
 
-## Controlling generation
+## Pipelines
+
+::::predict{id=p3 kind=numeric answer=0.4286 tol=0.01}
+A model is split into 4 pipeline stages and each step streams 4 micro-batches. What fraction of the step is the bubble?
+
+:::reveal
+$(p - 1)/(m + p - 1) = 3/7 \approx 0.43$: almost half the time idle. With 32 micro-batches it falls to $3/35 \approx 0.09$, which is why pipelines need many micro-batches per step, and why the global batch limits how deep a pipeline can usefully be.
+:::
+::::
 
 :::exercise{ref=e08}
 :::
 
+## Recomputation
+
 :::exercise{ref=e09}
 :::
 
-## Regularizing the target
+## Planning
+
+Try your plans in the planner: a 13B model on 64 GPUs, then a 175B model.
+
+:::widget{name=ParallelismPlanner model=b13 dp=6}
+:::
 
 :::exercise{ref=e10}
 :::
-
-::::predict{id=p4 kind=numeric answer=6.25 tol=0.1}
-The capstone's tokenizer has a vocabulary of 512. What cross-entropy, in nats per token, does an untrained model have if it predicts uniformly?
-
-:::reveal
-$\ln 512 \approx 6.24$ nats per token. The capstone's first logged loss is close to that (a randomly initialized model with small embeddings predicts nearly uniformly), which is a useful check that the loss is computed correctly before training starts.
-:::
-::::

@@ -1,9 +1,19 @@
-# FlashAttention, forward
+# Quality heuristics
 
-`reference_attention(Q, K, V)` (non-causal, scaled) is provided. Implement `flash_attention(Q, K, V, Br=4, Bc=4)` exactly as the derivation describes: for each block of `Br` queries, loop over blocks of `Bc` keys and values, keeping per query a running maximum `m`, a running sum `l` and an output accumulator, rescaled by $\alpha = e^{m - m'}$ whenever the maximum grows. Never build the full $N \times N$ score matrix. Return `(O, L)`, where `L[i] = m + log(l)` is row $i$'s log-sum-exp of scores.
+Rae et al. (2021) filtered web text for Gopher with simple rules. Implement them.
+
+1. `quality_signals(doc)` returning a dictionary with:
+   - `n_words`: whitespace-separated words;
+   - `mean_word_len`;
+   - `symbol_ratio`: the larger of the number of `#` characters and of `...` occurrences, per word;
+   - `bullet_lines`: the fraction of non-empty lines starting (after leading spaces) with `-`, `*` or a bullet character (`"•"`);
+   - `ellipsis_lines`: the fraction of non-empty lines ending with `...`;
+   - `alpha_words`: the fraction of words containing at least one letter;
+   - `stop_words`: how many of `STOP_WORDS` occur (case-insensitive, with surrounding punctuation stripped).
+2. `passes(doc, min_words=50, max_words=100000)`: between `min_words` and `max_words` words, mean word length between 3 and 10, symbol ratio at most 0.1, at most 90% bullet lines and 30% ellipsis lines, at least 80% of words with a letter, and at least two stop words.
 
 ## Hints
 
-1. Initialize `m` to $-\infty$, `l` and the accumulator to zeros, per query block.
-2. Inside the loop: `s = q @ K_j.T * c`, `m_new = max(m, s.max(1))`, `p = exp(s - m_new)`, `alpha = exp(m - m_new)`.
-3. `l = l * alpha + p.sum(1)` and `acc = acc * alpha[:, None] + p @ V_j`.
+1. Guard every ratio against empty documents with `max(1, ...)` in the denominator.
+2. `any(c.isalpha() for c in w)` tests a word for a letter.
+3. The stop-word rule removes text that is not running English prose, such as lists of keywords, tables and code.

@@ -1,40 +1,18 @@
-STOP_WORDS = {"the", "be", "to", "of", "and", "that", "have", "with"}
+import numpy as np
 
 
-def quality_signals(doc):
-    """Signals used by the Gopher quality rules, over whitespace-separated words and non-empty
-    lines: n_words, mean_word_len, symbol_ratio (the larger of the counts of "#" and of "..." per
-    word), bullet_lines (fraction starting with a bullet: "-", "*" or a bullet character after
-    leading spaces), ellipsis_lines (fraction ending with "..."), alpha_words (fraction of words
-    with a letter) and stop_words (how many STOP_WORDS occur, case-insensitive, punctuation
-    stripped)."""
-    words = doc.split()
-    lines = [l for l in doc.split("\n") if l.strip()]
-    n = max(1, len(words))
-    m = max(1, len(lines))
-    found = {w.strip(".,;:!?\"'()").lower() for w in words} & STOP_WORDS
-    return {
-        "n_words": len(words),
-        "mean_word_len": sum(len(w) for w in words) / n,
-        "symbol_ratio": max(doc.count("#"), doc.count("...")) / n,
-        "bullet_lines": sum(l.lstrip()[:1] in ("-", "*", "\u2022") for l in lines) / m,
-        "ellipsis_lines": sum(l.rstrip().endswith("...") for l in lines) / m,
-        "alpha_words": sum(any(c.isalpha() for c in w) for w in words) / n,
-        "stop_words": len(found),
-    }
-
-
-def passes(doc, min_words=50, max_words=100000):
-    """Gopher's rules: word count in [min_words, max_words], mean word length in [3, 10], symbol
-    ratio at most 0.1, at most 90% bullet lines and 30% ellipsis lines, at least 80% of words with
-    a letter, and at least two of the stop words."""
-    s = quality_signals(doc)
-    return (
-        min_words <= s["n_words"] <= max_words
-        and 3 <= s["mean_word_len"] <= 10
-        and s["symbol_ratio"] <= 0.1
-        and s["bullet_lines"] <= 0.9
-        and s["ellipsis_lines"] <= 0.3
-        and s["alpha_words"] >= 0.8
-        and s["stop_words"] >= 2
-    )
+def fit_lora(target, r, alpha, steps=3000, lr=0.05, seed=0):
+    """Fit (alpha / r) B A to the target update by gradient descent on 0.5 |(alpha / r) B A - target|^2,
+    starting from B = 0 and A with entries N(0, 1/r) as LoRA does. Return (A, B, final loss)."""
+    rng = np.random.default_rng(seed)
+    d_out, d_in = target.shape
+    A = rng.normal(size=(r, d_in)) / np.sqrt(r)
+    B = np.zeros((d_out, r))
+    s = alpha / r
+    for _ in range(steps):
+        E = s * B @ A - target
+        gB = s * E @ A.T
+        gA = s * B.T @ E
+        A -= lr * gA
+        B -= lr * gB
+    return A, B, 0.5 * float(np.sum((s * B @ A - target) ** 2))

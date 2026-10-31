@@ -1,11 +1,13 @@
-import numpy as np
+def normalize(text):
+    return " ".join(text.lower().split())
 
 
-def fit_unigram(tokens, mask, vocab):
-    """Next-token frequencies estimated from the tokens whose mask is 1, with add-one smoothing."""
+def leaked_items(eval_prompts, train_prompts):
+    """Indices of evaluation prompts that appear, after normalization, among the training prompts."""
     raise NotImplementedError
 
 
-def response_ce(p, tokens, mask):
-    """Mean -log p(token) over the tokens whose mask is 1."""
+def honest_accuracy(correct, leaked):
+    """Accuracy over all items, over the items that did not leak, and over those that did.
+    Return a dict with keys all, clean, leaked (None for an empty group)."""
     raise NotImplementedError

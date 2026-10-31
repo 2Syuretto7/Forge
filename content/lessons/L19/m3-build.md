@@ -1,6 +1,6 @@
-# Build: the parts of a training script
+# Build: honest evals and the first tools for reading activations
 
-## Defenses
+## Evaluations with error bars
 
 :::exercise{ref=e01}
 :::
@@ -11,7 +11,7 @@
 :::exercise{ref=e03}
 :::
 
-## Detection and schedules
+## Probes
 
 :::exercise{ref=e04}
 :::
@@ -19,7 +19,7 @@
 :::exercise{ref=e05}
 :::
 
-## State
+## Superposition and sparse autoencoders
 
 :::exercise{ref=e06}
 :::

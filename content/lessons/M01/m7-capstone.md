@@ -13,7 +13,7 @@ You can now carry orders of magnitude in your head and check them with code. Eve
 
 - M02 names unknowns and solves for them.
 - M06 turns "the exponent of ten" into the logarithm, a function you can compute with.
-- L11 measures the gap between your browser and a GPU on the roofline.
+- L07 measures the gap between your browser and a GPU on the roofline.
 - M35 fits scaling laws to compute budgets like $6ND$ on log-log axes.
 
 :::edge{to=M06 text="Scientific notation is a logarithm in disguise."}

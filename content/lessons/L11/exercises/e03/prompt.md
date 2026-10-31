@@ -1,15 +1,12 @@
-# Tiling a matrix product
+# Fitting a power law
 
-Model an $n \times n \times n$ product computed in $T \times T$ output blocks, each of which streams a $T$-wide strip of $A$ and of $B$ ($nT$ values each) and writes its block of $C$.
+A power law $y = k x^{-a}$ is a straight line in log-log coordinates: $\log y = \log k - a \log x$.
 
-1. `tiled_matmul_bytes(n, tile, bytes_per=2)`: total device-memory traffic.
-2. `min_tile_for_compute_bound(peak, bw, bytes_per=2)`: the smallest power-of-two tile whose intensity $T/b$ reaches the ridge point.
-3. `tile_smem_bytes(tile, bytes_per=2)`: shared memory to hold one $T \times T$ tile of $A$ and one of $B$.
-
-`tiled_intensity(n, tile, bytes_per)` (given) divides $2n^3$ by your traffic. Compare it with $T/b$, and the shared memory a compute-bound tile would need with the T4's 64 KB per SM.
+1. `log_mse(theta, x, y)` with $\theta = (\log k, a)$: return the mean squared error between $\log k - a \log x$ and $\log y$, and its gradient with respect to $\theta$.
+2. `fit_power_law(x, y)`: the least-squares fit, returning $(k, a)$.
 
 ## Hints
 
-1. There are $(n/T)^2$ blocks.
-2. Add the $n^2$ values written to $C$ once.
-3. Double the tile until it is large enough.
+1. With residuals $r_i = \log k - a \log x_i - \log y_i$, the gradient is $\bigl(2\,\overline{r},\; -2\,\overline{r \log x}\bigr)$.
+2. `np.polyfit(np.log(x), np.log(y), 1)` returns the slope and the intercept.
+3. The least-squares fit is where the gradient of `log_mse` vanishes.

@@ -1,17 +1,16 @@
-import numpy as np
+import math
 
 
-def softmax_loss(W, b, X, y, l2=0.0):
+def warmup_cosine(t, total, warmup, peak, floor=0.0):
+    """Rate at step t (1-based): linear ramp to peak over `warmup` steps, then cosine to floor at `total`."""
     raise NotImplementedError
 
 
-def softmax_grad(W, b, X, y, l2=0.0):
+def warmup_linear(t, total, warmup, peak):
+    """Linear ramp to peak, then linear decay to zero at `total`."""
     raise NotImplementedError
 
 
-def predict_proba(W, b, X):
-    raise NotImplementedError
-
-
-def fit_softmax(X, y, K, lr=0.5, steps=2000, l2=0.0):
+def inverse_sqrt(t, warmup, peak):
+    """Linear ramp to peak, then peak * sqrt(warmup / t)."""
     raise NotImplementedError

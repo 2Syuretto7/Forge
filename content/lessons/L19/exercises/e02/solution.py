@@ -1,15 +1,11 @@
 import numpy as np
 
 
-def ce_with_z_loss(logits, y, z_coef):
-    """Mean softmax cross-entropy of logits (n, V) against integer labels y, plus
-    z_coef * mean(logsumexp(logits)^2). Return (loss, gradient with respect to logits)."""
-    m = logits.max(axis=1, keepdims=True)
-    lse = (m + np.log(np.exp(logits - m).sum(axis=1, keepdims=True)))[:, 0]
-    p = np.exp(logits - lse[:, None])
-    n = len(y)
-    loss = np.mean(lse - logits[np.arange(n), y]) + z_coef * np.mean(lse ** 2)
-    g = p.copy()
-    g[np.arange(n), y] -= 1
-    g += 2 * z_coef * lse[:, None] * p
-    return loss, g / n
+def paired_bootstrap(a, b, n_boot=2000, seed=0, level=0.95):
+    """Two models' per-item correctness on the same items: the mean difference a - b and a
+    bootstrap interval that resamples items (keeping each pair). Return (diff, low, high)."""
+    d = np.asarray(a, dtype=float) - np.asarray(b, dtype=float)
+    rng = np.random.default_rng(seed)
+    means = d[rng.integers(0, len(d), (n_boot, len(d)))].mean(axis=1)
+    lo, hi = np.quantile(means, [(1 - level) / 2, (1 + level) / 2])
+    return float(d.mean()), float(lo), float(hi)

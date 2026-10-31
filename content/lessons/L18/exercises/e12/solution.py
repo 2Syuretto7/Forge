@@ -1,18 +1,21 @@
 import numpy as np
 
 
-def correct_average(grad_sums, counts):
-    """Each rank holds the SUM of its examples' gradients and its example count. The full-batch
-    mean gradient is the sum over ranks divided by the total count."""
-    return sum(grad_sums) / sum(counts)
+def per_tensor_int8(W):
+    """One scale for the whole matrix (largest absolute value / 127); return dequantized weights."""
+    s = np.abs(W).max() / 127
+    return np.clip(np.round(W / s), -127, 127) * s
 
 
-def mean_of_means(grad_sums, counts):
-    """A common bug: average the ranks' mean gradients, which weights a rank with few examples as
-    much as one with many."""
-    return sum(g / c for g, c in zip(grad_sums, counts)) / len(counts)
-
-
-def sum_of_means(grad_sums, counts):
-    """Another bug: all-reduce with a sum and forget to divide by the number of ranks."""
-    return sum(g / c for g, c in zip(grad_sums, counts))
+def mixed_precision_int8(W, X, k):
+    """LLM.int8-style: the k input features (columns of W) with the largest typical activation
+    magnitude in X (mean absolute value over the rows of X) stay in full precision; the other
+    columns are quantized per output row. Return the effective weights."""
+    keep = np.argsort(np.abs(X).mean(axis=0))[-k:]
+    rest = np.setdiff1d(np.arange(W.shape[1]), keep)
+    out = W.astype(float).copy()
+    sub = W[:, rest]
+    s = np.abs(sub).max(axis=1, keepdims=True) / 127
+    s = np.where(s == 0, 1.0, s)
+    out[:, rest] = np.clip(np.round(sub / s), -127, 127) * s
+    return out

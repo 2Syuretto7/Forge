@@ -1,12 +1,11 @@
-# Shingles and Jaccard similarity
+# The SFT loss, masked
 
-Near-duplicate detection compares documents as sets of short overlapping pieces.
+Supervised fine-tuning trains on (prompt, response) pairs, but only the response is the model's job: the loss counts response tokens and ignores the prompt.
 
-1. `shingles(text, k=5)`: the set of character $k$-grams of `text` after lowercasing and collapsing every run of whitespace to a single space. A text shorter than $k$ is its own single shingle.
-2. `jaccard(a, b)`: $|a \cap b| / |a \cup b|$, and 1.0 when both sets are empty.
+Implement `masked_ce(logits, targets, mask)`: the mean cross-entropy over the positions where `mask` is 1, and its gradient with respect to the logits, which must be zero at masked-out positions.
 
 ## Hints
 
-1. `" ".join(text.lower().split())` normalizes case and whitespace in one line.
-2. A set comprehension over `range(len(t) - k + 1)` collects the $k$-grams.
-3. Two copies of a page that differ only in spacing or capitalization have Jaccard similarity 1.
+1. Divide by the number of counted positions, not by the sequence length.
+2. The gradient at a counted position is $(\operatorname{softmax}(z) - \text{onehot}(y))/n$.
+3. Compute the log-softmax stably by subtracting each row's maximum.

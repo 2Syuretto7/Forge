@@ -1,19 +1,26 @@
+import numpy as np
 import sub
 
-
-def test_flops_per_token():
-    assert sub.train_flops_per_token(1e6, 4, 128, 192) == 6e6 + 12 * 4 * 128 * 192
-    N = 12 * 4 * 192 ** 2
-    f = sub.train_flops_per_token(N, 4, 128, 192)
-    assert abs((f - 6 * N) / f - sub.attention_share(128, 192)) < 1e-12
+rng = np.random.default_rng(0)
+L = rng.normal(size=(4, 6)) * 3 + 5
+y = np.array([0, 2, 5, 1])
 
 
-def test_attention_share_values():
-    assert abs(sub.attention_share(128, 192) - 128 / 1280) < 1e-12
-    assert sub.attention_share(2048, 768) > sub.attention_share(2048, 12288)
-    assert abs(sub.attention_share(6, 1) - 0.5) < 1e-12
+def test_grad_z_loss():
+    _, g = sub.ce_with_z_loss(L, y, 1e-2)
+    num = np.zeros_like(L)
+    for idx in np.ndindex(L.shape):
+        P = L.copy()
+        P[idx] += 1e-6
+        up = sub.ce_with_z_loss(P, y, 1e-2)[0]
+        P[idx] -= 2e-6
+        num[idx] = (up - sub.ce_with_z_loss(P, y, 1e-2)[0]) / 2e-6
+    assert np.allclose(g, num, atol=1e-8)
 
 
-def test_budget_and_mfu():
-    assert abs(sub.tokens_for_budget(6e18, 1e9) - 1e9) < 1e-3
-    assert abs(sub.mfu(1e5, 6e8, 65e12) - 6e13 / 65e12) < 1e-12
+def test_values():
+    lse = np.log(np.exp(L).sum(1))
+    ce = np.mean(lse - L[np.arange(4), y])
+    assert abs(sub.ce_with_z_loss(L, y, 0)[0] - ce) < 1e-12
+    assert abs(sub.ce_with_z_loss(L, y, 0.1)[0] - ce - 0.1 * np.mean(lse ** 2)) < 1e-12
+    assert np.isfinite(sub.ce_with_z_loss(L * 200, y, 1e-4)[0])

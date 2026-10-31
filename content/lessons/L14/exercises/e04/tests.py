@@ -1,22 +1,20 @@
+import numpy as np
 import sub
 
-TEXT = "Hello world. It's the world's end; the end of the world, hello again.\n\n  Hello!" * 5
+rng = np.random.default_rng(1)
+X = rng.normal(size=(30, 4))
+y = rng.normal(size=30)
+w = rng.normal(size=4)
 
 
-def test_chunks():
-    chunks = sub.pretokenize(TEXT)
-    assert "".join(chunks) == TEXT
-    assert " world" in chunks and "'s" in chunks
-    assert sub.pretokenize("a  b") == ["a", " ", " b"]
+def test_grad_local_loss():
+    _, g = sub.local_loss_grad(w, X, y)
+    num = [(sub.local_loss_grad(w + e, X, y)[0] - sub.local_loss_grad(w - e, X, y)[0]) / 2e-6 for e in np.eye(4) * 1e-6]
+    assert np.allclose(g, num, atol=1e-8)
 
 
-def test_no_merge_crosses_a_word_boundary():
-    merges = sub.train_bpe_chunks(TEXT, 330)
-    v = {i: bytes([i]) for i in range(256)}
-    for (a, b), i in merges.items():
-        v[i] = v[a] + v[b]
-    for i in range(256, 256 + len(merges)):
-        s = v[i].decode("utf-8", errors="ignore")
-        # spaces attach to the following word, so no token has a visible character before a space
-        assert not any(not c.isspace() and n == " " for c, n in zip(s, s[1:])), s
-    assert any(v[i] == b" world" for i in v)
+def test_matches_full_batch():
+    full = w - 0.1 * sub.local_loss_grad(w, X, y)[1]
+    shards = [(X[:7], y[:7]), (X[7:20], y[7:20]), (X[20:], y[20:])]
+    assert np.allclose(sub.dp_step(w, shards, 0.1), full)
+    assert np.allclose(sub.dp_step(w, [(X, y)], 0.1), full)

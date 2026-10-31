@@ -1,0 +1,35 @@
+id: L02
+hours: 7
+capstone: "Reproduce a double-descent curve with random features and explain where the peak sits"
+teaser: "Why test error falls, rises and falls again as models grow, and how not to fool yourself measuring it."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 20}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 35}
+  - {file: m2-derivation.md, mode: theory,   minutes: 130}
+  - {file: m3-build.md,      mode: practice, minutes: 90}
+  - {file: m4-scale.md,      mode: practice, minutes: 50}
+  - {file: m5-break.md,      mode: both,     minutes: 40}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 20}
+  - {file: m7-capstone.md,   mode: practice, minutes: 35}
+hooks:
+  - {to: L11, text: "Scaling laws are learning curves on a log-log plot; the irreducible-error term is the noise floor of this lesson."}
+  - {to: L12, text: "Test-set leakage returns at scale as benchmark contamination of pretraining data."}
+reuses:
+  - {from: M25, concept: "bias and variance of estimators"}
+  - {from: M27, concept: "held-out cross-entropy"}
+  - {from: L01, concept: "ridge regression and least squares"}
+annotations:
+  - {target: M25, anchor: "mean squared error", text: "The same bias-variance split, applied to a model's predictions instead of a parameter, explains overfitting (L02)."}
+  - {target: L01, anchor: "ridge", text: "Ridge trades a little bias for a large cut in variance; near the interpolation threshold it removes the double-descent peak (L02)."}
+concepts:
+  - q: "State the bias-variance decomposition of expected squared error at a point."
+    a: "E[(y - f_hat(x))^2] = noise variance + (f(x) - E[f_hat(x)])^2 + Var(f_hat(x)): irreducible noise plus squared bias plus variance."
+  - q: "Why does test error peak when the number of parameters equals the number of training points?"
+    a: "At the interpolation threshold the fitted model must pass exactly through noisy points using the only solution available; the design matrix's smallest singular value is near zero, so noise is amplified enormously. With more parameters, the minimum-norm interpolant spreads the fit over many directions and the variance falls again."
+  - q: "What does gradient descent from zero converge to on an underdetermined least-squares problem?"
+    a: "The minimum-norm solution, because every update lies in the row space of X, so the iterate never acquires a component in the null space."
+  - q: "Why is selecting features on the full dataset before cross-validation a leak?"
+    a: "The selection has already looked at the validation labels, so features chosen for spurious correlation with those labels make the cross-validated score optimistic, even on pure noise."
+  - q: "Why can a test score used to pick among many models no longer be trusted?"
+    a: "The maximum of many noisy scores is biased upward; the chosen model's test score includes luck that will not repeat on fresh data."
+katas: [e03, e05, e07]

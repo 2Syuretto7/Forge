@@ -1,32 +1,35 @@
 import numpy as np
+import math
 
 
-def make_spiral(n_per_class=100, K=3, seed=0):
-    rng = np.random.default_rng(seed)
-    Xs, ys = [], []
-    for j in range(K):
-        r = np.linspace(0.0, 1.0, n_per_class)
-        t = np.linspace(4 * j, 4 * (j + 1), n_per_class) + 0.2 * rng.normal(size=n_per_class)
-        Xs.append(np.column_stack([r * np.sin(t), r * np.cos(t)]))
-        ys.append(np.full(n_per_class, j))
-    return np.concatenate(Xs), np.concatenate(ys)
+C = math.sqrt(2.0 / math.pi)
 
 
-def accuracy(pred, y):
-    return float(np.mean(np.asarray(pred) == np.asarray(y)))
+def gelu(x):
+    """The tanh approximation used by GPT-2: 0.5 x (1 + tanh(c (x + 0.044715 x^3)))."""
+    return 0.5 * x * (1.0 + np.tanh(C * (x + 0.044715 * x ** 3)))
 
 
-def linear_baseline(X, y, steps=2000, lr=1.0):
-    K = int(y.max()) + 1
-    W = np.zeros((X.shape[1], K))
-    b = np.zeros(K)
-    Y = np.eye(K)[y]
-    for _ in range(steps):
-        Z = X @ W + b
-        Z -= Z.max(axis=1, keepdims=True)
-        P = np.exp(Z)
-        P /= P.sum(axis=1, keepdims=True)
-        G = (P - Y) / len(y)
-        W -= lr * X.T @ G
-        b -= lr * G.sum(axis=0)
-    return accuracy((X @ W + b).argmax(axis=1), y)
+def gelu_grad(x):
+    """d gelu / dx."""
+    u = C * (x + 0.044715 * x ** 3)
+    t = np.tanh(u)
+    return 0.5 * (1.0 + t) + 0.5 * x * (1.0 - t * t) * C * (1.0 + 3 * 0.044715 * x * x)
+
+
+def bias_gelu_forward(x, b):
+    """y = gelu(x + b) in one pass; return (y, cache)."""
+    z = x + b
+    return gelu(z), z
+
+
+def bias_gelu_backward(dy, cache):
+    """Return (dx, db)."""
+    g = dy * gelu_grad(cache)
+    return g, g.sum(axis=0)
+
+
+def traffic(n, bytes_per=2, fused=True):
+    """Bytes moved for x + b followed by gelu on n elements (the bias vector is negligible).
+    Unfused: the add reads x and writes z, the GELU reads z and writes y. Fused: read x, write y."""
+    return 2 * n * bytes_per if fused else 4 * n * bytes_per

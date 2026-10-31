@@ -1,15 +1,11 @@
-# Break it: range against precision
+# Break it: no KL penalty
 
-Your `round_to_format` is provided.
+Implement `train_with_kl(means, beta, steps=2000, lr=0.5)`: exact policy-gradient ascent (no sampling) on $\mathbb{E}[r] - \beta\,\mathrm{KL}(\pi \,\|\, \pi_\text{ref})$ for a bandit, from the uniform reference. `entropy` is provided.
 
-1. `bf16(x)` and `fp16(x)`: round to bfloat16 (8, 7) and float16 (5, 10).
-2. `survives(x, fmt)`: `True` where a value is finite and nonzero after rounding with `fmt`.
-3. `resolves(a, b, fmt)`: `True` where `a` and `b` remain different after rounding.
-
-Then find values that each format loses: large activations, tiny gradients, and small differences between nearby numbers.
+Without the penalty the policy collapses onto one action: its entropy goes to zero and it no longer produces anything else, which in a language model means one way of answering everything, and no exploration left for later training.
 
 ## Hints
 
-1. `fmt` is one of your two functions.
-2. fp16 loses values above 65504 and below about $6 \times 10^{-8}$; bf16 reaches $10^{\pm 38}$.
-3. Near 1, bf16 can only distinguish differences of about 0.008.
+1. Write the objective's gradient as $\pi \odot (f - \pi^\top f)$ with $f = r - \beta \log(\pi/\pi_\text{ref})$.
+2. With $\beta > 0$ the iteration converges to $\pi_\text{ref} e^{r/\beta}/Z$.
+3. Compare the entropies of the two runs.

@@ -2,7 +2,7 @@
 
 This file is the complete, self-contained specification for building **Forge**, a personal learning platform for the ML research and ML engineering skills expected at frontier AI labs. Read it fully before writing code. Execute the phases in order. Do not stop at a partial build: every phase ends with a working, deployed app, and the plan is finished only when every lesson passes the acceptance checks in Section 12.
 
-**Math track (owner request, Phase 7).** The owner replaced the four-lesson math track (L01 to L04) with a 38-lesson track, M01 to M38, specified in [`docs/math-track.md`](docs/math-track.md). That document is binding for the math track: its lessons, edges, lesson template, density minimums and gating rules. Where it and this file disagree, it wins for the math track, with one exception decided by the owner: progress is **reset** when the new curriculum first loads instead of being migrated from L01 to L04 (the API key, model and theme stay).
+**Math track (owner request, Phase 7).** The owner replaced the original four-lesson math track with a 38-lesson track, M01 to M38, specified in [`docs/math-track.md`](docs/math-track.md). That document is binding for the math track: its lessons, edges, lesson template, density minimums and gating rules. Where it and this file disagree, it wins for the math track, with one exception decided by the owner: progress is **reset** when the new curriculum first loads instead of being migrated (the API key, model and theme stay). The core lessons are numbered from L01, and progress saved under their earlier numbers is carried over (owner request).
 
 ---
 
@@ -24,7 +24,7 @@ This file is the complete, self-contained specification for building **Forge**, 
 | --- | --- |
 | Learner level | Assumes high-school calculus and basic Python. Math lessons start from first principles but move fast. |
 | Pace | Slow and steady, enforced (docs/math-track.md, Pedagogy): a lesson unlocks when its prerequisites are complete and their Feynman blocks have passed; one lesson in progress at a time; due reviews come before a new movement; a lesson closes at 80% on its own review cards a week after completion. |
-| Compute | Browser only (Pyodide + NumPy) for 9 lessons, browser plus Colab for 3 (L08, L13, L16), free Google Colab (T4 GPU) for 12. No paid compute required. |
+| Compute | Browser only (Pyodide + NumPy) for the 38 math lessons and 5 core lessons, browser plus Colab for 3 (L04, L09, L12), free Google Colab (T4 GPU) for 12. No paid compute required. |
 | Target role | Balanced research engineer: ML theory + MLE systems equally weighted. |
 | Hosting | Static site on GitHub Pages, deployed by GitHub Actions on every push to `main`. |
 | Storage | Single learner. Progress in IndexedDB, with one-click JSON export/import in Settings. |
@@ -39,7 +39,7 @@ This file is the complete, self-contained specification for building **Forge**, 
 - **Pedagogy:** the Feynman loop in every lesson: puzzle, derive, build from scratch, explain plainly, break it, reconnect.
 - **50/50 rule:** in every lesson, theory minutes and practice minutes are each between 45% and 55% of the total. Enforced by the content validator.
 - **Long-arc rule:** every lesson has 6 to 12 estimated hours, 6 to 8 movements, at least 12 exercises, and one capstone. Enforced by the validator.
-- **Graph rule:** three edge types (vertical prerequisite, horizontal same-stage across tracks or math strands, long-range across stages). Every lesson has at least 1 inbound edge (except M01), at least 1 outbound edge (except L24), and at least 1 horizontal or long-range edge. Enforced by the validator.
+- **Graph rule:** three edge types (vertical prerequisite, horizontal same-stage across tracks or math strands, long-range across stages). Every lesson has at least 1 inbound edge (except M01), at least 1 outbound edge (except L20), and at least 1 horizontal or long-range edge. Enforced by the validator.
 
 ---
 
@@ -97,7 +97,7 @@ forge/
           starter.py | notebook.ipynb
           solution.py
           tests.py
-      L02/ ... L24/
+      L02/ ... L20/, M01/ ... M38/
     reviews/                   generated spaced-review items (built by script)
   notebooks/                   GPU lessons' Colab notebooks (copied from content at build)
   scripts/
@@ -145,7 +145,7 @@ forge/
 - A lesson bar under the top bar: a Syllabus drawer (movements with theory/practice tag, minutes and their exercises; the live theory/practice meter), the lesson title, and one progress segment per movement.
 - Center: the movement content (markdown + math + widgets) in a reading column; each exercise is a step card with its status, XP and a Start, Continue or Review button. A sticky bottom bar holds Back, the count of tasks done, and Complete movement or Next.
 - Exercises open in a full-screen workspace, as on DataCamp: instructions, hints (each costs XP) and the solution on the left; a dark editor with Run code and Submit answer, and a console with Output and Tests tabs, on the right; Previous, one dot per exercise of the movement, and Next exercise at the bottom. On a phone the three panels become tabs.
-- Edge markers render inline as chips: "Reuses L04: KL divergence" (links back) and "Returns in L21" (links forward; disabled until reachable, shows a one-line teaser).
+- Edge markers render inline as chips: "Reuses M27: KL divergence" (links back) and "Returns in L17" (links forward; disabled until reachable, shows a one-line teaser).
 - Retro-annotations: when a later lesson is complete, its annotations appear as margin notes in earlier lessons.
 - Gating (docs/math-track.md): a locked lesson, or any lesson while another is in progress, is a preview whose movements cannot be completed; a movement the learner has not opened yet shows the due review queue first and opens once it is cleared; after about 90 minutes of study a movement boundary suggests a break.
 - Progress saves on every exercise pass, movement completion, and prediction submission.
@@ -182,23 +182,23 @@ forge/
 ### 6.1 `content/graph.yaml`
 ```yaml
 tracks: [math, core, arch, sys, llm]
-stages: [foundations, learning, models_gpus, scale, frontier]
+stages: [prelude, foundations, learning, models_gpus, scale, frontier]
 lessons:
   - id: L01
-    title: Linear algebra as the geometry of data
-    track: math
-    stage: foundations
+    title: Linear and logistic regression, end to end
+    track: core
+    stage: learning
     gpu: false
 edges:
-  - {from: L01, to: L05, type: vertical}
-  - {from: L13, to: L11, type: horizontal, note: "Attention cost read on the roofline"}
-  - {from: L04, to: L21, type: long_range, note: "KL divergence returns as the RLHF penalty"}
+  - {from: M12, to: L01, type: vertical}
+  - {from: L09, to: L07, type: horizontal, note: "Attention cost read on the roofline"}
+  - {from: M27, to: L17, type: long_range, note: "KL divergence returns as the RLHF penalty"}
 ```
 The full lesson and edge list is in Section 10; encode it exactly.
 
 ### 6.2 `lesson.yaml`
 ```yaml
-id: L13
+id: L09
 hours: 10
 capstone: "Train a 2-layer transformer on character-level Shakespeare-style public-domain text to below 1.6 nats"
 movements:
@@ -211,11 +211,11 @@ movements:
   - {file: m6-feynman.md,    mode: theory,   minutes: 30}
   - {file: m7-capstone.md,   mode: practice, minutes: 75}
 hooks:        # forward links shown at the end
-  - {to: L12, text: "You will fuse this softmax into one kernel."}
+  - {to: L08, text: "You will fuse this softmax into one kernel."}
 reuses:       # backward links; drive Movement 0
-  - {from: L07, concept: backprop through matrix products}
+  - {from: L03, concept: backprop through matrix products}
 annotations:  # retro-annotations placed into earlier lessons when this lesson completes
-  - {target: L05, anchor: softmax, text: "Softmax here is the same function that weights attention in L13."}
+  - {target: L01, anchor: softmax, text: "Softmax here is the same function that weights attention in L09."}
 ```
 `mode: both` minutes count half to theory, half to practice.
 
@@ -255,24 +255,24 @@ annotations:  # retro-annotations placed into earlier lessons when this lesson c
 
 | Widget | Shows | Used in |
 | --- | --- | --- |
-| `MatrixTransform` | 2D linear map acting on a grid and unit circle; SVD axes overlay | L01, L20 |
-| `DistributionPlayground` | Sample, fit by MLE, see likelihood surface | L02, L06 |
-| `ComputationGraph` | Forward values and backward gradients flowing on a graph | L03, L07, L08 |
-| `EntropyBars` | Entropy, cross-entropy, KL between two editable distributions | L04, L14, L21 |
-| `DecisionBoundary` | Logistic regression boundary training live | L05 |
-| `BiasVarianceCurve` | Train/test error vs capacity, double-descent regime | L06, L15 |
-| `LossLandscape` | 2D loss surface with SGD/momentum/Adam trajectories | L09 |
-| `ActivationStats` | Per-layer activation and gradient histograms under different inits and norms | L09, L10 |
-| `Roofline` | Arithmetic intensity vs achievable FLOP/s; place kernels on it | L11, L12, L13, L22 |
-| `AttentionHeatmap` | Q, K, V and attention weights for a toy sequence; causal mask toggle | L13, L23 |
-| `TokenizerStepper` | BPE merges step by step | L14 |
-| `ScalingFit` | Fit power laws to loss vs compute; compute-optimal frontier | L15 |
-| `FloatFormats` | Bit layout and rounding of fp32, bf16, fp16, fp8 | L17, L22 |
-| `ParallelismPlanner` | Memory per GPU for DP, ZeRO stages, TP, PP given model size | L18, L19 |
-| `LossSpikeExplorer` | Replay a logged training run; inspect grad norm, LR, spikes | L19 |
-| `KVCacheMeter` | KV cache memory vs batch, length, heads, precision | L22 |
-| `RewardKLTradeoff` | Reward vs KL-to-reference as beta changes | L21 |
-| `FeatureDictionary` | Sparse autoencoder features over toy activations | L23 |
+| `MatrixTransform` | 2D linear map acting on a grid and unit circle; SVD axes overlay | M02, M07, M09 to M11, M13, M14, M18, M20, L16 |
+| `DistributionPlayground` | Sample, fit by MLE, see likelihood surface | M22, M25, L02 |
+| `ComputationGraph` | Forward values and backward gradients flowing on a graph | M19, L03, L04 |
+| `EntropyBars` | Entropy, cross-entropy, KL between two editable distributions | M27, L17 |
+| `DecisionBoundary` | Logistic regression boundary training live | L01 |
+| `BiasVarianceCurve` | Train/test error vs capacity, double-descent regime | L02, L11 |
+| `LossLandscape` | 2D loss surface with SGD/momentum/Adam trajectories | L05 |
+| `ActivationStats` | Per-layer activation and gradient histograms under different inits and norms | L05, L06 |
+| `Roofline` | Arithmetic intensity vs achievable FLOP/s; place kernels on it | L07, L08, L09, L18 |
+| `AttentionHeatmap` | Q, K, V and attention weights for a toy sequence; causal mask toggle | L09, L19 |
+| `TokenizerStepper` | BPE merges step by step | L10 |
+| `ScalingFit` | Fit power laws to loss vs compute; compute-optimal frontier | L11 |
+| `FloatFormats` | Bit layout and rounding of fp32, bf16, fp16, fp8 | L13, L18 |
+| `ParallelismPlanner` | Memory per GPU for DP, ZeRO stages, TP, PP given model size | L14, L15 |
+| `LossSpikeExplorer` | Replay a logged training run; inspect grad norm, LR, spikes | L15 |
+| `KVCacheMeter` | KV cache memory vs batch, length, heads, precision | L18 |
+| `RewardKLTradeoff` | Reward vs KL-to-reference as beta changes | L17 |
+| `FeatureDictionary` | Sparse autoencoder features over toy activations | L19 |
 
 All widgets: keyboard accessible, work at 380px width, light/dark themes, no external network calls.
 
@@ -316,200 +316,162 @@ Pass threshold for movement completion: total at least 14 of 20, or three submis
 
 ## 10. Curriculum
 
-The math track is M01 to M38 in [`docs/math-track.md`](docs/math-track.md); L01 to L04 below are retired into it (Phase 7) and kept here as the record of what moved. The other tracks are L05 to L24 below.
+The math track is M01 to M38 in [`docs/math-track.md`](docs/math-track.md). The other tracks are L01 to L20 below; their edges from the math track are listed with them.
 
 Every lesson follows the movement pattern in 6.2 (recall bridge, puzzle, derivation, build, scale/measure, break it, Feynman, capstone). Hours, content, edges and capstones below are binding. "Exercises" lists the minimum set; add more to reach at least 12 per lesson.
 
-### Stage 1: Foundations
+### Learning
 
-**L01. Linear algebra as the geometry of data** (math, 8 h, browser)
-- Puzzle: why does solving a nearly singular system return garbage, and why do embeddings live on a few directions?
-- Derive: vector spaces, bases, projections, least squares via normal equations, eigendecomposition, SVD from scratch, condition number, low-rank approximation (Eckart-Young statement and numeric check).
-- Build: Gram-Schmidt, QR, power iteration, SVD via eigendecomposition of AᵀA, PCA on synthetic data, rank-k compression of an image array.
-- Break: solve ill-conditioned systems in float32 vs float64; compare normal equations with QR.
-- Capstone: PCA pipeline that explains 95% variance on a provided synthetic embedding set, with a written interpretation of the top 3 components.
-- Edges out: L05 (vertical), L09 (vertical), L13 (vertical), L20 (long-range, SVD to LoRA).
-
-**L02. Probability, likelihood and estimation** (math, 8 h, browser)
-- Puzzle: two coins, few flips; how confident should you be?
-- Derive: random variables, expectation, variance, Gaussian and Bernoulli/categorical, Bayes' rule, MLE for Bernoulli and Gaussian, MAP with priors, bias of estimators, law of large numbers and CLT (simulation-backed).
-- Build: samplers from uniform, MLE fitters, bootstrap confidence intervals, a Monte Carlo CLT demo.
-- Break: MLE with tiny samples; heavy-tailed data breaks the sample mean.
-- Capstone: A/B test analyzer with bootstrap and Bayesian posteriors, with a report on when they disagree.
-- Edges out: L04, L05, L06 (vertical).
-
-**L03. Calculus, Jacobians and automatic differentiation** (math, 8 h, browser)
-- Puzzle: why does finite-difference gradient checking fail at step size 1e-12?
-- Derive: derivatives, chain rule, partial derivatives, gradients, Jacobians, vector-Jacobian products, forward vs reverse mode cost, Taylor expansion and why gradient descent works locally.
-- Build: numeric differentiation with error analysis, forward-mode autodiff with dual numbers, Jacobians of softmax, layer norm and matrix multiply by hand, verified numerically.
-- Break: step-size sweep showing truncation vs rounding error.
-- Capstone: dual-number autodiff library that differentiates a 20-line function, verified against finite differences.
-- Edges out: L07, L08 (vertical). Horizontal: L04.
-
-**L04. Information theory: entropy, cross-entropy, KL** (math, 7 h, browser)
-- Puzzle: why is the training loss of a language model measured in nats, and what does 1.5 nats mean?
-- Derive: surprisal, entropy, cross-entropy, KL divergence and its asymmetry, Gibbs' inequality, mutual information, the link between MLE and minimizing cross-entropy, perplexity.
-- Build: entropy estimators, KL between Gaussians (closed form vs Monte Carlo), cross-entropy loss with log-sum-exp stability.
-- Break: naive softmax cross-entropy overflowing; forward vs reverse KL fitting a bimodal target.
-- Capstone: a compression experiment: Huffman code a text corpus and compare bits per character with entropy estimates.
-- Edges in: L02. Edges out: L06, L14 (vertical), L21 (long-range).
-
-### Stage 2: Learning
-
-**L05. Linear and logistic regression, end to end** (core, 8 h, browser)
+**L01. Linear and logistic regression, end to end** (core, 8 h, browser)
 - Derive: least squares from MLE under Gaussian noise; logistic regression from Bernoulli MLE; gradients of both; softmax regression; L2 as Gaussian prior.
 - Build: closed-form and gradient-descent solvers, softmax classifier, feature standardization, evaluation metrics (accuracy, log loss, calibration curve).
 - Break: unscaled features, perfectly separable data driving weights to infinity.
 - Capstone: multi-class classifier on a provided tabular dataset reaching a stated accuracy, with calibration analysis.
-- Edges in: L01, L02. Edges out: L06, L07.
+- Edges in: M12, M25 (vertical); M30 (horizontal). Edges out: L02, L03 (vertical); L09 (long-range).
 
-**L06. Generalization, bias-variance and double descent** (core, 7 h, browser)
+**L02. Generalization, bias-variance and double descent** (core, 7 h, browser)
 - Derive: train/test split rationale, bias-variance decomposition for squared error, regularization, cross-validation, overparameterized interpolation and double descent with random features.
 - Build: polynomial and random-feature regressions, k-fold CV, a double-descent curve.
 - Break: test-set leakage; tuning on the test set.
 - Capstone: reproduce a double-descent curve and explain where the peak sits.
-- Edges in: L02, L04, L05. Edges out: L15 (vertical).
+- Edges in: L01, M25, M27 (vertical); M31 (horizontal). Edges out: L11 (vertical); L12 (long-range).
 
-**L07. Neural networks and backprop from scratch** (core, 10 h, browser)
+**L03. Neural networks and backprop from scratch** (core, 10 h, browser)
 - Derive: MLP forward pass, universal approximation intuition, backprop as reverse-mode autodiff on matrix expressions, gradients for linear, ReLU, tanh, softmax-cross-entropy.
 - Build: NumPy MLP with manual backward, gradient checks per layer, minibatch training on a provided spiral and digit-like dataset.
 - Break: all-zero init symmetry; dead ReLUs; exploding activations from bad init.
 - Capstone: 2-hidden-layer MLP reaching a stated accuracy, all gradients written by hand.
-- Edges in: L03, L05. Edges out: L08, L09, L13.
+- Edges in: L01, M19 (vertical); M04 (long-range). Edges out: L04, L05, L09 (vertical); L17 (long-range).
 
-**L08. Build a mini autograd engine; PyTorch internals** (sys, 10 h, browser + Colab)
+**L04. Build a mini autograd engine; PyTorch internals** (sys, 10 h, browser + Colab)
 - Derive: computation graphs, topological sort, tensor broadcasting rules and their gradients, memory saved for backward.
-- Build: tensor autograd engine in NumPy (add, mul, matmul, sum, exp, log, relu, broadcasting, reshape), with an `nn.Module`-like API; train the L07 MLP on it. In Colab: compare against PyTorch, inspect `grad_fn`, write a custom `torch.autograd.Function`.
+- Build: tensor autograd engine in NumPy (add, mul, matmul, sum, exp, log, relu, broadcasting, reshape), with an `nn.Module`-like API; train the L03 MLP on it. In Colab: compare against PyTorch, inspect `grad_fn`, write a custom `torch.autograd.Function`.
 - Break: in-place ops corrupting saved tensors; broadcasting gradient bugs.
 - Capstone: the engine trains an MLP to match the PyTorch reference loss curve within tolerance.
-- Edges in: L03, L07. Edges out: L11. Horizontal: L09.
+- Edges in: L03, M19 (vertical). Edges out: L07 (vertical); L05 (horizontal); L14 (long-range).
 
-**L09. Optimization: SGD, momentum, Adam, schedules, initialization** (core, 9 h, browser)
+**L05. Optimization: SGD, momentum, Adam, schedules, initialization** (core, 9 h, browser)
 - Derive: gradient descent on quadratics and condition number, momentum as a low-pass filter, RMSProp and Adam with bias correction, AdamW decoupled weight decay, warmup and cosine schedules, Xavier and He initialization from variance preservation.
-- Build: each optimizer from scratch; schedule functions; init schemes; compare on the `LossLandscape` widget and on the L07 MLP.
+- Build: each optimizer from scratch; schedule functions; init schemes; compare on the `LossLandscape` widget and on the L03 MLP.
 - Break: learning rate too high; Adam without bias correction early in training; weight decay vs L2 inside Adam.
-- Capstone: an optimizer bake-off report with a tuned recipe for the L07 task.
-- Edges in: L01, L07. Edges out: L10, L15.
+- Capstone: an optimizer bake-off report with a tuned recipe for the L03 task.
+- Edges in: L03, M28 (vertical); L04, M29 (horizontal). Edges out: L06, L11 (vertical); L15 (long-range).
 
-### Stage 3: Models + GPUs
+### Models and GPUs
 
-**L10. Normalization, residuals and training stability** (arch, 8 h, browser)
+**L06. Normalization, residuals and training stability** (arch, 8 h, browser)
 - Derive: batch norm and layer norm forward and backward, RMSNorm, residual connections and gradient flow through depth, pre-norm vs post-norm.
 - Build: each norm with manual backward and gradient checks; a 20-layer MLP with and without residuals and norms; activation statistics tracking.
 - Break: post-norm deep stacks without warmup; batch norm with batch size 1.
 - Capstone: train a 30-layer residual MLP stably and explain each stabilizing choice.
-- Edges in: L09. Edges out: L13.
+- Edges in: L05 (vertical); M34 (horizontal). Edges out: L09 (vertical); L08 (horizontal).
 
-**L11. GPU architecture and the roofline model** (sys, 9 h, Colab)
+**L07. GPU architecture and the roofline model** (sys, 9 h, Colab)
 - Derive: SMs, warps, memory hierarchy (registers, shared, L2, HBM), bandwidth vs compute bound, arithmetic intensity, roofline; FLOP counts for matmul and elementwise ops.
 - Build: benchmark matmul and elementwise ops on the T4, place them on a measured roofline; profile with `torch.profiler`; measure the cost of host-device transfers.
 - Break: tiny kernels dominated by launch overhead; unnecessary `.item()` syncs.
 - Capstone: a profiling report that explains a provided slow training step and speeds it up by at least 2x.
-- Edges in: L08. Edges out: L12, L17, L18. Horizontal: L13.
+- Edges in: L04 (vertical); M33 (horizontal). Edges out: L08, L13, L14 (vertical); L09 (horizontal).
 
-**L12. Writing kernels: Triton, fused ops, FlashAttention** (sys, 11 h, Colab)
+**L08. Writing kernels: Triton, fused ops, FlashAttention** (sys, 11 h, Colab)
 - Derive: tiling, memory coalescing, kernel fusion savings, online softmax (derive the running max and sum update), FlashAttention's IO complexity.
 - Build: Triton vector add, fused softmax, tiled matmul, fused layer norm, a forward FlashAttention kernel tested against a reference.
 - Break: numerically unstable softmax in fp16; wrong block sizes.
 - Capstone: FlashAttention forward kernel matching reference within 1e-2 in fp16 and faster than the naive version at sequence length 2048.
-- Edges in: L11, L13. Edges out: L22.
+- Edges in: L07, L09 (vertical); L06 (horizontal). Edges out: L18 (vertical).
 
-**L13. Attention and the transformer from scratch** (arch, 11 h, browser + Colab)
+**L09. Attention and the transformer from scratch** (arch, 11 h, browser + Colab)
 - Derive: attention as soft lookup, scaled dot product (why divide by sqrt(d)), causal masking, multi-head attention, positional information (sinusoidal, RoPE), the full decoder block, parameter and FLOP counts.
 - Build: NumPy attention with manual backward; permutation-equivariance tests; full decoder block in PyTorch in Colab.
 - Break: missing scaling causing saturated softmax; mask off by one leaking the future.
 - Capstone: train a 2-layer transformer on a provided public-domain character corpus to below a stated loss.
-- Edges in: L01, L07, L10. Edges out: L12, L14, L20, L23. Horizontal: L11.
+- Edges in: L03, L06 (vertical); L07, M34 (horizontal); L01, M07, M10 (long-range). Edges out: L08, L10, L16, L18, L19 (vertical).
 
-**L14. Tokenization and language modeling: a GPT from scratch** (arch, 10 h, Colab)
+**L10. Tokenization and language modeling: a GPT from scratch** (arch, 10 h, Colab)
 - Derive: language modeling as next-token cross-entropy, BPE algorithm, sampling (temperature, top-k, top-p), perplexity.
 - Build: BPE tokenizer from scratch, data loader, GPT model, training loop with eval, sampling.
 - Break: tokenizer edge cases (whitespace, unicode); temperature extremes.
 - Capstone: train a small GPT on a provided public-domain corpus and report validation loss and samples.
-- Edges in: L04, L13. Edges out: L15, L16.
+- Edges in: L09, M27 (vertical); L13 (horizontal). Edges out: L11, L12 (vertical).
 
-**L17. Mixed precision and floating-point numerics** (sys, 7 h, Colab)
+**L13. Mixed precision and floating-point numerics** (sys, 7 h, Colab)
 - Derive: IEEE formats, bf16 vs fp16 range and precision, loss scaling, stochastic rounding, accumulation precision, fp8 basics.
 - Build: simulate formats in NumPy; mixed-precision training with autocast and GradScaler; measure speed and memory.
 - Break: fp16 overflow in attention logits; underflow of small gradients.
-- Capstone: convert the L14 GPT to bf16/fp16 training with matching loss and a measured speedup.
-- Edges in: L11. Edges out: L18, L22.
+- Capstone: convert the L10 GPT to bf16/fp16 training with matching loss and a measured speedup.
+- Edges in: L07 (vertical); M26 (long-range). Edges out: L14, L18 (vertical); L10 (horizontal).
 
-### Stage 4: Scale
+### Scale
 
-**L15. Scaling laws and compute-optimal training** (llm, 9 h, Colab)
+**L11. Scaling laws and compute-optimal training** (llm, 9 h, Colab)
 - Derive: power-law fits, the compute approximation C ≈ 6ND, compute-optimal allocation of parameters and tokens under a power-law loss model, why loss is predictable.
-- Build: train a sweep of tiny GPTs (L14 code) at several sizes and token counts, fit power laws, find the compute-optimal frontier on your own data.
+- Build: train a sweep of tiny GPTs (L10 code) at several sizes and token counts, fit power laws, find the compute-optimal frontier on your own data.
 - Break: fitting on too narrow a range; ignoring learning-rate retuning across sizes.
 - Capstone: predict the loss of a held-out larger run before training it, then compare.
-- Edges in: L06, L09, L14. Edges out: L18, L19.
+- Edges in: L02, L05, L10 (vertical); L12, M35 (horizontal). Edges out: L14, L15 (vertical); L20 (long-range).
 
-**L16. Data at scale: curation, dedup, mixtures, pipelines** (sys, 8 h, browser + Colab)
+**L12. Data at scale: curation, dedup, mixtures, pipelines** (sys, 8 h, browser + Colab)
 - Derive: why data quality changes scaling, near-duplicate detection with MinHash and LSH (derive collision probability), mixture weighting, train/eval contamination.
 - Build: MinHash dedup, quality heuristics, a sharded streaming data loader with deterministic resumption.
 - Break: contamination inflating eval scores; non-deterministic shuffles breaking resumption.
-- Capstone: a pipeline that dedups and filters a provided corpus and shows a validation-loss improvement on L14's model.
-- Edges in: L14. Edges out: L19.
+- Capstone: a pipeline that dedups and filters a provided corpus and shows a validation-loss improvement on L10's model.
+- Edges in: L10 (vertical); L02 (long-range). Edges out: L15 (vertical); L11 (horizontal).
 
-**L18. Distributed training: DDP, FSDP/ZeRO, tensor and pipeline parallel** (sys, 12 h, Colab)
+**L14. Distributed training: DDP, FSDP/ZeRO, tensor and pipeline parallel** (sys, 12 h, Colab)
 - Derive: memory accounting (weights, grads, optimizer states, activations), all-reduce, reduce-scatter, all-gather costs, ZeRO stages 1 to 3, tensor parallel matmul splits, pipeline bubbles, activation checkpointing.
 - Build: simulated multi-process DDP and ZeRO on CPU with `torch.distributed` (gloo); tensor-parallel linear layer; activation checkpointing; the `ParallelismPlanner` exercises for real model sizes.
 - Break: deadlocks from mismatched collectives; wrong gradient averaging.
 - Capstone: a written parallelism plan for a stated model size and cluster, with memory math verified by the planner and a working simulated implementation.
-- Edges in: L11, L15, L17. Edges out: L19.
+- Edges in: L07, L11, L13 (vertical); L04 (long-range). Edges out: L15 (vertical).
 
-**L19. A real pretraining run: loss spikes, checkpoints, eval harness** (sys, 11 h, Colab)
+**L15. A real pretraining run: loss spikes, checkpoints, eval harness** (sys, 11 h, Colab)
 - Derive: what causes loss spikes (LR, data, numerics, attention logit growth), gradient clipping, z-loss, checkpoint and resume semantics.
 - Build: a full training script with config, logging, checkpointing and exact resume, an eval harness, spike detection and rollback.
 - Break: injected bad data batch; injected LR bug; resume that silently changes data order.
 - Capstone: run a multi-hour GPT pretraining on Colab with logged metrics, recover from an injected spike, and write a run report.
-- Edges in: L15, L16, L18. Edges out: L20.
+- Edges in: L11, L12, L14 (vertical); L05 (long-range). Edges out: L16, L20 (vertical).
 
-### Stage 5: Frontier
+### Frontier
 
-**L20. Fine-tuning: SFT, LoRA, distillation** (llm, 9 h, Colab)
+**L16. Fine-tuning: SFT, LoRA, distillation** (llm, 9 h, Colab)
 - Derive: supervised fine-tuning objective with loss masking, catastrophic forgetting, LoRA as low-rank update (link to SVD), knowledge distillation with temperature.
-- Build: SFT on the L19 model with a provided instruction set, LoRA from scratch, distillation from a larger to a smaller model.
+- Build: SFT on the L15 model with a provided instruction set, LoRA from scratch, distillation from a larger to a smaller model.
 - Break: training on prompt tokens; LoRA rank too low; forgetting measured on base evals.
 - Capstone: a LoRA fine-tune that hits a target metric while keeping base eval loss within a stated margin.
-- Edges in: L13, L19, L01 (long-range). Edges out: L21.
+- Edges in: L09, L15 (vertical); M14 (long-range). Edges out: L17, L20 (vertical); L18 (horizontal).
 
-**L21. RL for language models: policy gradients, RLHF, DPO, verifiable rewards** (llm, 12 h, Colab)
+**L17. RL for language models: policy gradients, RLHF, DPO, verifiable rewards** (llm, 12 h, Colab)
 - Derive: policy gradient theorem, REINFORCE with baselines, advantage estimation, PPO clipped objective, KL penalty to reference, reward models from preferences (Bradley-Terry), DPO derivation from the KL-regularized objective, RL with verifiable rewards.
 - Build: REINFORCE on a toy bandit and a small LM, a Bradley-Terry reward model, DPO training, RL on arithmetic tasks with an exact-match reward.
 - Break: reward hacking with a flawed reward; removing the KL penalty.
-- Capstone: improve the L20 model's accuracy on a provided verifiable task with RL and report the reward-KL tradeoff.
-- Edges in: L04 (long-range), L20. Edges out: L23.
+- Capstone: improve the L16 model's accuracy on a provided verifiable task with RL and report the reward-KL tradeoff.
+- Edges in: L16 (vertical); M36 (horizontal); L03, M27, M30 (long-range). Edges out: L19, L20 (vertical).
 
-**L22. Inference systems: KV cache, batching, quantization, speculative decoding** (sys, 10 h, Colab)
+**L18. Inference systems: KV cache, batching, quantization, speculative decoding** (sys, 10 h, Colab)
 - Derive: prefill vs decode cost, KV cache memory formula, continuous batching, paged attention idea, int8/int4 weight quantization error, speculative decoding acceptance rule and why it preserves the distribution.
-- Build: KV-cache generation for the L14 model, a continuous-batching scheduler simulation, weight-only int8 quantization, speculative decoding with a draft model, latency and throughput benchmarks.
+- Build: KV-cache generation for the L10 model, a continuous-batching scheduler simulation, weight-only int8 quantization, speculative decoding with a draft model, latency and throughput benchmarks.
 - Break: cache index bugs; quantization outliers.
 - Capstone: an inference server loop that meets stated latency and throughput targets on the T4.
-- Edges in: L12, L13, L17. Edges out: L24.
+- Edges in: L08, L09, L13 (vertical); L16 (horizontal). Edges out: L20 (vertical).
 
-**L23. Evaluation and interpretability: probes, sparse autoencoders, circuits** (llm, 10 h, Colab)
+**L19. Evaluation and interpretability: probes, sparse autoencoders, circuits** (llm, 10 h, Colab)
 - Derive: eval design (contamination, variance, confidence intervals over items), linear probes, superposition intuition, sparse autoencoder objective, activation patching logic.
-- Build: an eval harness with bootstrap CIs, linear probes on the L19 model, a sparse autoencoder on its activations, activation patching on a toy task such as induction.
+- Build: an eval harness with bootstrap CIs, linear probes on the L15 model, a sparse autoencoder on its activations, activation patching on a toy task such as induction.
 - Break: an eval with too few items; a probe that succeeds on random features.
 - Capstone: find and validate an interpretable circuit or feature set in your model, with a written report.
-- Edges in: L13, L21. Edges out: L24.
+- Edges in: L09, L17 (vertical); M25 (long-range). Edges out: L20 (vertical).
 
-**L24. Capstone: train, align, evaluate and serve a small LM** (all, 12 h, Colab)
+**L20. Capstone: train, align, evaluate and serve a small LM** (all, 12 h, Colab)
 - No new theory; the theory half is a written design document defending every choice with references to earlier lessons (graded by the Feynman grader with a design rubric).
-- Practice half: from raw corpus to served model: data pipeline (L16), pretrain (L19), fine-tune (L20), RL (L21), evaluate (L23), serve (L22), with a final report.
-- Edges in: L19, L20, L21, L22, L23. Edges out: none.
+- Practice half: from raw corpus to served model: data pipeline (L12), pretrain (L15), fine-tune (L16), RL (L17), evaluate (L19), serve (L18), with a final report.
+- Edges in: L15, L16, L17, L18, L19 (vertical); M38 (horizontal); L11 (long-range). Edges out: none.
 
-### Full edge list to encode in `graph.yaml`
-Vertical: L01-L05, L01-L09, L01-L13, L02-L04, L02-L05, L02-L06, L03-L07, L03-L08, L04-L06, L04-L14, L05-L06, L05-L07, L06-L15, L07-L08, L07-L09, L07-L13, L08-L11, L09-L10, L09-L15, L10-L13, L11-L12, L11-L17, L11-L18, L13-L12, L13-L14, L13-L20, L13-L22, L13-L23, L14-L15, L14-L16, L15-L18, L15-L19, L16-L19, L17-L18, L17-L22, L18-L19, L19-L20, L20-L21, L21-L23, L12-L22, L19-L24, L20-L24, L21-L24, L22-L24, L23-L24.
-Horizontal: L03-L04, L08-L09, L11-L13, L16-L15, L17-L14.
-Long-range: L01-L20 (SVD to LoRA), L04-L21 (KL to RLHF), L02-L23 (bootstrap to eval CIs), L09-L19 (schedules to spike recovery), L05-L13 (softmax to attention), L07-L08 (manual backprop to autograd internals is vertical; do not duplicate), L06-L15 (already vertical; do not duplicate).
+### Full edge list (as encoded in `graph.yaml`)
+Every edge that touches a lesson of this section; the math track's edges among its own lessons are in `docs/math-track.md`.
 
-Only the first five long-range edges are new; the last two notes exist to prevent duplicates.
-
-Added to satisfy the graph rule in Section 2 (the list above leaves L06, L07, L10, L12, L18, L22 and L24 without any horizontal or long-range edge; these six edges close that gap without removing anything above):
-Horizontal: L10-L12 (the layer norm derived in L10 becomes a fused kernel in L12), L20-L22 (a distilled student is a natural speculative-decoding draft).
-Long-range: L06-L16 (test-set leakage returns as train/eval contamination), L07-L21 (the softmax cross-entropy gradient p - y returns as the policy-gradient score function), L08-L18 (tensors saved for backward return as activation memory and checkpointing), L15-L24 (the scaling-law fit sizes the capstone model and token budget).
+Vertical: M12-L01, M19-L03, M19-L04, M25-L01, M25-L02, M27-L02, M27-L10, M28-L05, L01-L02, L01-L03, L02-L11, L03-L04, L03-L05, L03-L09, L04-L07, L05-L06, L05-L11, L06-L09, L07-L08, L07-L13, L07-L14, L09-L08, L09-L10, L09-L16, L09-L18, L09-L19, L10-L11, L10-L12, L11-L14, L11-L15, L12-L15, L13-L14, L13-L18, L14-L15, L15-L16, L16-L17, L17-L19, L08-L18, L15-L20, L16-L20, L17-L20, L18-L20, L19-L20.
+Horizontal: M30-L01 (ridge regression is a Lagrangian with a norm constraint), M31-L02 (concentration bounds put numbers on the generalization gap), M29-L05 (proved rates meet the practical optimizers), M34-L06 (variance preservation is what initialization and normalization protect), M33-L07 (arithmetic intensity places each kernel on the roofline), M34-L09 (near-orthogonality explains the 1/sqrt(d) in attention), M35-L11 (your fitting machinery produces the scaling-law fit), M36-L17 (REINFORCE is the policy-gradient estimator behind RLHF), M38-L20 (the paper audit method is applied to your capstone model), L04-L05 (your autograd engine drives the optimizers), L07-L09 (attention cost read on the roofline), L12-L11 (data quality shifts the scaling curve), L13-L10 (train the GPT in reduced precision), L06-L08 (the layer norm derived here becomes a fused kernel), L16-L18 (a distilled student is a natural speculative-decoding draft).
+Long-range: M04-L03 (sums of shifted ReLUs return as one-hidden-layer networks), M07-L09 (planar rotations return as rotary position embeddings), M10-L09 (matrix products are the whole of attention's compute), M14-L16 (SVD returns as the low-rank update in LoRA), M25-L19 (the bootstrap returns as confidence intervals on evals), M26-L13 (machine epsilon returns as the limits of bf16 and fp8), M27-L17 (KL divergence returns as the RLHF penalty), M30-L17 (the KL-regularized optimum returns as the basis of DPO), L05-L15 (learning-rate schedules return in spike recovery), L01-L09 (softmax returns as attention weights), L02-L12 (test-set leakage returns as train/eval contamination), L03-L17 (the gradient p - y returns as the policy-gradient score function), L04-L14 (tensors saved for backward return as activation memory), L11-L20 (your scaling fit sizes the capstone model and token budget).
 
 ---
 
@@ -521,8 +483,8 @@ Long-range: L06-L16 (test-set leakage returns as train/eval contamination), L07-
 | `npm run build` | `build_content.ts`, then Vite build to `dist/` |
 | `npm run validate` | `validate_content.ts` |
 | `npm run test` | Vitest unit tests |
-| `npm run e2e` | Playwright: open map, open L01, pass one exercise, see progress persist after reload |
-| `npm run e2e:path` | Playwright: a simulated learner completes all 24 lessons in prerequisite order with the solutions |
+| `npm run e2e` | Playwright: open map, open a lesson, pass one exercise, see progress persist after reload |
+| `npm run e2e:path` | Playwright: a simulated learner completes every lesson in prerequisite order with the solutions |
 | `npm run pytest` | `run_exercise_tests.py`: every `solution.py` passes its `tests.py`; every `starter.py` fails at least one test |
 | `npm run notebooks` | `run_notebooks.py` with `SMALL=1` |
 | `npm run check` | validate + typecheck + lint + test + pytest + build (notebooks run in CI only) |
@@ -532,19 +494,19 @@ Long-range: L06-L16 (test-set leakage returns as train/eval contamination), L07-
 Implementation notes (decided during Phase 1):
 - Pyodide core files come from the pinned `pyodide` npm package; the matching NumPy wheel is vendored in `vendor/pyodide/` and checked against `pyodide-lock.json` by SHA-256. Everything is served from the site itself, so the app makes no CDN calls.
 - Notebooks are authored as percent-format Python in the GPU lesson's `capstone/solution.py` (cells split on `# %%`, solution regions between `# BEGIN SOLUTION` and `# END SOLUTION`, with an optional `-> replacement` for the learner version), next to `capstone/tests.py`, which becomes the autograder cell. `build_content.ts` writes the learner `.ipynb` to `notebooks/<ID>.ipynb` (committed, so Colab can open it from `main`) and the solved version to `notebooks/solved/<ID>.ipynb` (also committed: CI executes it, and `docs/colab-check.md` has the owner's one-click T4 check).
-- `:::colab{notebook=<ID> runtime=cpu}` marks a notebook that needs no GPU (L08); the button text and the notebook metadata then leave the accelerator unset.
-- A retro-annotation may name its target movement (`{target: L07, movement: m2-derivation, anchor: ..., text: ...}`); the anchor is matched case-insensitively against the plain text of that movement's blocks, first match wins.
+- `:::colab{notebook=<ID> runtime=cpu}` marks a notebook that needs no GPU (L04); the button text and the notebook metadata then leave the accelerator unset.
+- A retro-annotation may name its target movement (`{target: L03, movement: m2-derivation, anchor: ..., text: ...}`); the anchor is matched case-insensitively against the plain text of that movement's blocks, first match wins.
 - Exercise hints live at the end of `prompt.md` under a `## Hints` heading (numbered list, at most 3).
 - Deployment: `deploy.yml` publishes from `main` and, until `main` exists, from the working branch. The build receives `VITE_COLAB_BRANCH` (the branch it built from), so the Colab button opens the notebooks committed next to the deployed site.
-- Widgets beyond Section 7: `LshCurve` (L16) plots the LSH candidate probability for chosen bands and rows. `LossSpikeExplorer` replays real logged CPU runs written by `scripts/gen_spike_runs.py` into `src/widgets/data/spike_runs.json`.
-- L15's sweep is sized for Tiny Shakespeare (the only corpus the notebooks can verify offline): four layers at five widths, every run 1,950 steps with the batch growing with the token budget, at most four epochs. At this scale the runs are early in training and the fitted floor $E$ is constrained to be non-negative; the held-out prediction must land within 8%.
-- L18's capstone needs no GPU: four CPU processes joined by `torch.distributed` (gloo) through `fork`, using only `all_reduce`, `all_gather` and point-to-point messages, which every PyTorch version's gloo backend supports.
-- L19's reference run is the nanoGPT-sized character model for 5,000 steps, roughly 15 to 25 minutes on a T4 rather than several hours: a longer run on Tiny Shakespeare would only overfit. The script checkpoints to Google Drive when mounted and resumes after a disconnection, so the same code serves a multi-hour run on a larger corpus.
-- L20's capstone replays pretraining text during fine-tuning (both LoRA and full fine-tuning): without it, measured forgetting on the small pretrained model was over 1.9 nats per byte for either method, so the "forgetting margin" target is only meaningful with replay.
-- L21's capstone fine-tunes on demonstrations of two-digit addition in which 30% of answers contain a slip, then runs RL against an exact verifier. Clean addition is mastered by supervision alone, and on harder tasks (multiplication) RL mostly sharpened memorized answers; noisy demonstrations give the verifier something it reliably fixes and make the reward-KL tradeoff monotone. The KL penalty uses the `exp(u) - 1 - u` estimator, whose gradient is that of KL(reference || policy); the reported KL is computed exactly per position.
-- L22 compares throughput at saturation (all requests queued) and measures latency on the arriving workload: with arrivals at a fixed rate, throughput is capped by the arrivals rather than the server.
-- L23's toy model uses relative position biases instead of absolute position embeddings. With absolute positions the same task is solved by a different circuit (a layer-0 head that finds the earlier copy of the current token and copies its position); relative positions leave the classic previous-token head plus induction head. The notebook mentions both.
-- L24 provides the solved tools of L16 to L22 and asks the learner for the plan, the cleaning order, the stage evaluation, the reward, the manifest and the report.
+- Widgets beyond Section 7: `LshCurve` (L12) plots the LSH candidate probability for chosen bands and rows. `LossSpikeExplorer` replays real logged CPU runs written by `scripts/gen_spike_runs.py` into `src/widgets/data/spike_runs.json`.
+- L11's sweep is sized for Tiny Shakespeare (the only corpus the notebooks can verify offline): four layers at five widths, every run 1,950 steps with the batch growing with the token budget, at most four epochs. At this scale the runs are early in training and the fitted floor $E$ is constrained to be non-negative; the held-out prediction must land within 8%.
+- L14's capstone needs no GPU: four CPU processes joined by `torch.distributed` (gloo) through `fork`, using only `all_reduce`, `all_gather` and point-to-point messages, which every PyTorch version's gloo backend supports.
+- L15's reference run is the nanoGPT-sized character model for 5,000 steps, roughly 15 to 25 minutes on a T4 rather than several hours: a longer run on Tiny Shakespeare would only overfit. The script checkpoints to Google Drive when mounted and resumes after a disconnection, so the same code serves a multi-hour run on a larger corpus.
+- L16's capstone replays pretraining text during fine-tuning (both LoRA and full fine-tuning): without it, measured forgetting on the small pretrained model was over 1.9 nats per byte for either method, so the "forgetting margin" target is only meaningful with replay.
+- L17's capstone fine-tunes on demonstrations of two-digit addition in which 30% of answers contain a slip, then runs RL against an exact verifier. Clean addition is mastered by supervision alone, and on harder tasks (multiplication) RL mostly sharpened memorized answers; noisy demonstrations give the verifier something it reliably fixes and make the reward-KL tradeoff monotone. The KL penalty uses the `exp(u) - 1 - u` estimator, whose gradient is that of KL(reference || policy); the reported KL is computed exactly per position.
+- L18 compares throughput at saturation (all requests queued) and measures latency on the arriving workload: with arrivals at a fixed rate, throughput is capped by the arrivals rather than the server.
+- L19's toy model uses relative position biases instead of absolute position embeddings. With absolute positions the same task is solved by a different circuit (a layer-0 head that finds the earlier copy of the current token and copies its position); relative positions leave the classic previous-token head plus induction head. The notebook mentions both.
+- L20 provides the solved tools of L12 to L18 and asks the learner for the plan, the cleaning order, the stage evaluation, the reward, the manifest and the report.
 
 ---
 
@@ -565,7 +527,7 @@ Implementation notes (decided during Phase 1):
 
 ## 13. Task list (execute in order; tick as done)
 
-### Phase 1: Skeleton and L01 (owner can start learning at the end of this phase)
+### Phase 1: Skeleton and the first lesson (owner can start learning at the end of this phase)
 - [x] 1.1 Scaffold repo, tooling, CI (`check.yml`, `deploy.yml`), README.
 - [x] 1.2 Content pipeline: `graph.yaml` with all 24 lessons and all edges; `build_content.ts`; `validate_content.ts` with every rule (lessons not yet written are allowed only under a `--phase` flag that lists the lessons expected so far).
 - [x] 1.3 IndexedDB store and Settings screen (key, model, theme, export/import, reset).
@@ -573,44 +535,44 @@ Implementation notes (decided during Phase 1):
 - [x] 1.5 Lesson player: movements, directives (all of 6.3), edge markers, theory/practice meter.
 - [x] 1.6 Pyodide worker, CodeMirror pane, test runner, hints, solution reveal.
 - [x] 1.7 Prediction blocks and derivation step checker.
-- [x] 1.8 Widgets used by L01 (`MatrixTransform`).
-- [x] 1.9 Write L01 completely; pytest passes.
+- [x] 1.8 Widgets used by the first lesson (`MatrixTransform`).
+- [x] 1.9 Write the first lesson completely; pytest passes.
 - [x] 1.10 Deploy; run acceptance checks 1, 2, 9 for the current scope; send the owner the URL.
 
-### Phase 2: Math and Core ML (L02 to L09)
+### Phase 2: Math and Core ML (the other original math lessons, and L01 to L05)
 - [x] 2.1 Feynman grader (Section 9) with fallback self-assessment.
 - [x] 2.2 Spaced-review engine, `gen_reviews.ts`, `#/review`, recall-bridge integration.
 - [x] 2.3 Colab button, completion-code verification, notebook autograder template.
 - [x] 2.4 Widgets: `DistributionPlayground`, `ComputationGraph`, `EntropyBars`, `DecisionBoundary`, `BiasVarianceCurve`, `LossLandscape`, `ActivationStats`.
-- [x] 2.5 Write L02, L03, L04.
-- [x] 2.6 Write L05, L06, L07.
-- [x] 2.7 Write L08 (browser part and notebook), L09.
+- [x] 2.5 Write the other three original math lessons.
+- [x] 2.6 Write L01, L02, L03.
+- [x] 2.7 Write L04 (browser part and notebook), L05.
 - [x] 2.8 Retro-annotations engine.
 - [x] 2.9 Deploy; acceptance checks for current scope.
 
-### Phase 3: Architectures and Systems (L10 to L14, L17)
+### Phase 3: Architectures and Systems (L06 to L10, L13)
 - [x] 3.1 Widgets: `Roofline`, `AttentionHeatmap`, `TokenizerStepper`, `FloatFormats`.
-- [x] 3.2 Write L10, L11.
-- [x] 3.3 Write L13, then L12 (L12 depends on L13).
-- [x] 3.4 Write L14, L17.
-- [x] 3.5 Notebooks for L11, L12, L13, L14, L17 pass in CI `SMALL=1`; manually verify one on a Colab T4 by running it yourself if you have access, otherwise document the exact runtime check the owner performs with one click.
+- [x] 3.2 Write L06, L07.
+- [x] 3.3 Write L09, then L08 (L08 depends on L09).
+- [x] 3.4 Write L10, L13.
+- [x] 3.5 Notebooks for L07, L08, L09, L10, L13 pass in CI `SMALL=1`; manually verify one on a Colab T4 by running it yourself if you have access, otherwise document the exact runtime check the owner performs with one click.
 - [x] 3.6 Deploy; acceptance checks for current scope.
 
-### Phase 4: Scale (L15, L16, L18, L19)
+### Phase 4: Scale (L11, L12, L14, L15)
 - [x] 4.1 Widgets: `ScalingFit`, `ParallelismPlanner`, `LossSpikeExplorer`.
-- [x] 4.2 Write L15, L16.
-- [x] 4.3 Write L18, L19.
+- [x] 4.2 Write L11, L12.
+- [x] 4.3 Write L14, L15.
 - [x] 4.4 Notebooks pass in CI; deploy; acceptance checks.
 
-### Phase 5: Frontier (L20 to L24)
+### Phase 5: Frontier (L16 to L20)
 - [x] 5.1 Widgets: `RewardKLTradeoff`, `KVCacheMeter`, `FeatureDictionary`.
-- [x] 5.2 Write L20, L21.
-- [x] 5.3 Write L22, L23.
-- [x] 5.4 Write L24 with the design-document rubric.
+- [x] 5.2 Write L16, L17.
+- [x] 5.3 Write L18, L19.
+- [x] 5.4 Write L20 with the design-document rubric.
 - [x] 5.5 Remove the `--phase` flag; full validator must pass for all 24 lessons.
 
 ### Phase 6: Hardening and handoff
-- [x] 6.1 Full Playwright suite across a complete simulated learner path (L01 to L24 with solutions).
+- [x] 6.1 Full Playwright suite across a complete simulated learner path (every lesson with solutions).
 - [x] 6.2 Accessibility and mobile pass (Lighthouse at least 90).
 - [x] 6.3 Content review pass: re-read every derivation; every numeric claim backed by a test or a derivation in the lesson.
 - [ ] 6.4 Run all 10 acceptance criteria; fix until all pass.
@@ -618,11 +580,12 @@ Implementation notes (decided during Phase 1):
 - [x] 6.6 Owner request: bring the interface closer to Codecademy and DataCamp (Section 5.0 and 5.2): dashboard with Resume, XP and streak; split-screen exercise workspace; lesson step bar, syllabus drawer and Back/Next bar.
 
 ### Phase 7: The math track (owner request; docs/math-track.md)
-- [x] 7.1 Schema and validator: `prelude` stage, strands, the 38 lessons and 120 edges merged into `graph.yaml` with L01 to L04 still present; validator rule 9 and 10; slow-and-steady gating and one-week closure in the store; a one-time progress reset when the new curriculum first loads (owner request, replacing the migration of docs/math-track.md); map with strand columns; unit and end-to-end tests.
+- [x] 7.1 Schema and validator: `prelude` stage, strands, the 38 lessons and 120 edges merged into `graph.yaml` with the original math lessons still present; validator rule 9 and 10; slow-and-steady gating and one-week closure in the store; a one-time progress reset when the new curriculum first loads (owner request, replacing the migration of docs/math-track.md); map with strand columns; unit and end-to-end tests.
 - [x] 7.2 Prelude, M01 to M08, with their eight widgets.
-- [x] 7.3 Foundations linear algebra and calculus, M09 to M20, with their widgets; move the material of L01 and L03 into M12, M14, M15, M18 and M19; retire L01 and L03. (L01's exercises went to M09 and M12 to M14, with its Rayleigh-gradient exercise in M18 and its low-rank training exercise in M19, after calculus; L03's to M15, M18 and M19.)
-- [x] 7.4 Foundations probability and numerics, M21 to M28, with their widgets; move the material of L02 and L04 into M22, M24, M25 and M27; retire L02 and L04. (L02's exercises went to M22 (three), M24 (the CLT simulator) and M25 (eight, with the A/B capstone); L04 went whole into M27, with two new exercises. New widgets BayesGrid, GaussianEllipse and CLTMachine; DistributionPlayground gained the exponential and Poisson families.)
-- [ ] 7.5 Learning stage, M29 to M32, with chips into L05, L06 and L09.
+- [x] 7.3 Foundations linear algebra and calculus, M09 to M20, with their widgets; move the material of the original linear-algebra and calculus lessons into M12, M14, M15, M18 and M19, and retire them. (The linear-algebra lesson's exercises went to M09 and M12 to M14, with its Rayleigh-gradient exercise in M18 and its low-rank training exercise in M19, after calculus; the calculus lesson's to M15, M18 and M19.)
+- [x] 7.4 Foundations probability and numerics, M21 to M28, with their widgets; move the material of the original probability and information-theory lessons into M22, M24, M25 and M27, and retire them. (The probability lesson's exercises went to M22 (three), M24 (the CLT simulator) and M25 (eight, with the A/B capstone); the information-theory lesson went whole into M27, with two new exercises. New widgets BayesGrid, GaussianEllipse and CLTMachine; DistributionPlayground gained the exponential and Poisson families.)
+- [x] Owner request, after 7.4: number the core lessons from L01. The lessons that were L05 to L24 became L01 to L20 everywhere (folders, graph, cross-references, notebooks, Colab codes, tests, this plan and the math-track spec), and progress saved under the earlier numbers is carried over once, at startup or on import.
+- [ ] 7.5 Learning stage, M29 to M32, with chips into L01, L02 and L05.
 - [ ] 7.6 M33 to M37 beside their L-lesson partners; M38; retro-annotations from every M lesson into its predecessors; remove `--allow-unpublished`; full check, learner path and deploy.
 
 ---

@@ -2,52 +2,37 @@ import numpy as np
 import sub
 
 rng = np.random.default_rng(5)
+X32 = (np.float32(1e4) + rng.normal(size=1000).astype(np.float32)).astype(np.float32)
+TRUE_VAR = float(np.var(X32.astype(np.float64)))
 
 
-def _num(f, x, h=1e-6):
-    g = np.zeros_like(x)
-    for idx in np.ndindex(x.shape):
-        e = np.zeros_like(x)
-        e[idx] = h
-        g[idx] = (f(x + e) - f(x - e)) / (2 * h)
-    return g
+def test_naive_cancels():
+    _, v = sub.naive_moments(X32)
+    assert abs(float(v) - TRUE_VAR) > 0.3
 
 
-def test_forward():
-    A = sub.Tensor(rng.normal(size=(3, 4)))
-    B = sub.Tensor(rng.normal(size=(4, 2)))
-    assert np.allclose((A @ B).data, A.data @ B.data)
-    assert A.T.shape == (4, 3)
-    assert A.reshape(2, 6).shape == (2, 6)
+def test_welford_is_accurate():
+    m, v = sub.welford(X32)
+    assert abs(float(m) - X32.astype(np.float64).mean()) < 1e-2
+    assert abs(float(v) - TRUE_VAR) < 0.01
 
 
-def test_grad_matmul():
-    A = rng.normal(size=(3, 4))
-    B = rng.normal(size=(4, 2))
-    G = rng.normal(size=(3, 2))
-    tA, tB = sub.Tensor(A), sub.Tensor(B)
-    ((tA @ tB) * sub.Tensor(G)).sum().backward()
-    assert np.allclose(tA.grad, _num(lambda x: np.sum(G * (x @ B)), A), atol=1e-6)
-    assert np.allclose(tB.grad, _num(lambda x: np.sum(G * (A @ x)), B), atol=1e-6)
-
-
-def test_grad_transpose_reshape():
-    A = rng.normal(size=(3, 4))
-    G1 = rng.normal(size=(4, 3))
-    G2 = rng.normal(size=(6, 2))
-    tA = sub.Tensor(A)
-    ((tA.T * sub.Tensor(G1)).sum() + (tA.reshape(6, 2) * sub.Tensor(G2)).sum()).backward()
-    f = lambda x: np.sum(G1 * x.T) + np.sum(G2 * x.reshape(6, 2))
-    assert np.allclose(tA.grad, _num(f, A), atol=1e-6)
-
-
-def test_grad_linear_layer():
-    X = rng.normal(size=(5, 3))
-    W = rng.normal(size=(3, 2))
-    b = rng.normal(size=2)
-    G = rng.normal(size=(5, 2))
-    tX, tW, tb = sub.Tensor(X), sub.Tensor(W), sub.Tensor(b)
-    ((tX @ tW + tb) * sub.Tensor(G)).sum().backward()
-    assert np.allclose(tW.grad, X.T @ G)
-    assert np.allclose(tb.grad, G.sum(axis=0))
-    assert np.allclose(tX.grad, G @ W.T)
+def test_grad_layernorm_recompute():
+    x = rng.normal(size=(4, 6)) * 2 + 1
+    g = rng.normal(size=6) + 1
+    G = rng.normal(size=(4, 6))
+    def f(x, g, b):
+        mu = x.mean(axis=1, keepdims=True)
+        y = g * (x - mu) / np.sqrt(x.var(axis=1, keepdims=True) + 1e-5) + b
+        return float(np.sum(y * G))
+    dx, dg, db = sub.layernorm_backward_recompute(G, x, g)
+    b0 = np.zeros(6)
+    for arr, grad, pos in ((x, dx, 0), (g, dg, 1), (b0, db, 2)):
+        num = np.zeros_like(arr)
+        for idx in np.ndindex(arr.shape):
+            args = [x.copy(), g.copy(), b0.copy()]
+            args[pos][idx] += 1e-6
+            fp = f(*args)
+            args[pos][idx] -= 2e-6
+            num[idx] = (fp - f(*args)) / 2e-6
+        assert np.allclose(grad, num, atol=1e-6), pos

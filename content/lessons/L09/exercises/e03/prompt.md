@@ -1,12 +1,9 @@
-# Heavy-ball momentum
+# The backward pass of attention
 
-1. `heavy_ball(grad, x0, lr, beta, steps)` runs $v \leftarrow \beta v + \nabla f(x)$, $x \leftarrow x - \eta v$ from $v = 0$ and returns all iterates, shape `(steps + 1, d)`.
-2. `tuned_heavy_ball(A)` returns the optimal `(lr, beta)` for a quadratic with Hessian $A$: $\eta = 4/(\sqrt L + \sqrt\mu)^2$ and $\beta = \left(\frac{\sqrt\kappa - 1}{\sqrt\kappa + 1}\right)^2$.
-
-The tests race tuned momentum against gradient descent at its optimal rate on a valley with condition number 100. Plain `gd` is provided.
+Your softmax, its backward pass and `attention` are provided. Implement `attention_backward(dO, Q, K, V, P, scale=True)` returning $(\text{d}Q, \text{d}K, \text{d}V)$, using the formulas from the derivation. It must be correct with and without the causal mask: masked weights are exactly 0, and the softmax backward pass then sends them no gradient.
 
 ## Hints
 
-1. With `beta = 0` your function must reproduce `gd` exactly.
-2. Update the velocity before the position, and evaluate the gradient at the current position.
-3. Copy the position into the list at every step, or every entry will point to the same array.
+1. $\text{d}V = P^\top \text{d}O$ and $\text{d}P = \text{d}O\, V^\top$.
+2. $\text{d}S$ is `softmax_backward(P, dP)` times the scale $c$.
+3. $\text{d}Q = \text{d}S\, K$ and $\text{d}K = \text{d}S^\top Q$.

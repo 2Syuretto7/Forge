@@ -1,19 +1,26 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(2)
+
+def text(words):
+    return " ".join(words)
 
 
-def test_matches_product():
-    A, B = rng.normal(size=(10, 7)), rng.normal(size=(7, 9))
-    C, _ = sub.tiled_matmul(A, B, 4)
-    assert np.allclose(C, A @ B)
+base = [f"word{i % 97}" for i in range(400)]
+other = base[:300] + [f"other{i}" for i in range(100)]
 
 
-def test_loads():
-    n, T = 16, 4
-    A, B = rng.normal(size=(n, n)), rng.normal(size=(n, n))
-    _, loads = sub.tiled_matmul(A, B, T)
-    assert loads == 2 * n ** 3 // T
-    _, loads1 = sub.tiled_matmul(A, B, 1)
-    assert loads1 == 2 * n ** 3
+def test_signature_shape_and_identity():
+    a, b = sub.make_hashes(128, seed=1)
+    s = sub.minhash(sub.shingle_ids({"abc", "bcd"}), a, b)
+    assert s.shape == (128,) and np.all(s >= 0) and np.all(s < sub.PRIME)
+    assert sub.estimate_jaccard(s, s) == 1.0
+
+
+def test_minhash_estimates_jaccard():
+    from_text = lambda t: {t[i:i + 5] for i in range(len(t) - 4)}
+    A, B = from_text(text(base)), from_text(text(other))
+    true = len(A & B) / len(A | B)
+    a, b = sub.make_hashes(256, seed=3)
+    est = sub.estimate_jaccard(sub.minhash(sub.shingle_ids(A), a, b), sub.minhash(sub.shingle_ids(B), a, b))
+    assert abs(est - true) < 0.1

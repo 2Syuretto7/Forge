@@ -1,447 +1,219 @@
 # %% [markdown]
-# # L08 capstone: your autograd engine against PyTorch
+# # L08 capstone: Triton kernels, up to FlashAttention
 #
-# This notebook needs no GPU; any Colab runtime works. Run the cells in order. The last cell is the
-# autograder: it runs the capstone tests and prints a completion code to paste into the lesson.
+# Choose **Runtime, Change runtime type, T4 GPU**, then run the cells in order. You will write four
+# Triton kernels: a fused row softmax, a tiled matrix multiplication, a fused layer norm, and the
+# forward pass of FlashAttention, which must match a reference within 1e-2 in fp16 and beat the
+# unfused attention at sequence length 2048. The last cell is the autograder.
 #
-# You will (1) paste your engine, (2) train a 2-64-3 ReLU network on the spiral with your engine and
-# with PyTorch from identical initial weights and compare the loss curves, (3) walk a real PyTorch
-# `grad_fn` graph, and (4) write a custom `torch.autograd.Function` that passes `gradcheck`.
+# Without a GPU the kernels still run, slowly, in Triton's interpreter (`TRITON_INTERPRET=1`, set
+# below), which is useful for debugging; the speed test needs the GPU.
 
 # %%
+import math
 import os
-import numpy as np
+
+if not os.environ.get("TRITON_INTERPRET"):
+    import torch as _t
+    if not _t.cuda.is_available():
+        os.environ["TRITON_INTERPRET"] = "1"  # must be set before triton is imported
+
 import torch
+import triton
+import triton.language as tl
 
 SMALL = os.environ.get("SMALL") == "1"
-torch.set_default_dtype(torch.float64)
+INTERPRET = os.environ.get("TRITON_INTERPRET") == "1"
+DEVICE = "cuda" if torch.cuda.is_available() and not INTERPRET else "cpu"
 torch.manual_seed(0)
-print("PyTorch", torch.__version__, "(SMALL mode)" if SMALL else "")
+print("triton", triton.__version__, "| device:", DEVICE, "| interpreter" if INTERPRET else "")
 
 # %% [markdown]
-# ## 1. Your engine
+# ## 0. A first kernel: vector addition
 #
-# Paste your finished engine from exercise 9 of the lesson (the `Tensor` class with its operations,
-# `cross_entropy_fused`, `Parameter`, `Linear`, `MLP` and `SGD`) into the next cell, replacing the
-# `raise` line.
+# One program instance handles `BLOCK` consecutive elements. `tl.arange` gives the offsets within the
+# block, a mask guards the ragged end, and loads and stores move whole blocks at once.
 
 # %%
-# BEGIN SOLUTION -> raise NotImplementedError("Paste your engine from exercise 9 here")
+@triton.jit
+def add_kernel(x_ptr, y_ptr, out_ptr, n, BLOCK: tl.constexpr):
+    pid = tl.program_id(0)
+    offs = pid * BLOCK + tl.arange(0, BLOCK)
+    mask = offs < n
+    tl.store(out_ptr + offs, tl.load(x_ptr + offs, mask=mask) + tl.load(y_ptr + offs, mask=mask), mask=mask)
 
 
-def unbroadcast(g, shape):
-    """Sum g over the axes that broadcasting added or stretched, to get `shape`."""
-    while g.ndim > len(shape):
-        g = g.sum(axis=0)
-    for i, s in enumerate(shape):
-        if s == 1 and g.shape[i] != 1:
-            g = g.sum(axis=i, keepdims=True)
-    return g
-
-
-def as_tensor(x):
-    return x if isinstance(x, Tensor) else Tensor(x)
-
-
-class Tensor:
-    def __init__(self, data, parents=(), op=""):
-        self.data = np.array(data, dtype=float)
-        self.grad = None
-        self._parents = parents
-        self._backward = None
-        self.op = op
-
-    @property
-    def shape(self):
-        return self.data.shape
-
-    def __repr__(self):
-        return f"Tensor(shape={self.data.shape}, op={self.op!r})"
-
-    def _accumulate(self, g):
-        self.grad = g.copy() if self.grad is None else self.grad + g
-
-    def __add__(self, other):
-        other = as_tensor(other)
-        out = Tensor(self.data + other.data, (self, other), "add")
-
-        def _backward():
-            self._accumulate(unbroadcast(out.grad, self.shape))
-            other._accumulate(unbroadcast(out.grad, other.shape))
-        out._backward = _backward
-        return out
-
-    __radd__ = __add__
-
-    def __mul__(self, other):
-        other = as_tensor(other)
-        out = Tensor(self.data * other.data, (self, other), "mul")
-
-        def _backward():
-            self._accumulate(unbroadcast(out.grad * other.data, self.shape))
-            other._accumulate(unbroadcast(out.grad * self.data, other.shape))
-        out._backward = _backward
-        return out
-
-    __rmul__ = __mul__
-
-    def sum(self, axis=None, keepdims=False):
-        out = Tensor(self.data.sum(axis=axis, keepdims=keepdims), (self,), "sum")
-
-        def _backward():
-            g = out.grad
-            if axis is not None and not keepdims:
-                g = np.expand_dims(g, axis)
-            self._accumulate(np.broadcast_to(g, self.shape).copy())
-        out._backward = _backward
-        return out
-
-    def backward(self):
-        order, seen, stack = [], set(), [(self, False)]
-        while stack:
-            node, done = stack.pop()
-            if done:
-                order.append(node)
-                continue
-            if id(node) in seen:
-                continue
-            seen.add(id(node))
-            stack.append((node, True))
-            for p in node._parents:
-                if id(p) not in seen:
-                    stack.append((p, False))
-        for node in order:
-            if node._parents:
-                node.grad = None  # intermediate gradients do not persist between passes
-        self.grad = np.ones_like(self.data)
-        for node in reversed(order):
-            if node._backward is not None and node.grad is not None:
-                node._backward()
-
-
-def _matmul(self, other):
-    other = as_tensor(other)
-    out = Tensor(self.data @ other.data, (self, other), "matmul")
-
-    def _backward():
-        self._accumulate(out.grad @ other.data.T)
-        other._accumulate(self.data.T @ out.grad)
-    out._backward = _backward
+def add(x, y):
+    out = torch.empty_like(x)
+    add_kernel[(triton.cdiv(x.numel(), 1024),)](x, y, out, x.numel(), BLOCK=1024)
     return out
 
 
-def _transpose(self):
-    out = Tensor(self.data.T, (self,), "transpose")
-
-    def _backward():
-        self._accumulate(out.grad.T)
-    out._backward = _backward
-    return out
-
-
-def _reshape(self, *shape):
-    out = Tensor(self.data.reshape(*shape), (self,), "reshape")
-
-    def _backward():
-        self._accumulate(out.grad.reshape(self.shape))
-    out._backward = _backward
-    return out
-
-
-Tensor.__matmul__ = _matmul
-Tensor.T = property(_transpose)
-Tensor.reshape = _reshape
-
-
-def _unary(self, value, local, op):
-    out = Tensor(value, (self,), op)
-
-    def _backward():
-        self._accumulate(out.grad * local())
-    out._backward = _backward
-    return out
-
-
-def _exp(self):
-    v = np.exp(self.data)
-    return _unary(self, v, lambda: v, "exp")
-
-
-def _log(self):
-    return _unary(self, np.log(self.data), lambda: 1.0 / self.data, "log")
-
-
-def _relu(self):
-    return _unary(self, np.maximum(self.data, 0), lambda: (self.data > 0).astype(float), "relu")
-
-
-def _tanh(self):
-    v = np.tanh(self.data)
-    return _unary(self, v, lambda: 1.0 - v ** 2, "tanh")
-
-
-def _pow(self, p):
-    return _unary(self, self.data ** p, lambda: p * self.data ** (p - 1), "pow")
-
-
-def _neg(self):
-    return self * -1.0
-
-
-def _sub(self, other):
-    return self + (-as_tensor(other))
-
-
-def _rsub(self, other):
-    return as_tensor(other) + (-self)
-
-
-def _div(self, other):
-    return self * as_tensor(other) ** -1.0
-
-
-def _rdiv(self, other):
-    return as_tensor(other) * self ** -1.0
-
-
-def _mean(self, axis=None, keepdims=False):
-    n = self.data.size if axis is None else self.data.shape[axis]
-    return self.sum(axis=axis, keepdims=keepdims) * (1.0 / n)
-
-
-Tensor.exp = _exp
-Tensor.log = _log
-Tensor.relu = _relu
-Tensor.tanh = _tanh
-Tensor.__pow__ = _pow
-Tensor.__neg__ = _neg
-Tensor.__sub__ = _sub
-Tensor.__rsub__ = _rsub
-Tensor.__truediv__ = _div
-Tensor.__rtruediv__ = _rdiv
-Tensor.mean = _mean
-
-
-def cross_entropy(logits, y):
-    """Mean softmax cross-entropy built from primitive operations."""
-    m = Tensor(logits.data.max(axis=1, keepdims=True))  # constant: the loss does not depend on it
-    z = logits - m
-    lse = z.exp().sum(axis=1, keepdims=True).log()
-    onehot = np.eye(logits.shape[1])[y]
-    picked = (z * onehot).sum(axis=1, keepdims=True)
-    return (lse - picked).mean()
-
-
-def cross_entropy_fused(logits, y):
-    """The same loss as one operation with the backward rule (P - onehot) / B."""
-    Z = logits.data - logits.data.max(axis=1, keepdims=True)
-    logp = Z - np.log(np.exp(Z).sum(axis=1, keepdims=True))
-    B = Z.shape[0]
-    out = Tensor(-np.mean(logp[np.arange(B), y]), (logits,), "cross_entropy")
-
-    def _backward():
-        P = np.exp(logp)
-        P[np.arange(B), y] -= 1.0
-        logits._accumulate(out.grad * P / B)
-    out._backward = _backward
-    return out
-
-
-class Module:
-    def parameters(self):
-        params = []
-        for v in self.__dict__.values():
-            if isinstance(v, Tensor) and getattr(v, "is_param", False):
-                params.append(v)
-            elif isinstance(v, Module):
-                params.extend(v.parameters())
-            elif isinstance(v, (list, tuple)):
-                for item in v:
-                    if isinstance(item, Module):
-                        params.extend(item.parameters())
-        return params
-
-    def zero_grad(self):
-        for p in self.parameters():
-            p.grad = None
-
-    def __call__(self, x):
-        return self.forward(x)
-
-
-def Parameter(data):
-    t = Tensor(data)
-    t.is_param = True
-    return t
-
-
-class Linear(Module):
-    def __init__(self, n_in, n_out, rng):
-        self.W = Parameter(rng.normal(size=(n_in, n_out)) * np.sqrt(2.0 / n_in))
-        self.b = Parameter(np.zeros(n_out))
-
-    def forward(self, x):
-        return x @ self.W + self.b
-
-
-class MLP(Module):
-    def __init__(self, sizes, seed=0):
-        rng = np.random.default_rng(seed)
-        self.layers = [Linear(a, b, rng) for a, b in zip(sizes, sizes[1:])]
-
-    def forward(self, x):
-        for i, layer in enumerate(self.layers):
-            x = layer(x)
-            if i < len(self.layers) - 1:
-                x = x.relu()
-        return x
-
-
-class SGD:
-    def __init__(self, params, lr):
-        self.params = list(params)
-        self.lr = lr
-
-    def step(self):
-        for p in self.params:
-            if p.grad is not None:
-                p.data -= self.lr * p.grad
-
-    def zero_grad(self):
-        for p in self.params:
-            p.grad = None
-
-# END SOLUTION
+x = torch.randn(5000, device=DEVICE)
+print("add matches:", torch.allclose(add(x, x), 2 * x))
 
 # %% [markdown]
-# ## 2. Data and the engine run
-
-# %%
-def make_spiral(n=100, K=3, seed=0):
-    rng = np.random.default_rng(seed)
-    Xs, ys = [], []
-    for j in range(K):
-        r = np.linspace(0.0, 1.0, n)
-        t = np.linspace(4 * j, 4 * (j + 1), n) + 0.2 * rng.normal(size=n)
-        Xs.append(np.column_stack([r * np.sin(t), r * np.cos(t)]))
-        ys.append(np.full(n, j))
-    return np.concatenate(Xs), np.concatenate(ys)
-
-
-X, y = make_spiral()
-SIZES = [2, 64, 3]
-STEPS = 40 if SMALL else 300
-LR = 1.0
-
-model = MLP(SIZES, seed=0)
-init_weights = [(layer.W.data.copy(), layer.b.data.copy()) for layer in model.layers]
-opt = SGD(model.parameters(), LR)
-engine_losses = []
-for _ in range(STEPS):
-    opt.zero_grad()
-    loss = cross_entropy_fused(model(Tensor(X)), y)
-    loss.backward()
-    opt.step()
-    engine_losses.append(float(loss.data))
-print("engine: first loss", round(engine_losses[0], 4), "last loss", round(engine_losses[-1], 4))
-
-# %% [markdown]
-# ## 3. The same network in PyTorch
+# ## 1. A fused row softmax
 #
-# Build `TorchMLP` from the engine's initial weights. Note that `torch.nn.Linear` stores its weight as
-# `(out_features, in_features)`, the transpose of your engine's `W`. Then train it with
-# `torch.optim.SGD` and `torch.nn.functional.cross_entropy` for the same number of steps.
+# One program per row: load the row once, subtract its maximum, exponentiate in fp32, normalize and
+# store, so the row makes one trip through device memory instead of several.
 
 # %%
-class TorchMLP(torch.nn.Module):
-    def __init__(self, init):
-        super().__init__()
-        # BEGIN SOLUTION
-        self.layers = torch.nn.ModuleList()
-        for W, b in init:
-            lin = torch.nn.Linear(W.shape[0], W.shape[1])
-            with torch.no_grad():
-                lin.weight.copy_(torch.tensor(W.T))
-                lin.bias.copy_(torch.tensor(b))
-            self.layers.append(lin)
-        # END SOLUTION
-
-    def forward(self, x):
-        # BEGIN SOLUTION
-        for i, layer in enumerate(self.layers):
-            x = layer(x)
-            if i < len(self.layers) - 1:
-                x = torch.relu(x)
-        return x
-        # END SOLUTION
-
-
-tmodel = TorchMLP(init_weights)
-topt = torch.optim.SGD(tmodel.parameters(), lr=LR)
-Xt, yt = torch.tensor(X), torch.tensor(y)
-torch_losses = []
-for _ in range(STEPS):
-    topt.zero_grad()
-    tloss = torch.nn.functional.cross_entropy(tmodel(Xt), yt)
-    tloss.backward()
-    topt.step()
-    torch_losses.append(tloss.item())
-print("largest difference between the loss curves:", max(abs(a - b) for a, b in zip(engine_losses, torch_losses)))
-
-# %% [markdown]
-# ## 4. Walk the graph PyTorch recorded
-#
-# Every non-leaf tensor has a `grad_fn`; its `next_functions` are `(function, index)` pairs leading to
-# the functions that produced its inputs. Write `walk_grad_fn(t)` returning the class names of every
-# function reachable from `t.grad_fn` (leaf nodes appear as `AccumulateGrad`; `None` entries mark
-# inputs that need no gradient).
-
-# %%
-def walk_grad_fn(t):
+@triton.jit
+def softmax_kernel(out_ptr, in_ptr, n_cols, BLOCK: tl.constexpr):
+    row = tl.program_id(0)
+    offs = tl.arange(0, BLOCK)
+    mask = offs < n_cols
     # BEGIN SOLUTION
-    names, seen, stack = [], set(), [t.grad_fn]
-    while stack:
-        fn = stack.pop()
-        if fn is None or fn in seen:
-            continue
-        seen.add(fn)
-        names.append(type(fn).__name__)
-        for nxt, _ in fn.next_functions:
-            stack.append(nxt)
-    return names
+    x = tl.load(in_ptr + row * n_cols + offs, mask=mask, other=float("-inf")).to(tl.float32)
+    e = tl.exp(x - tl.max(x, axis=0))
+    y = e / tl.sum(e, axis=0)
+    tl.store(out_ptr + row * n_cols + offs, y.to(out_ptr.dtype.element_ty), mask=mask)
     # END SOLUTION
 
 
-grad_fn_names = walk_grad_fn(torch.nn.functional.cross_entropy(tmodel(Xt), yt))
-print(sorted(set(grad_fn_names)))
+def softmax(x):
+    rows, cols = x.shape
+    out = torch.empty_like(x)
+    softmax_kernel[(rows,)](out, x.contiguous(), cols, BLOCK=triton.next_power_of_2(cols))
+    return out
+
 
 # %% [markdown]
-# ## 5. A custom autograd function
+# ## 2. A tiled matrix multiplication
 #
-# Implement the squared ReLU, $f(x) = \max(0, x)^2$, as a `torch.autograd.Function` with your own
-# backward rule, then verify it with `torch.autograd.gradcheck` and against PyTorch's automatic
-# derivative of the same expression.
+# Each program computes a `BM x BN` tile of `C`, looping over `K` in steps of `BK` and accumulating
+# `tl.dot` of a tile of `A` and a tile of `B` in fp32. Mask the loads so that sizes need not be
+# multiples of the tile sizes.
 
 # %%
-class SquaredReLU(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, x):
-        # BEGIN SOLUTION
-        ctx.save_for_backward(x)
-        return torch.clamp(x, min=0) ** 2
-        # END SOLUTION
+@triton.jit
+def matmul_kernel(a_ptr, b_ptr, c_ptr, M, N, K, BM: tl.constexpr, BN: tl.constexpr, BK: tl.constexpr):
+    pid_m = tl.program_id(0)
+    pid_n = tl.program_id(1)
+    rm = pid_m * BM + tl.arange(0, BM)
+    rn = pid_n * BN + tl.arange(0, BN)
+    rk = tl.arange(0, BK)
+    # BEGIN SOLUTION
+    acc = tl.zeros([BM, BN], dtype=tl.float32)
+    for k0 in range(0, K, BK):
+        kk = k0 + rk
+        a = tl.load(a_ptr + rm[:, None] * K + kk[None, :], mask=(rm[:, None] < M) & (kk[None, :] < K), other=0.0)
+        b = tl.load(b_ptr + kk[:, None] * N + rn[None, :], mask=(kk[:, None] < K) & (rn[None, :] < N), other=0.0)
+        acc += tl.dot(a, b)
+    tl.store(c_ptr + rm[:, None] * N + rn[None, :], acc.to(c_ptr.dtype.element_ty), mask=(rm[:, None] < M) & (rn[None, :] < N))
+    # END SOLUTION
 
-    @staticmethod
-    def backward(ctx, g):
-        # BEGIN SOLUTION
-        (x,) = ctx.saved_tensors
-        return g * 2 * torch.clamp(x, min=0)
-        # END SOLUTION
+
+def matmul(a, b, BM=32, BN=32, BK=32):
+    M, K = a.shape
+    N = b.shape[1]
+    c = torch.empty(M, N, device=a.device, dtype=a.dtype)
+    matmul_kernel[(triton.cdiv(M, BM), triton.cdiv(N, BN))](a.contiguous(), b.contiguous(), c, M, N, K, BM=BM, BN=BN, BK=BK)
+    return c
 
 
-xc = torch.randn(25, requires_grad=True)
-custom_gradcheck_ok = bool(torch.autograd.gradcheck(SquaredReLU.apply, (xc,)))
-(g_custom,) = torch.autograd.grad(SquaredReLU.apply(xc).sum(), xc)
-(g_auto,) = torch.autograd.grad((torch.relu(xc) ** 2).sum(), xc)
-custom_matches_autograd = float((g_custom - g_auto).abs().max())
-print("gradcheck:", custom_gradcheck_ok, "| max difference from autograd:", custom_matches_autograd)
+# %% [markdown]
+# ## 3. A fused layer norm
+#
+# One program per row: mean, variance, normalization, scale and shift in a single pass over the row
+# (L06's forward pass as one kernel). Compute the statistics in fp32.
+
+# %%
+@triton.jit
+def layernorm_kernel(x_ptr, w_ptr, b_ptr, y_ptr, n_cols, eps, BLOCK: tl.constexpr):
+    row = tl.program_id(0)
+    offs = tl.arange(0, BLOCK)
+    mask = offs < n_cols
+    # BEGIN SOLUTION
+    x = tl.load(x_ptr + row * n_cols + offs, mask=mask, other=0.0).to(tl.float32)
+    mean = tl.sum(x, axis=0) / n_cols
+    xc = tl.where(mask, x - mean, 0.0)
+    rstd = 1.0 / tl.sqrt(tl.sum(xc * xc, axis=0) / n_cols + eps)
+    w = tl.load(w_ptr + offs, mask=mask, other=0.0).to(tl.float32)
+    b = tl.load(b_ptr + offs, mask=mask, other=0.0).to(tl.float32)
+    tl.store(y_ptr + row * n_cols + offs, (xc * rstd * w + b).to(y_ptr.dtype.element_ty), mask=mask)
+    # END SOLUTION
+
+
+def layernorm(x, w, b, eps=1e-5):
+    rows, cols = x.shape
+    y = torch.empty_like(x)
+    layernorm_kernel[(rows,)](x.contiguous(), w, b, y, cols, eps, BLOCK=triton.next_power_of_2(cols))
+    return y
+
+
+# %% [markdown]
+# ## 4. FlashAttention, forward pass
+#
+# `q`, `k`, `v` have shape `(batch * heads, N, D)`. Each program handles `BLOCK_M` queries of one
+# head: it keeps a running maximum `m_i`, running sum `l_i` and an fp32 accumulator, loops over the
+# keys and values in blocks of `BLOCK_N`, and rescales its running results whenever the maximum
+# grows (the online softmax of the derivation). The `N x N` score matrix is never written to memory.
+
+# %%
+@triton.jit
+def flash_kernel(q_ptr, k_ptr, v_ptr, o_ptr, N, scale, D: tl.constexpr, BLOCK_M: tl.constexpr, BLOCK_N: tl.constexpr):
+    pid_m = tl.program_id(0)
+    bh = tl.program_id(1)
+    offs_m = pid_m * BLOCK_M + tl.arange(0, BLOCK_M)
+    offs_d = tl.arange(0, D)
+    base = bh * N * D
+    q = tl.load(q_ptr + base + offs_m[:, None] * D + offs_d[None, :], mask=offs_m[:, None] < N, other=0.0)
+    # BEGIN SOLUTION
+    m_i = tl.full([BLOCK_M], float("-inf"), dtype=tl.float32)
+    l_i = tl.zeros([BLOCK_M], dtype=tl.float32)
+    acc = tl.zeros([BLOCK_M, D], dtype=tl.float32)
+    for start in range(0, N, BLOCK_N):
+        offs_n = start + tl.arange(0, BLOCK_N)
+        kv_mask = offs_n[:, None] < N
+        k = tl.load(k_ptr + base + offs_n[:, None] * D + offs_d[None, :], mask=kv_mask, other=0.0)
+        v = tl.load(v_ptr + base + offs_n[:, None] * D + offs_d[None, :], mask=kv_mask, other=0.0)
+        s = tl.dot(q, tl.trans(k)) * scale
+        s = tl.where(offs_n[None, :] < N, s, float("-inf"))
+        m_new = tl.maximum(m_i, tl.max(s, axis=1))
+        p = tl.exp(s - m_new[:, None])
+        alpha = tl.exp(m_i - m_new)
+        l_i = l_i * alpha + tl.sum(p, axis=1)
+        acc = acc * alpha[:, None] + tl.dot(p.to(v.dtype), v)
+        m_i = m_new
+    out = acc / l_i[:, None]
+    tl.store(o_ptr + base + offs_m[:, None] * D + offs_d[None, :], out.to(o_ptr.dtype.element_ty), mask=offs_m[:, None] < N)
+    # END SOLUTION
+
+
+def flash_attention(q, k, v, BLOCK_M=64, BLOCK_N=64):
+    BH, N, D = q.shape
+    BLOCK_M, BLOCK_N = min(BLOCK_M, triton.next_power_of_2(N)), min(BLOCK_N, triton.next_power_of_2(N))
+    o = torch.empty_like(q)
+    grid = (triton.cdiv(N, BLOCK_M), BH)
+    flash_kernel[grid](q.contiguous(), k.contiguous(), v.contiguous(), o, N, 1.0 / math.sqrt(D), D=D, BLOCK_M=BLOCK_M, BLOCK_N=BLOCK_N)
+    return o
+
+
+def naive_attention(q, k, v):
+    """Unfused attention: the N x N score matrix is written to memory and read back."""
+    s = (q @ k.transpose(1, 2)) / math.sqrt(q.shape[-1])
+    return torch.softmax(s.float(), dim=-1).to(q.dtype) @ v
+
+
+# %% [markdown]
+# ## 5. Check and time
+#
+# On a T4, compare your FlashAttention with the unfused version at sequence length 2048 (16 heads of
+# dimension 64, fp16). `triton.testing.do_bench` reports milliseconds per call.
+
+# %%
+DT = torch.float16
+BH, N_CHECK, D = (2, 64, 16) if (SMALL or INTERPRET) else (4, 1024, 64)
+q, k, v = (torch.randn(BH, N_CHECK, D, device=DEVICE, dtype=DT) for _ in range(3))
+flash_error = (flash_attention(q, k, v).float() - naive_attention(q.float(), k.float(), v.float())).abs().max().item()
+print(f"max |flash - reference| = {flash_error:.2e}")
+
+timing = None
+if DEVICE == "cuda" and not SMALL:
+    q, k, v = (torch.randn(16, 2048, 64, device=DEVICE, dtype=DT) for _ in range(3))
+    t_flash = triton.testing.do_bench(lambda: flash_attention(q, k, v))
+    t_naive = triton.testing.do_bench(lambda: naive_attention(q, k, v))
+    timing = {"flash_ms": t_flash, "naive_ms": t_naive}
+    print(timing, f"speedup {t_naive / t_flash:.2f}x")

@@ -1,15 +1,12 @@
-# Break it: one learning rate for every size
+# Break it: a schedule that restarts
 
-The best learning rate shrinks as models grow. `sweep_loss(N, lr)` models a sweep in which the best loss for each size follows a power law but is reached only at that size's own best rate; `LRS` and `SIZES` are the sweep.
+A run resumed at step 3000 of 6000 rebuilt its scheduler without restoring its step count, so the learning rate went through warmup again, from a tiny value back up to the peak, in the middle of training. The rates were logged, so the bug is visible.
 
-1. `tuned_losses(sizes, lrs)`: for each size, the lowest loss over `lrs`, and the rate that achieved it.
-2. `fixed_lr_losses(sizes, lr)`: each size's loss at one rate.
-3. `fitted_exponent(sizes, losses, E)`: the exponent $a$ in $L - E = k N^{-a}$, by a log-log line.
-
-Then compare the exponent of the tuned sweep with that of a sweep that uses the rate tuned for the smallest model everywhere.
+1. `expected_lr(step, peak, warmup, total, floor=0.1)`: the schedule of exercise 5.
+2. `audit_lr(logged, peak, warmup, total, rtol=1e-6)`: given (step, lr) pairs from a log, the first step whose rate differs from the schedule by more than `rtol` relative, or `None`.
 
 ## Hints
 
-1. Build a sizes by rates array of losses and take `min` and `argmin` along the rates.
-2. Rates too high for the large models make them look worse than they are.
-3. A flatter fitted curve means a smaller exponent: you would conclude that scaling up helps less than it does.
+1. Recompute the expected rate for every logged step from the step alone.
+2. Run the audit on every resumed run: it costs nothing and catches the restart at its first step.
+3. The safest fix is not to have scheduler state at all: compute the rate from the step, as in exercise 5.

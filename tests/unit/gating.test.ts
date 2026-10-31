@@ -146,3 +146,49 @@ describe('a new curriculum resets progress once', () => {
     expect(getState().progress.M02).toBeDefined();
   });
 });
+
+describe('the core lessons were renumbered once', () => {
+  it('maps record IDs from L05-L24 to L01-L20 and drops the original L01-L04', async () => {
+    const { renumberedId } = await import('../../src/store/store');
+    expect(renumberedId('L05')).toBe('L01');
+    expect(renumberedId('L09/e03')).toBe('L05/e03');
+    expect(renumberedId('L24/d2/s1')).toBe('L20/d2/s1');
+    expect(renumberedId('L02/e01')).toBeNull();
+    expect(renumberedId('M27/e01')).toBe('M27/e01');
+  });
+
+  it('moves stored progress to the new numbers, keeps math lessons, and runs only once', async () => {
+    const { renumberLessons, NUMBERING } = await import('../../src/store/store');
+    const db = await getDb();
+    await db.put('progress', { lessonId: 'L09', status: 'complete', movementsDone: ['m0'], startedAt: 1, completedAt: 2, hoursLogged: 3 });
+    await db.put('progress', { lessonId: 'L01', status: 'complete', movementsDone: ['m0'], startedAt: 1, completedAt: 2, hoursLogged: 1 });
+    await db.put('progress', { lessonId: 'M28', status: 'in_progress', movementsDone: [], startedAt: 1, completedAt: null, hoursLogged: 0 });
+    await db.put('exercises', { id: 'L05/e02', status: 'passed', attempts: 1, failedChecks: 0, hintsUsed: 0, lastCode: 'y' });
+    await db.put('reviews', { itemId: 'L08/d1/s2', ease: 2.5, interval: 1, due: '2026-01-01', reps: 1, lapses: 0, history: [] });
+    await db.put('colab', { lessonId: 'L11', code: 'FORGE-L11-00000000', verifiedAt: 5 });
+    await db.put('settings', { key: 'curriculum', value: CURRICULUM });
+    await db.put('settings', { key: 'lastPath', value: '/lesson/L13/m2-derivation' });
+    await loadStore();
+    expect(await renumberLessons()).toBe(true);
+    const s = getState();
+    expect(Object.keys(s.progress).sort()).toEqual(['L05', 'M28']);
+    expect(s.progress.L05.hoursLogged).toBe(3);
+    expect(s.exercises['L01/e02'].lastCode).toBe('y');
+    expect(Object.keys(s.reviews)).toEqual(['L04/d1/s2']);
+    expect(s.colab.L07.verifiedAt).toBe(5);
+    expect(s.settings.lastPath).toBe('/lesson/L09/m2-derivation');
+    expect(s.settings.numbering).toBe(NUMBERING);
+    await db.put('progress', { lessonId: 'L06', status: 'complete', movementsDone: [], startedAt: 1, completedAt: 2, hoursLogged: 0 });
+    await loadStore();
+    expect(await renumberLessons()).toBe(false);
+    expect(getState().progress.L06).toBeDefined();
+  });
+
+  it('a fresh start needs no renumbering', async () => {
+    const { renumberLessons } = await import('../../src/store/store');
+    await resetProgress();
+    await openMovement('L01', 'm0');
+    expect(await renumberLessons()).toBe(false);
+    expect(getState().progress.L01).toBeDefined();
+  });
+});

@@ -1,11 +1,18 @@
-import numpy as np
+import re
 
 
-def target_update(d, rank, seed=0, decay=0.7):
-    """A d x d update whose singular values fall geometrically, sigma_i = decay^i, for i < rank."""
-    raise NotImplementedError
+def encode_train(text):
+    """The encoding used to build the training data: UTF-8 bytes, unchanged."""
+    return list(text.encode("utf-8"))
 
 
-def error_by_rank(M, ranks):
-    """Relative Frobenius error of the best rank-r approximation for each r."""
+def encode_serve(text):
+    """The serving front end's encoding: it tidies whitespace before encoding."""
+    return list(re.sub(r"[ \t]+", " ", text).strip().encode("utf-8"))
+
+
+def skew_report(samples):
+    """Compare the two encodings on each sample. Return (rate, first) where rate is the fraction
+    of samples whose token ids differ and first is (sample index, first differing position) for
+    the first such sample, or None."""
     raise NotImplementedError

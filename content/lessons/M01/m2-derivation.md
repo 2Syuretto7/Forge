@@ -168,9 +168,9 @@ $$
 \text{FLOPs}(m \times n \text{ matrix times a vector}) = 2 m n .
 $$
 
-The matrix has $mn$ parameters, so this is **2 FLOPs per parameter**. A model is a chain of such layers (plus cheaper elementwise operations), so a forward pass for one token costs about $2N$ FLOPs, where $N$ is the number of parameters. Attention over a long context adds more, and you will count it in L13; for prompts shorter than a few thousand tokens the $2N$ term dominates.
+The matrix has $mn$ parameters, so this is **2 FLOPs per parameter**. A model is a chain of such layers (plus cheaper elementwise operations), so a forward pass for one token costs about $2N$ FLOPs, where $N$ is the number of parameters. Attention over a long context adds more, and you will count it in L09; for prompts shorter than a few thousand tokens the $2N$ term dominates.
 
-Training costs more. Backpropagation, which you will build in L07, computes for every weight matrix two products of the same size as the forward one: the gradient with respect to the layer's input (to pass backwards) and the gradient with respect to the weights (to update them). That is about $4N$ FLOPs more, for a total of
+Training costs more. Backpropagation, which you will build in L03, computes for every weight matrix two products of the same size as the forward one: the gradient with respect to the layer's input (to pass backwards) and the gradient with respect to the weights (to update them). That is about $4N$ FLOPs more, for a total of
 
 $$
 \text{training FLOPs} \approx 6 N D ,

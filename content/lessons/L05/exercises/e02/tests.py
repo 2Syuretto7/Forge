@@ -2,26 +2,47 @@ import numpy as np
 import sub
 
 rng = np.random.default_rng(2)
-X = rng.normal(size=(30, 5))
-y = X @ rng.normal(size=5) + 0.5 * rng.normal(size=30)
+Q, _ = np.linalg.qr(rng.normal(size=(6, 6)))
+LAM = np.array([1.0, 2.0, 5.0, 10.0, 30.0, 50.0])
+A = Q @ np.diag(LAM) @ Q.T
 
 
-def test_ridge_is_the_map_estimate():
-    s2, t2 = 0.25, 0.1
-    w = sub.ridge(X, y, s2 / t2)
-    base = sub.map_objective(w, X, y, s2, t2)
-    for _ in range(30):
-        assert sub.map_objective(w + 0.01 * rng.normal(size=5), X, y, s2, t2) > base
+def _run(lr, steps, x0):
+    x = x0.copy()
+    norms = [np.linalg.norm(x)]
+    for _ in range(steps):
+        x = x - lr * (A @ x)
+        norms.append(np.linalg.norm(x))
+    return np.array(norms)
 
 
-def test_shrinkage():
-    norms = [np.linalg.norm(sub.ridge(X, y, lam)) for lam in [0.0, 1.0, 10.0, 100.0, 1e4]]
-    assert all(a > b for a, b in zip(norms, norms[1:]))
-    assert norms[-1] < 0.05 * norms[0]
+def test_rates_diag():
+    r = sub.rates(np.diag([1.0, 100.0]))
+    assert abs(r["kappa"] - 100) < 1e-9 and abs(r["lr_max"] - 0.02) < 1e-12
+    assert abs(r["lr_opt"] - 2 / 101) < 1e-12 and abs(r["rho_opt"] - 99 / 101) < 1e-12
 
 
-def test_regularization_fixes_conditioning():
-    B = X.copy()
-    B[:, 4] = B[:, 3] + 1e-6 * rng.normal(size=30)  # nearly duplicated feature
-    assert sub.effective_condition(B, 0.0) > 1e10
-    assert sub.effective_condition(B, 1.0) < 1e3
+def test_rotation_invariant():
+    r = sub.rates(A)
+    assert abs(r["kappa"] - 50) < 1e-8 and abs(r["lr_max"] - 0.04) < 1e-10
+
+
+def test_contraction_matches_iteration():
+    lr = 0.7 * sub.rates(A)["lr_max"]
+    norms = _run(lr, 400, rng.normal(size=6))
+    assert abs(norms[-1] / norms[-2] - sub.contraction(A, lr)) < 1e-3
+
+
+def test_divergence_threshold():
+    x0 = rng.normal(size=6)
+    lr_max = sub.rates(A)["lr_max"]
+    assert _run(1.02 * lr_max, 600, x0)[-1] > 10 * np.linalg.norm(x0)
+    assert _run(0.98 * lr_max, 600, x0)[-1] < np.linalg.norm(x0)
+
+
+def test_steps_needed():
+    D = np.diag([1.0, 100.0])
+    assert sub.steps_needed(D, 1e-6) == 691
+    t = sub.steps_needed(A, 1e-4)
+    norms = _run(sub.rates(A)["lr_opt"], t, rng.normal(size=6))
+    assert norms[-1] <= 1e-4 * norms[0]

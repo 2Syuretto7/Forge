@@ -1,10 +1,13 @@
-# Detecting a spike
+# A linear probe
 
-1. `detect_spikes(losses, window, k)`: the 1-based steps whose loss exceeds the mean of the previous `window` losses by more than $k$ of their standard deviations. A non-finite loss always counts; no step is flagged before a full window exists.
-2. `rollback_point(flagged_step, checkpoint_every)`: the step of the checkpoint to restore. The loss at step $s$ is computed before update $s$, so update $s - 1$ may already be damaged: use the last checkpoint saved before it.
+Does a model's hidden state encode a property, such as whether the current token is inside a quotation? Train a linear classifier on the activations and test it on held-out examples.
+
+1. `probe_loss(w, b, A, y, l2=1e-3)`: the mean logistic loss of $\sigma(A w + b)$ plus $\tfrac{l_2}{2}\|w\|^2$, and its gradients.
+2. `train_probe(A, y, steps=500, lr=1.0, l2=1e-3)`: gradient descent from zero.
+3. `probe_accuracy(w, b, A, y)`.
 
 ## Hints
 
-1. `np.isfinite` catches NaN and infinity, which compare false with everything.
-2. A trailing window adapts to the falling loss; a fixed threshold would fire early in training and never late.
-3. The rollback step is $\lfloor (s - 2)/c \rfloor \cdot c$.
+1. With $p = \sigma(z)$ the gradient of the mean loss is $A^\top (p - y)/n$.
+2. Keep the probe linear: a probe powerful enough to learn the property itself says nothing about the model.
+3. Accuracy on held-out examples is what counts.

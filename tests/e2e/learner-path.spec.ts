@@ -18,7 +18,7 @@ const prereqs = (id: string) =>
   [...graph.matchAll(/^\s+- \{from: ([LM]\d\d), to: ([LM]\d\d), type: vertical/gm)]
     .filter((m) => m[2] === id && ids.includes(m[1]))
     .map((m) => m[1]);
-// Lesson order: the first lesson in graph order whose prerequisites are all done (L13 comes before L12).
+// Lesson order: the first lesson in graph order whose prerequisites are all done (L09 comes before L08).
 const lessonIds: string[] = [];
 while (lessonIds.length < ids.length) {
   lessonIds.push(ids.find((l) => !lessonIds.includes(l) && prereqs(l).every((p) => lessonIds.includes(p)))!);

@@ -1,31 +1,55 @@
 import numpy as np
 import sub
 
-X, y = sub.make_dataset()
-out = sub.train_and_evaluate(X[:600], y[:600], X[600:], y[600:])
+Xva, yva = sub.make_digits(1000, 2)
+Xte, yte = sub.make_digits(1000, 1)
+KINDS = ["sgd", "momentum", "adam", "adamw"]
+_cache = {}
 
 
-def test_targets():
-    assert out["accuracy"] >= 0.87, out["accuracy"]
-    assert out["log_loss"] <= 0.30, out["log_loss"]
-    assert out["ece"] <= 0.06, out["ece"]
+def _val(recipe):
+    key = repr(sorted(recipe.items()))
+    if key not in _cache:
+        _cache[key] = sub.evaluate(sub.run(recipe, 0), Xva, yva)
+    return _cache[key]
 
 
-def test_metrics_are_consistent():
-    C = np.asarray(out["confusion"])
-    assert C.shape == (3, 3) and C.sum() == 300
-    assert abs(np.trace(C) / 300 - out["accuracy"]) < 1e-12
+def _check_recipe(r):
+    assert r["optimizer"] in KINDS, r
+    assert 0 < r["steps"] <= 800 and 0 < r["batch"] <= 100, r
+    assert r.get("schedule", "constant") in ("constant", "cosine"), r
 
 
-def test_test_rows_do_not_influence_training():
-    X2 = X.copy()
-    X2[600:] = X2[600:] * 3 + 100  # corrupt the test features only
-    out2 = sub.train_and_evaluate(X2[:600], y[:600], X2[600:], y[600:])
-    assert np.allclose(out2["W"], out["W"]) and np.allclose(out2["b"], out["b"]), "training must use training rows only"
+def test_recipe_is_valid():
+    _check_recipe(sub.RECIPE)
+
+
+def test_bakeoff_covers_four_optimizers():
+    assert sorted(sub.BAKEOFF) == sorted(KINDS)
+    for k, entry in sub.BAKEOFF.items():
+        _check_recipe(entry["recipe"])
+        assert entry["recipe"]["optimizer"] == k
+
+
+def test_bakeoff_reproducible():
+    for k, entry in sub.BAKEOFF.items():
+        got = _val(entry["recipe"])
+        assert abs(got - entry["val_acc"]) <= 0.002, (k, got, entry["val_acc"])
+
+
+def test_recipe_best_on_validation():
+    best = max(entry["val_acc"] for entry in sub.BAKEOFF.values())
+    assert _val(sub.RECIPE) >= best - 0.005
+
+
+def test_recipe_test_accuracy():
+    accs = [sub.evaluate(sub.run(sub.RECIPE, seed), Xte, yte) for seed in (0, 1)]
+    assert np.mean(accs) >= 0.92, accs
 
 
 def test_report():
-    words = sub.REPORT.split()
-    assert len(words) >= 80, f"{len(words)} words"
-    t = sub.REPORT.lower()
-    assert "standard" in t and "calibrat" in t
+    text = sub.REPORT.lower()
+    assert len(text.split()) >= 80
+    assert "validation" in text
+    for k in KINDS:
+        assert k in text, k

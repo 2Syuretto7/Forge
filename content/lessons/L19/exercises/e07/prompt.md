@@ -1,12 +1,15 @@
-# An evaluation harness with error bars
+# The sparse autoencoder objective
 
-A validation loss is an average over examples, and has sampling error. Comparing two checkpoints on the same examples, the paired difference is far more precise than comparing their separate intervals.
+A sparse autoencoder rewrites activations $x$ as a sparse combination of many learned directions:
+$$
+z = \operatorname{ReLU}\bigl((x - b_d) W_e^\top + b_e\bigr), \qquad \hat x = z W_d + b_d, \qquad \mathcal{L} = \|x - \hat x\|^2 + \lambda \textstyle\sum_j z_j,
+$$
+averaged over rows, with $m$ latents, usually many more than the dimensions.
 
-1. `mean_with_ci(values, n_boot=2000, seed=0, level=0.95)`: the mean and a percentile bootstrap interval. Draw all resamples at once with `rng.integers(0, n, (n_boot, n))`.
-2. `paired_difference(a, b, ...)`: the mean of $a - b$ over the same examples, with its interval.
+Implement `sae_loss(params, X, l1)` with `params = (W_e, b_e, W_d, b_d)`, returning the loss and the gradients in the same order.
 
 ## Hints
 
-1. Use `np.random.default_rng(seed)`.
-2. Resample examples, keeping each pair together; resampling $a$ and $b$ separately throws away the pairing.
-3. Two runs whose intervals overlap can still differ clearly: check the interval of the difference.
+1. Backpropagate: $\partial \hat x = 2(\hat x - x)/n$; $\partial z = \partial \hat x\, W_d^\top + \lambda/n$; through the ReLU only where the pre-activation is positive.
+2. $b_d$ appears twice: added to the output and subtracted from the input.
+3. The L1 term is what makes most latents zero for any one input.

@@ -1,36 +1,29 @@
-# Puzzle: which earlier word does "was" need?
+# Puzzle: an update that disappears
 
-Read the sentence "the cat sat on the mat because the cat was tired". To predict what follows "was", a model must know that its subject is "cat", which is six words back, and the distance changes from sentence to sentence. A fixed-size window or a fixed weighting by distance cannot do this; the model needs to **look up** the relevant earlier word by its content.
+A weight equals 1.0. Each training step adds 0.001 to it. After 1000 steps it should be 2.0.
 
-::::predict{id=p1 kind=choice answer=c}
-A lookup over earlier positions needs to be differentiable, so it can be trained by gradient descent. Which mechanism is both content-based and differentiable?
+::::predict{id=p1 kind=choice answer=a}
+The weight is stored in bf16 (7 mantissa bits) and each update is rounded to the nearest bf16 value. What is it after 1000 steps?
 
-- Pick the single earlier position whose vector is most similar to the current one (an argmax).
-- Average all earlier positions equally.
-- Score every earlier position by the dot product of a query with its key, softmax the scores, and average the positions' values with those weights.
-- Use the position exactly six steps back.
+- Still 1.0.
+- About 2.0.
+- About 1.5.
+- Infinity.
 
 :::reveal
-The softmax-weighted average is a soft version of the argmax: when one score dominates, it returns almost exactly that position's value, and it has a gradient everywhere. This is attention. The query says what the current position is looking for, each key says what a position offers, and each value is what it hands over if chosen.
+Near 1.0, consecutive bf16 numbers are $2^{-7} \approx 0.0078$ apart. Adding 0.001 gives $1.001$, whose nearest bf16 neighbour is 1.0: the update rounds away, every time. This is why mixed-precision training keeps a full-precision master copy of the weights, or uses stochastic rounding.
 :::
 ::::
 
-In the widget, choose the previous-token head (every query matches the key of the position before it) and the same-word head, and switch the causal mask on and off.
-
-:::widget{name=AttentionHeatmap pattern=previous d=16}
-:::
-
-Now switch back to random projections and increase the head dimension with "Divide logits by sqrt(d)" turned off.
-
-::::predict{id=p2 kind=choice answer=b}
-Queries and keys have independent entries of variance 1. Without dividing by $\sqrt d$, what happens to the attention weights as the head dimension grows from 16 to 512?
-
-- Nothing: the softmax normalizes the scores.
-- They become nearly one-hot: each row puts almost all its weight on one key.
-- They become uniform.
-- They become negative.
+::::predict{id=p2 kind=numeric answer=65504 tol=1}
+What is the largest finite fp16 number?
 
 :::reveal
-A dot product of $d$ unit-variance terms has standard deviation $\sqrt d$, so at $d = 512$ the scores differ by tens, and the softmax of such scores is nearly one-hot. A one-hot softmax has almost zero gradient, so the model stops learning which keys to attend to. Dividing by $\sqrt d$ restores unit-scale scores whatever $d$ is.
+$(2 - 2^{-10}) \cdot 2^{15} = 65504$. Activations, attention scores or a loss multiplied by a scale factor can exceed it and become infinite. bf16 reaches about $3.4 \times 10^{38}$, like fp32, because it keeps fp32's 8 exponent bits.
 :::
 ::::
+
+Explore the formats in the widget: choose a value, and compare how each format stores it.
+
+:::widget{name=FloatFormats value=0.1}
+:::

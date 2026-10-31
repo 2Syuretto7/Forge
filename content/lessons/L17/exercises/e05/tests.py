@@ -1,20 +1,23 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(5)
-G = np.exp(rng.normal(-16, 2, size=10000)).astype(np.float32)
+logp_old = np.log(np.array([0.2, 0.5, 0.1, 0.3, 0.25]))
+logp = np.log(np.array([0.3, 0.45, 0.05, 0.31, 0.21]))
+adv = np.array([1.0, -1.0, 2.0, 0.5, -0.5])
 
 
-def test_underflow():
-    assert sub.underflow_fraction(G) > 0.15
-    assert sub.underflow_fraction(G, 2 ** 16) < 0.001
+def test_grad_ppo():
+    _, g = sub.ppo_objective(logp, logp_old, adv, 0.2)
+    num = []
+    for i in range(5):
+        e = np.zeros(5)
+        e[i] = 1e-7
+        num.append((sub.ppo_objective(logp + e, logp_old, adv, 0.2)[0] - sub.ppo_objective(logp - e, logp_old, adv, 0.2)[0]) / 2e-7)
+    assert np.allclose(g, num, atol=1e-6)
 
 
-def test_grad_scaled_loss():
-    X, y, w = rng.normal(size=(20, 3)), rng.normal(size=20), rng.normal(size=3)
-    S = 1024.0
-    L, g = sub.scaled_loss_and_grad(w, X, y, S)
-    num = np.array([(sub.scaled_loss_and_grad(w + e, X, y, S)[0] - sub.scaled_loss_and_grad(w - e, X, y, S)[0]) / 2e-6 for e in np.eye(3) * 1e-6])
-    assert np.allclose(g, num, rtol=1e-6)
-    _, g1 = sub.scaled_loss_and_grad(w, X, y, 1.0)
-    assert np.allclose(g / S, g1)
+def test_clipping():
+    obj, g = sub.ppo_objective(np.log([0.3]), np.log([0.2]), np.array([1.0]), 0.2)
+    assert abs(obj - 1.2) < 1e-12 and g[0] == 0
+    obj, g = sub.ppo_objective(np.log([0.3]), np.log([0.2]), np.array([-1.0]), 0.2)
+    assert abs(obj + 1.5) < 1e-12 and abs(g[0] + 1.5) < 1e-12

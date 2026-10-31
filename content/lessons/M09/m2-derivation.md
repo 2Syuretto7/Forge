@@ -112,7 +112,7 @@ $$
 \|x\|_1 = |x_1| + \dots + |x_d|, \qquad \|x\|_\infty = \max_i |x_i| .
 $$
 
-All three are **norms**: zero only for the zero vector, scaled by $|c|$ when the vector is scaled by $c$, and satisfying the triangle inequality. They measure different things: the L1 norm is the total amount, the L-infinity norm the worst coordinate. Regularization (L06) penalizes L2 or L1 norms of weights; gradient clipping (L19) caps an L2 norm.
+All three are **norms**: zero only for the zero vector, scaled by $|c|$ when the vector is scaled by $c$, and satisfying the triangle inequality. They measure different things: the L1 norm is the total amount, the L-infinity norm the worst coordinate. Regularization (L02) penalizes L2 or L1 norms of weights; gradient clipping (L15) caps an L2 norm.
 
 ::::derivation{id=d5 title="Three norms of one vector"}
 :::step

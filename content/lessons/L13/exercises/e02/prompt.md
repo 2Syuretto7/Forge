@@ -1,12 +1,10 @@
-# One attention head
+# Range and precision of a format
 
-Your softmax is provided.
-
-1. `causal_mask(n)`: a boolean `(n, n)` array, `True` where key `j` comes after query `i`.
-2. `attention(Q, K, V, causal=True, scale=True)`: scores $QK^\top$, divided by $\sqrt{d_k}$ if `scale`, masked to `-inf` where the causal mask is `True` if `causal`, softmax by rows, then the weighted sum of `V`. Return `(O, P)`.
+1. `format_properties(exp_bits, man_bits)`: a dictionary with the largest finite value `"max"`, the smallest positive normal `"min_normal"`, the smallest positive subnormal `"min_subnormal"` and the machine epsilon `"eps"`.
+2. `decimal_digits(man_bits)`: about how many significant decimal digits the format keeps, $(m + 1)\log_{10} 2$.
 
 ## Hints
 
-1. `np.triu(np.ones((n, n), dtype=bool), k=1)` is `True` strictly above the diagonal.
-2. `np.where(mask, -np.inf, S)` applies the mask.
-3. The first row of a causal `P` is always `(1, 0, ..., 0)`.
+1. Bias $= 2^{e-1} - 1$; the largest exponent of a finite number is $2^e - 2 - \text{bias}$.
+2. The largest finite value is $(2 - 2^{-m}) \cdot 2^{e_{\max}}$.
+3. The smallest subnormal is the smallest normal times $2^{-m}$.

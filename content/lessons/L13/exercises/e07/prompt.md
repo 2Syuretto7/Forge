@@ -1,13 +1,15 @@
-# Rotary position embeddings
+# Stochastic rounding
 
-Implement `rope(X, positions, base=10000.0)`: for each row $p$ (at position `positions[p]`) and each pair of columns $(2i, 2i + 1)$, rotate the pair by the angle $p\,\theta_i$ with $\theta_i = \text{base}^{-2i/d}$:
-$$
-(x_{2i}, x_{2i+1}) \mapsto (x_{2i}\cos\phi - x_{2i+1}\sin\phi,\; x_{2i}\sin\phi + x_{2i+1}\cos\phi).
-$$
-The tests check that the result preserves norms, and that the score between a rotated query and a rotated key depends only on the difference of their positions.
+On a grid of spacing `step`:
+
+1. `round_down_up(x, step)`: the grid points just below and just above `x`.
+2. `stochastic_round(x, step, rng)`: round `x` up with probability $(x - \ell)/\text{step}$, where $\ell$ is the point below, and down otherwise.
+3. `accumulate(w0, update, n, step, mode, rng=None)`: apply $w \leftarrow \operatorname{round}(w + \text{update})$ `n` times, with `mode` `"nearest"` or `"stochastic"`.
+
+Start from 1.0 on bf16's grid near 1 ($2^{-7}$) and add 0.001 a thousand times.
 
 ## Hints
 
-1. Angles: `positions[:, None] * theta[None, :]`, shape `(n, d/2)`.
-2. Take `x0 = X[:, 0::2]` and `x1 = X[:, 1::2]`, and write the two results back into the same columns.
-3. Position 0 leaves a row unchanged.
+1. `lo = np.floor(x / step) * step`.
+2. `rng.random(shape) < p` picks "up" with probability `p`.
+3. The expected value of a stochastic rounding is exactly `x`.

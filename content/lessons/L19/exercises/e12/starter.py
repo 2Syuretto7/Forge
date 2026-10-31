@@ -1,12 +1,23 @@
-import math
+import numpy as np
 
 
-def expected_lr(step, peak, warmup, total, floor=0.1):
-    """The schedule of exercise 5: linear warmup, then cosine decay to floor * peak."""
-    raise NotImplementedError
+def train_probe(A, y, steps=300, lr=1.0, l2=1e-3):
+    """A logistic-regression probe (the solution of exercise 4)."""
+    w, b = np.zeros(A.shape[1]), 0.0
+    for _ in range(steps):
+        p = 1 / (1 + np.exp(-(A @ w + b)))
+        g = (p - y) / len(y)
+        w -= lr * (A.T @ g + l2 * w)
+        b -= lr * g.sum()
+    return w, b
 
 
-def audit_lr(logged, peak, warmup, total, rtol=1e-6):
-    """logged is a list of (step, lr) pairs from a run's log. Return the first step whose logged
-    rate differs from the schedule by more than rtol (relative), or None."""
+def probe_accuracy(w, b, A, y):
+    return float(np.mean(((A @ w + b) > 0) == (y == 1)))
+
+
+def random_feature_probe(n_train, n_test, d, seed=0):
+    """Labels that are pure noise and features that are pure noise: train a probe on n_train rows of
+    d random features with random labels, and return (train accuracy, test accuracy on n_test new
+    rows)."""
     raise NotImplementedError

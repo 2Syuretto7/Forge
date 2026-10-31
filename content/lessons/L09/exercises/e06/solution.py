@@ -1,23 +1,45 @@
-import math
+import numpy as np
 
 
-def warmup_cosine(t, total, warmup, peak, floor=0.0):
-    """Rate at step t (1-based): linear ramp to peak over `warmup` steps, then cosine to floor at `total`."""
-    if t < warmup:
-        return peak * t / warmup
-    progress = (t - warmup) / max(total - warmup, 1)
-    return floor + 0.5 * (peak - floor) * (1.0 + math.cos(math.pi * min(progress, 1.0)))
+def softmax_rows(S):
+    """Softmax of every row, stable for large entries; -inf entries get weight 0."""
+    m = S.max(axis=-1, keepdims=True)
+    E = np.exp(S - m)
+    return E / E.sum(axis=-1, keepdims=True)
 
 
-def warmup_linear(t, total, warmup, peak):
-    """Linear ramp to peak, then linear decay to zero at `total`."""
-    if t < warmup:
-        return peak * t / warmup
-    return peak * max(total - t, 0) / max(total - warmup, 1)
+def softmax_backward(P, dP):
+    """Given P = softmax_rows(S) and dL/dP, return dL/dS."""
+    return P * (dP - (dP * P).sum(axis=-1, keepdims=True))
 
 
-def inverse_sqrt(t, warmup, peak):
-    """Linear ramp to peak, then peak * sqrt(warmup / t)."""
-    if t < warmup:
-        return peak * t / warmup
-    return peak * math.sqrt(warmup / t)
+def causal_mask(n):
+    """Boolean (n, n) array, True where query i may not see key j (j > i)."""
+    return np.triu(np.ones((n, n), dtype=bool), k=1)
+
+
+def attention(Q, K, V, causal=True, scale=True):
+    """Single-head attention for Q, K of shape (n, d) and V of shape (n, dv). Return (O, P)."""
+    S = Q @ K.T
+    if scale:
+        S = S / np.sqrt(Q.shape[-1])
+    if causal:
+        S = np.where(causal_mask(Q.shape[0]), -np.inf, S)
+    P = softmax_rows(S)
+    return P @ V, P
+
+
+def sinusoidal(n, d, base=10000.0):
+    """PE[p, 2i] = sin(p / base^(2i/d)), PE[p, 2i+1] = cos(p / base^(2i/d)), shape (n, d)."""
+    p = np.arange(n)[:, None]
+    i = np.arange(d // 2)[None, :]
+    ang = p / base ** (2 * i / d)
+    pe = np.zeros((n, d))
+    pe[:, 0::2] = np.sin(ang)
+    pe[:, 1::2] = np.cos(ang)
+    return pe
+
+
+def is_permutation_equivariant(f, X, perm):
+    """True if f(X[perm]) equals f(X)[perm] (to 1e-9)."""
+    return bool(np.allclose(f(X[perm]), f(X)[perm], atol=1e-9))

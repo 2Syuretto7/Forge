@@ -1,20 +1,23 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(3)
-M = rng.normal(size=(8, 3)) @ rng.normal(size=(3, 10)) + 0.01 * rng.normal(size=(8, 10))
+rng = np.random.default_rng(1)
+logits = rng.normal(size=(7, 5))
+targets = rng.integers(0, 5, 7)
+mask = np.array([0, 0, 0, 1, 1, 1, 1], dtype=float)
 
 
-def test_eckart_young():
-    for r in [1, 2, 3]:
-        best = sub.best_rank_r(M, r)
-        assert np.linalg.matrix_rank(best) == r
-        err = np.linalg.norm(M - best) / np.linalg.norm(M)
-        assert abs(err - sub.relative_error(M, r)) < 1e-12
-        other = rng.normal(size=(8, r)) @ rng.normal(size=(r, 10))
-        assert np.linalg.norm(M - other) > np.linalg.norm(M - best)
+def test_grad_masked_ce():
+    loss, g = sub.masked_cross_entropy(logits, targets, mask)
+    num = np.zeros_like(logits)
+    for idx in np.ndindex(logits.shape):
+        E = np.zeros_like(logits); E[idx] = 1e-6
+        num[idx] = (sub.masked_cross_entropy(logits + E, targets, mask)[0] - sub.masked_cross_entropy(logits - E, targets, mask)[0]) / 2e-6
+    assert np.allclose(g, num, atol=1e-8)
+    assert np.all(g[:3] == 0)
 
 
-def test_rank_for():
-    assert sub.rank_for(M, 0.01) == 3
-    assert sub.rank_for(M, 0.0) == 8
+def test_value():
+    p = np.exp(logits) / np.exp(logits).sum(1, keepdims=True)
+    expected = -np.log(p[np.arange(7), targets])[3:].mean()
+    assert abs(sub.masked_cross_entropy(logits, targets, mask)[0] - expected) < 1e-12

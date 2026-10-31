@@ -53,7 +53,7 @@ describe('progress store', () => {
       selfAssessed: false,
       at: 5,
     });
-    await saveColab({ lessonId: 'L08', code: 'FORGE-L08-00000000', verifiedAt: 9 });
+    await saveColab({ lessonId: 'L04', code: 'FORGE-L04-00000000', verifiedAt: 9 });
     await saveSetting('modelId', 'claude-sonnet-5-5');
     await completeMovement('M01', 'm0', ['m0', 'm1'], ['M01/p1']);
     const first = await exportAll();

@@ -12,8 +12,8 @@ movements:
   - {file: m6-feynman.md,    mode: theory,   minutes: 45}
   - {file: m7-capstone.md,   mode: practice, minutes: 75}
 hooks:
-  - {to: L07, text: "Backpropagation is reverse-mode differentiation applied to a network's layers."}
-  - {to: L08, text: "You will turn these vector-Jacobian products into a working autograd engine for tensors."}
+  - {to: L03, text: "Backpropagation is reverse-mode differentiation applied to a network's layers."}
+  - {to: L04, text: "You will turn these vector-Jacobian products into a working autograd engine for tensors."}
   - {to: M26, text: "Finite differences fail at tiny steps; automatic differentiation has no step and no truncation error."}
   - {to: M27, text: "The gradient of cross-entropy through a softmax is simply p minus y."}
 reuses:

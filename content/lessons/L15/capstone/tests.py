@@ -1,50 +1,51 @@
-import unittest
-import numpy as np
+import math
+import torch
 import sub
 
 
-def test_parameter_count():
-    for n_layer, d in [(2, 32), (3, 64)]:
-        m = sub.GPT(len(sub.chars), sub.CTX, d, n_layer, d // 16)
-        assert sub.non_embedding_params(m) == n_layer * (12 * d * d + 13 * d) + 2 * d
+def test_schedule():
+    cfg = dict(lr=1e-3, warmup=100, steps=1000)
+    assert sub.lr_at(1, cfg) == 1e-5 and sub.lr_at(100, cfg) == 1e-3
+    assert abs(sub.lr_at(1000, cfg) - 1e-4) < 1e-15 and abs(sub.lr_at(550, cfg) - 5.5e-4) < 1e-15
 
 
-def test_sweep():
-    assert len(sub.runs) == len(sub.CFG["widths"]) * len(sub.CFG["batches"])
-    for r in sub.runs:
-        assert r["C"] == 6 * r["N"] * r["D"]
-    by_size = {}
-    for r in sub.runs:
-        by_size.setdefault(r["d"], []).append(r["loss"])
-    for losses in by_size.values():
-        assert losses[-1] < losses[0], losses
+def test_exact_resume():
+    assert sub.resume_exact is True
 
 
-def test_frontier():
-    n1, d1, l1 = sub.optimal_allocation(1e12, sub.fit)
-    n2, d2, l2 = sub.optimal_allocation(1e13, sub.fit)
-    assert abs(6 * n1 * d1 / 1e12 - 1) < 1e-9 and n2 > n1 and d2 > d1 and l2 < l1
-    for C in [1e10, 1e12, 1e14]:
-        n, d, l = sub.constrained_allocation(C, sub.fit, 1e6)
-        assert d <= 1e6 * (1 + 1e-12) and abs(6 * n * d / C - 1) < 1e-9
-        assert l >= sub.optimal_allocation(C, sub.fit)[2] - 1e-12
+def test_checkpoints():
+    files = sorted(sub.CKPT_DIR.glob("step-*.pt"))
+    assert files and not list(sub.CKPT_DIR.glob("*.tmp"))
+    state = torch.load(files[-1], map_location="cpu", weights_only=False)
+    for key in ["model", "opt", "scaler", "step", "pos", "log", "cfg", "rng_cpu"]:
+        assert key in state, key
 
 
-def test_fit_describes_the_sweep():
-    if sub.SMALL:
-        raise unittest.SkipTest("the fit is checked on the full sweep")
-    assert sub.fit_rmse < 0.03, sub.fit_rmse
-    assert 0 <= sub.fit["E"] < min(sub.L), sub.fit
+def test_spike_detected_and_rolled_back():
+    cfg = sub.CFG
+    assert 1 <= len(sub.spikes) <= 2, sub.spikes
+    s = sub.spikes[0]
+    assert cfg["bad_start"] <= s["flagged_pos"] <= cfg["bad_start"] + 2, s
+    assert s["restored_step"] < cfg["bad_start"] and s["restored_step"] % cfg["ckpt_every"] == 0
+    assert s["skipped"][1] >= cfg["bad_start"] + cfg["bad_len"] - 1
 
 
-def test_prediction_made_first_and_accurate():
-    assert sub.predicted_at < sub.heldout_started
-    if sub.SMALL:
-        raise unittest.SkipTest("the prediction is checked on the full sweep")
-    assert abs(sub.prediction_error) < 0.08, sub.prediction_error
+def test_log():
+    steps = [e for e in sub.run["log"] if "loss" in e]
+    assert [e["step"] for e in steps] == list(range(1, sub.CFG["steps"] + 1))
+    assert all(math.isfinite(e["loss"]) and e["grad_norm"] >= 0 and e["lr"] > 0 and e["tokens_per_s"] > 0 for e in steps)
+    assert all(e["pos"] not in sub.BAD for e in steps)
+
+
+def test_evaluation_and_recovery():
+    assert sub.final_low <= sub.final_val <= sub.final_high and len(sub.final_per) == sub.CFG["eval_windows"]
+    first = sub.evals[0]["val"]
+    assert sub.final_val < first
+    if not sub.SMALL:
+        assert sub.final_val < 1.70 and sub.final_val < sub.pre_spike_val, (sub.final_val, sub.pre_spike_val)
 
 
 def test_report():
     text = sub.REPORT.lower()
     assert len(text.split()) >= 80
-    assert "predict" in text and "alpha" in text and "beta" in text
+    assert "spike" in text and "validation" in text and "rolled back" in text

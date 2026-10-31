@@ -1,14 +1,13 @@
-# Break it: a version counter for in-place updates
+# Break it: an fp16 softmax
 
-Two helpers detect the bug from this movement:
+1. `naive_softmax(x)`: exponentiate, sum and divide, entirely in the input's precision, without subtracting the maximum.
+2. `stable_softmax(x)`: subtract the row maximum, exponentiate and sum in float32, and return the result in the input's precision.
+3. `overflow_threshold(dtype=np.float16)`: the largest $x$ with finite $e^x$ in that precision.
 
-- `mul_(t, s)` scales `t.data` in place by the number `s` and increments `t._version` (treat a missing attribute as version 0).
-- `checked_mul(a, b)` computes `a * b` like the engine's multiply, but records the versions of `a` and `b` at forward time; its backward rule raises `RuntimeError` if either has changed since, instead of silently using modified values.
-
-The tests run the bug both ways: an unprotected multiply that returns a wrong gradient, and your checked one that raises.
+Then feed both a row of fp16 attention scores containing a 12.
 
 ## Hints
 
-1. Use `getattr(t, "_version", 0)` so tensors created before you added the counter still work.
-2. Capture the versions in local variables in `checked_mul`, and compare inside the closure.
-3. The gradient rule itself is unchanged: `unbroadcast(out.grad * b.data, a.shape)` to `a` and the mirror image to `b`.
+1. `np.finfo(np.float16).max` is 65504.
+2. Pass `dtype=x.dtype` to the sum in the naive version so it really accumulates in fp16.
+3. The stable version never exponentiates anything larger than 0.

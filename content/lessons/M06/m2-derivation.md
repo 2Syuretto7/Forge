@@ -105,7 +105,7 @@ Compare logarithms: $\log_{10} 2^{100} = 100 \times 0.301 = 30.1$ and $\log_{10}
 
 ## 4. Functions built from the exponential
 
-**The sigmoid** $\sigma(x) = \dfrac{1}{1 + e^{-x}}$ squashes any real number into $(0, 1)$: very negative inputs give nearly 0, very positive nearly 1, and $\sigma(0) = \frac{1}{2}$. It is symmetric in the sense $\sigma(-x) = 1 - \sigma(x)$, and its inverse is the **logit** $\ln \frac{p}{1 - p}$. Logistic regression (L05) is built on it.
+**The sigmoid** $\sigma(x) = \dfrac{1}{1 + e^{-x}}$ squashes any real number into $(0, 1)$: very negative inputs give nearly 0, very positive nearly 1, and $\sigma(0) = \frac{1}{2}$. It is symmetric in the sense $\sigma(-x) = 1 - \sigma(x)$, and its inverse is the **logit** $\ln \frac{p}{1 - p}$. Logistic regression (L01) is built on it.
 
 **The softmax** turns a list of real numbers $z_1, \dots, z_n$ (scores, "logits") into probabilities:
 

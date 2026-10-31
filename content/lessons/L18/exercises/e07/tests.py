@@ -1,20 +1,19 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(4)
-T, d, heads = 6, 16, 8
-x = rng.normal(size=(T, d))
-Wq, Wk, Wv, Wo = (rng.normal(size=(d, d)) / 4 for _ in range(4))
+rng = np.random.default_rng(2)
+W = rng.normal(size=(6, 10))
+W[2] = 0
 
 
-def test_shards_are_blocks():
-    sh = sub.shard_attention(Wq, Wk, Wv, Wo, heads, 4)
-    assert len(sh) == 4 and sh[1][0].shape == (16, 4) and sh[1][3].shape == (4, 16)
-    assert np.array_equal(sh[1][0], Wq[:, 4:8]) and np.array_equal(sh[3][3], Wo[12:16, :])
+def test_roundtrip():
+    q, s = sub.quantize_int8(W)
+    assert q.dtype == np.int8 and np.abs(q).max() <= 127
+    assert np.all(np.abs(sub.dequantize(q, s) - W) <= s[:, None] / 2 + 1e-12)
 
 
-def test_tp_attention_matches_dense():
-    dense = sub.attention(x, Wq, Wk, Wv, Wo, heads)
-    for tp in [1, 2, 4, 8]:
-        out = sub.tp_attention(x, sub.shard_attention(Wq, Wk, Wv, Wo, heads, tp), heads // tp)
-        assert np.allclose(out, dense)
+def test_matmul():
+    x = rng.normal(size=(3, 10))
+    q, s = sub.quantize_int8(W)
+    assert np.allclose(sub.int8_matmul(x, q, s), x @ sub.dequantize(q, s).T)
+    assert np.abs(sub.int8_matmul(x, q, s) - x @ W.T).max() < 0.05

@@ -1,15 +1,13 @@
-# The spiral dataset
+# Fusing a bias and an activation
 
-Generate the three-arm spiral of the puzzle and a helper to measure accuracy.
+`gelu(x)` (tanh approximation) is provided.
 
-- `make_spiral(n_per_class, K, seed)`: for class $j$, radii `np.linspace(0, 1, n)` and angles `np.linspace(4j, 4(j+1), n) + 0.2 * noise`, points $(r\sin t, r\cos t)$. Draw the noise per class, in class order, from one `np.random.default_rng(seed)`. Return `X` `(n K, 2)` and integer labels `y`, class by class.
-- `accuracy(pred, y)`.
-- `linear_baseline(X, y, steps, lr)`: softmax regression trained by full-batch gradient descent from zero; return its training accuracy.
-
-The test confirms the puzzle: the linear model stays far below 100 percent.
+1. `gelu_grad(x)`: its derivative.
+2. `bias_gelu_forward(x, b)` returns `(gelu(x + b), cache)` for `x` of shape `(N, d)` and bias `b` of shape `(d,)`; `bias_gelu_backward(dy, cache)` returns `(dx, db)`.
+3. `traffic(n, bytes_per=2, fused=True)`: bytes moved for $n$ elements, ignoring the small bias vector. Unfused, one kernel reads `x` and writes `z = x + b`, and a second reads `z` and writes `y`: $4n$ values. Fused, one kernel reads `x` and writes `y`: $2n$ values.
 
 ## Hints
 
-1. `np.column_stack([r * np.sin(t), r * np.cos(t)])`.
-2. Reuse your softmax regression from L05.
-3. 2,000 steps with `lr=1` is plenty for the linear model.
+1. With $u = c(x + 0.044715x^3)$ and $t = \tanh u$: $\operatorname{gelu}'(x) = \tfrac12(1 + t) + \tfrac12 x (1 - t^2)\, c\,(1 + 3 \cdot 0.044715 x^2)$.
+2. Cache $z = x + b$; the bias gradient sums over the batch.
+3. The fused kernel moves half the bytes, so the memory-bound pair runs about twice as fast.

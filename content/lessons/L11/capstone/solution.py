@@ -1,285 +1,308 @@
 # %% [markdown]
-# # L11 capstone: measure, profile and speed up a training step
+# # L11 capstone: predict a training run before you train it
 #
-# Choose **Runtime, Change runtime type, T4 GPU**, then run the cells in order. You will
-# (1) benchmark matrix products and elementwise additions and place them on the T4's roofline,
-# (2) measure host-to-device copies, (3) profile a deliberately slow training step, and
-# (4) write a version that is at least twice as fast and produces the same losses. The last cell is
-# the autograder; it prints a completion code to paste into the lesson.
+# Choose **Runtime, Change runtime type, T4 GPU**, then run the cells in order. You will train a
+# sweep of small character-level GPTs (the L10 model) over five widths and four token counts on
+# Tiny Shakespeare, fit the scaling law $L(N, D) = E + A N^{-\alpha} + B D^{-\beta}$ to the runs,
+# derive the compute-optimal frontier from it, and predict the validation loss of a larger model
+# **before** training it. The last cell is the autograder; it prints a completion code to paste
+# into the lesson.
 
 # %%
+import hashlib
 import math
 import os
+import pathlib
 import time
+import urllib.request
 
 import numpy as np
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
 SMALL = os.environ.get("SMALL") == "1"
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-torch.manual_seed(0)
-print("device:", torch.cuda.get_device_name(0) if DEVICE == "cuda" else "CPU (switch the runtime to a T4 GPU for real numbers)")
-
-
-def sync():
-    if DEVICE == "cuda":
-        torch.cuda.synchronize()
-
-
-def timeit(fn, warmup=3, repeats=10):
-    """Median seconds per call. GPU work is asynchronous, so synchronize before reading the clock."""
-    for _ in range(warmup):
-        fn()
-    sync()
-    ts = []
-    for _ in range(repeats):
-        if DEVICE == "cuda":
-            start, end = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
-            start.record()
-            fn()
-            end.record()
-            torch.cuda.synchronize()
-            ts.append(start.elapsed_time(end) / 1e3)
-        else:
-            t = time.perf_counter()
-            fn()
-            ts.append(time.perf_counter() - t)
-    return float(np.median(ts))
-
+print("device:", torch.cuda.get_device_name(0) if DEVICE == "cuda" else "CPU")
 
 # %% [markdown]
-# ## 1. Benchmarks on the roofline
+# ## 1. The corpus
 #
-# For every kernel, record its FLOPs and the minimum bytes it must move (each input read once, the
-# output written once). Fill in the two counts where marked.
+# The same Tiny Shakespeare file as in L09, read character by character. The validation split is
+# the last 10% of the text; every run is scored on all of it.
 
 # %%
-DTYPE = torch.float16 if DEVICE == "cuda" else torch.float32
-BYTES = torch.finfo(DTYPE).bits // 8
-bench = []
-for n in ([128, 512] if SMALL else [256, 512, 1024, 2048, 4096]):
-    a = torch.randn(n, n, device=DEVICE, dtype=DTYPE)
-    b = torch.randn(n, n, device=DEVICE, dtype=DTYPE)
-    t = timeit(lambda: a @ b)
-    # BEGIN SOLUTION -> flops, nbytes = 0, 0  # the matmul's FLOPs and minimum bytes
-    flops, nbytes = 2 * n ** 3, 3 * n * n * BYTES
-    # END SOLUTION
-    bench.append({"name": f"matmul {n}", "flops": flops, "bytes": nbytes, "seconds": t})
-for n in ([1 << 14, 1 << 18] if SMALL else [1 << 16, 1 << 20, 1 << 24, 1 << 26]):
-    x = torch.randn(n, device=DEVICE, dtype=DTYPE)
-    y = torch.randn(n, device=DEVICE, dtype=DTYPE)
-    t = timeit(lambda: x + y)
-    # BEGIN SOLUTION -> flops, nbytes = 0, 0  # the addition's FLOPs and minimum bytes
-    flops, nbytes = n, 3 * n * BYTES
-    # END SOLUTION
-    bench.append({"name": f"add {n}", "flops": flops, "bytes": nbytes, "seconds": t})
-
-for r in bench:
-    r["intensity"] = r["flops"] / max(r["bytes"], 1)
-    r["tflops"] = r["flops"] / r["seconds"] / 1e12
-    r["gbps"] = r["bytes"] / r["seconds"] / 1e9
-    print(f"{r['name']:>14}: {r['intensity']:8.2f} FLOP/B  {r['tflops']:8.3f} TFLOP/s  {r['gbps']:8.1f} GB/s")
-
-# %%
-# The T4's roofs (datasheet): 65 TFLOP/s fp16 on tensor cores, 8.1 fp32, 320 GB/s of memory bandwidth.
-try:
-    import matplotlib.pyplot as plt
-
-    peak = 65e12 if DTYPE == torch.float16 else 8.1e12
-    xs = np.logspace(-2, 4, 200)
-    plt.loglog(xs, np.minimum(peak, 320e9 * xs) / 1e12, label="T4 roofline")
-    for r in bench:
-        plt.loglog(r["intensity"], r["tflops"], "o")
-        plt.annotate(r["name"], (r["intensity"], r["tflops"]), fontsize=8)
-    plt.xlabel("arithmetic intensity (FLOP/byte)")
-    plt.ylabel("TFLOP/s")
-    plt.legend()
-    plt.show()
-except ImportError:
-    print("matplotlib is not installed; skipping the plot")
+CORPUS_URL = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
+CORPUS_SHA256 = "86c4e6aa9db7c042ec79f339dcb96d42b0075e16b8fc2e86bf0ca57e2dc565ed"
+local = [p for p in (pathlib.Path("data/tinyshakespeare.txt"), pathlib.Path("../data/tinyshakespeare.txt")) if p.exists()]
+raw = local[0].read_bytes() if local else urllib.request.urlopen(CORPUS_URL, timeout=60).read()
+assert hashlib.sha256(raw).hexdigest() == CORPUS_SHA256, "unexpected corpus contents"
+text = raw.decode("utf-8")
+chars = sorted(set(text))
+stoi = {c: i for i, c in enumerate(chars)}
+data = torch.tensor([stoi[c] for c in text], dtype=torch.long)
+split = int(0.9 * len(data))
+train_data, val_data = data[:split], data[split:]
+print(f"{len(train_data):,} training and {len(val_data):,} validation characters")
 
 # %% [markdown]
-# ## 2. Host-to-device copies
+# ## 2. The model and its size
 #
-# Copy the same buffer from ordinary (pageable) host memory and from pinned host memory.
+# L10's GPT with the output layer tied to the character embedding. Scaling laws count
+# **non-embedding** parameters: write `non_embedding_params(model)`, the number of parameters
+# outside the token and position embeddings.
 
 # %%
-NB = (1 << 20) if SMALL else (64 << 20)
-host = torch.empty(NB, dtype=torch.uint8)
-pinned = torch.empty(NB, dtype=torch.uint8, pin_memory=(DEVICE == "cuda"))
-dev = torch.empty(NB, dtype=torch.uint8, device=DEVICE)
-transfer = {
-    "pageable_gbps": NB / timeit(lambda: dev.copy_(host)) / 1e9,
-    "pinned_gbps": NB / timeit(lambda: dev.copy_(pinned, non_blocking=True)) / 1e9,
-}
-print(transfer)
+class Block(nn.Module):
+    def __init__(self, d, n_head):
+        super().__init__()
+        self.n_head = n_head
+        self.ln1, self.ln2 = nn.LayerNorm(d), nn.LayerNorm(d)
+        self.qkv, self.proj = nn.Linear(d, 3 * d), nn.Linear(d, d)
+        self.mlp = nn.Sequential(nn.Linear(d, 4 * d), nn.GELU(), nn.Linear(4 * d, d))
 
-# %% [markdown]
-# ## 3. A slow training step
-#
-# `slow_step` trains a two-layer MLP regression on random data with plain SGD. It is correct and
-# slow. Do not change it; profile it, then write `fast_step` below.
-
-# %%
-D, HID, B = (64, 256, 32) if SMALL else (1024, 4096, 256)
-STEPS = 6 if SMALL else 30
-LR = 0.05
+    def forward(self, x):
+        B, T, d = x.shape
+        q, k, v = self.qkv(self.ln1(x)).split(d, dim=2)
+        q, k, v = (t.view(B, T, self.n_head, d // self.n_head).transpose(1, 2) for t in (q, k, v))
+        y = F.scaled_dot_product_attention(q, k, v, is_causal=True)
+        x = x + self.proj(y.transpose(1, 2).reshape(B, T, d))
+        return x + self.mlp(self.ln2(x))
 
 
-def make_params(seed=0):
-    g = torch.Generator().manual_seed(seed)
-    W1 = torch.randn(D, HID, generator=g) / math.sqrt(D)
-    W2 = torch.randn(HID, D, generator=g) / math.sqrt(HID)
-    return [t.to(DEVICE).requires_grad_() for t in (W1, torch.zeros(HID), W2, torch.zeros(D))]
+class GPT(nn.Module):
+    def __init__(self, vocab, ctx, d, n_layer, n_head):
+        super().__init__()
+        self.tok, self.pos = nn.Embedding(vocab, d), nn.Embedding(ctx, d)
+        nn.init.normal_(self.tok.weight, std=0.02)
+        nn.init.normal_(self.pos.weight, std=0.02)
+        self.blocks = nn.ModuleList([Block(d, n_head) for _ in range(n_layer)])
+        self.ln_f = nn.LayerNorm(d)
+
+    def forward(self, idx):
+        x = self.tok(idx) + self.pos(torch.arange(idx.shape[1], device=idx.device))
+        for b in self.blocks:
+            x = b(x)
+        return self.ln_f(x) @ self.tok.weight.T
 
 
-def batch(step):
-    rng = np.random.default_rng(step)
-    return rng.normal(size=(B, D)), rng.normal(size=(B, D))
-
-
-def slow_gelu(x):
-    inner = (x + 0.044715 * x * x * x) * math.sqrt(2.0 / math.pi)
-    return 0.5 * x * (1.0 + torch.tanh(inner))
-
-
-def slow_step(params, step):
-    xb, yb = batch(step)
-    x = torch.tensor(xb, dtype=torch.float32).to(DEVICE)
-    y = torch.tensor(yb, dtype=torch.float32).to(DEVICE)
-    W1, b1, W2, b2 = params
-    out = slow_gelu(x @ W1 + b1) @ W2 + b2
-    loss = ((out - y) ** 2).mean()
-    loss.backward()
-    with torch.no_grad():
-        for p in params:
-            p -= LR * p.grad
-            p.grad = None
-    return loss.item()
-
-
-P = make_params()
-slow_losses = [slow_step(P, s) for s in range(STEPS)]
-P = make_params()
-sync()
-t0 = time.perf_counter()
-for s in range(STEPS):
-    slow_step(P, s)
-sync()
-slow_time = (time.perf_counter() - t0) / STEPS
-print(f"slow step: {slow_time * 1e3:.2f} ms")
-
-# %%
-from torch.profiler import ProfilerActivity, profile
-
-ACTIVITIES = [ProfilerActivity.CPU] + ([ProfilerActivity.CUDA] if DEVICE == "cuda" else [])
-SORT = "cuda_time_total" if DEVICE == "cuda" else "cpu_time_total"
-
-
-def kernel_count(prof, steps):
-    """Device kernels per step on a GPU; on a CPU, ATen operator calls per step."""
+def non_embedding_params(model):
     # BEGIN SOLUTION
-    if DEVICE == "cuda":
-        n = sum(1 for e in prof.events() if e.device_type == torch.autograd.DeviceType.CUDA)
-    else:
-        n = sum(1 for e in prof.events() if e.name.startswith("aten::"))
-    return n / steps
+    return sum(p.numel() for name, p in model.named_parameters() if not name.startswith(("tok.", "pos.")))
     # END SOLUTION
 
 
-P = make_params()
-with profile(activities=ACTIVITIES) as prof_slow:
-    for s in range(3):
-        slow_step(P, s)
-print(prof_slow.key_averages().table(sort_by=SORT, row_limit=12))
-slow_kernels = kernel_count(prof_slow, 3)
-print("per step:", slow_kernels)
-
 # %% [markdown]
-# ## 4. Your fast step
+# ## 3. One training run
 #
-# Write `prepare(steps)`, which may move all the data to the device in advance, and
-# `fast_step(params, opt, data, step)`, which must compute the same losses as `slow_step` for the
-# same parameters and data. Return the loss as a tensor (not a Python float), so nothing forces the
-# CPU to wait for the GPU. `make_optimizer(params)` may return any object you need, such as a
-# `torch.optim` optimizer.
+# Every model has four layers and heads of width 16; only the width $d$ changes, so the sweep
+# varies one thing. Every run takes the same number of optimizer steps, and the token budget sets
+# the batch size: small models early in training learn more per token from small batches, and real
+# runs grow the batch with the budget. AdamW uses a learning rate of $0.4/d$ (the best rate shrinks
+# with width, L11 exercise 12), a linear warmup over the first 10% of steps and a cosine decay to
+# 10% of the peak **at the end of that run's own budget**: a run cut short of its schedule
+# understates what its token count can achieve. `val_loss` scores the whole validation split.
 
 # %%
-def prepare(steps):
-    # BEGIN SOLUTION
-    xs, ys = zip(*(batch(s) for s in range(steps)))
-    x = torch.tensor(np.stack(xs), dtype=torch.float32).to(DEVICE)
-    y = torch.tensor(np.stack(ys), dtype=torch.float32).to(DEVICE)
-    return x, y
-    # END SOLUTION
+CFG = dict(ctx=128, steps=1950, n_layer=4, widths=[32, 48, 64, 96, 128], batches=[2, 4, 8, 16], heldout_width=192)
+if SMALL:
+    CFG.update(ctx=32, steps=100, n_layer=2, widths=[16, 24, 32], batches=[4, 8, 16], heldout_width=48)
+CTX, STEPS, N_LAYER = CFG["ctx"], CFG["steps"], CFG["n_layer"]
 
 
-def make_optimizer(params):
-    # BEGIN SOLUTION
-    return torch.optim.SGD(params, lr=LR, foreach=True)
-    # END SOLUTION
+@torch.no_grad()
+def val_loss(model):
+    model.eval()
+    n = (len(val_data) - 1) // CTX
+    x = val_data[: n * CTX].view(n, CTX)
+    y = val_data[1: n * CTX + 1].view(n, CTX)
+    total = 0.0
+    for i in range(0, n, 256):
+        logits = model(x[i:i + 256].to(DEVICE))
+        total += F.cross_entropy(logits.flatten(0, 1), y[i:i + 256].to(DEVICE).flatten(), reduction="sum").item()
+    model.train()
+    return total / (n * CTX)
 
 
-def fast_step(params, opt, data, step):
-    # BEGIN SOLUTION
-    x, y = data[0][step], data[1][step]
-    W1, b1, W2, b2 = params
-    with torch.autocast(device_type="cuda", dtype=torch.float16, enabled=(DEVICE == "cuda")):
-        h = torch.nn.functional.gelu(torch.addmm(b1, x, W1), approximate="tanh")
-        out = torch.addmm(b2, h, W2)
-    loss = ((out.float() - y) ** 2).mean()
-    loss.backward()
-    opt.step()
-    opt.zero_grad(set_to_none=True)
-    return loss.detach()
-    # END SOLUTION
+def train_run(d, batch, seed=0):
+    torch.manual_seed(seed)
+    model = GPT(len(chars), CTX, d, N_LAYER, d // 16).to(DEVICE)
+    lr = 0.4 / d
+    opt = torch.optim.AdamW(model.parameters(), lr=lr, betas=(0.9, 0.95), weight_decay=0.1)
+    steps = STEPS
+    warmup = max(1, steps // 10)
+    gen = torch.Generator().manual_seed(seed)
+    for step in range(1, steps + 1):
+        for group in opt.param_groups:
+            group["lr"] = lr * min(1.0, step / warmup) * (0.1 + 0.45 * (1 + math.cos(math.pi * step / steps)))
+        ix = torch.randint(len(train_data) - CTX - 1, (batch,), generator=gen)
+        x = torch.stack([train_data[i:i + CTX] for i in ix]).to(DEVICE)
+        y = torch.stack([train_data[i + 1:i + CTX + 1] for i in ix]).to(DEVICE)
+        loss = F.cross_entropy(model(x).flatten(0, 1), y.flatten())
+        opt.zero_grad(set_to_none=True)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+        opt.step()
+    N = non_embedding_params(model)
+    D = steps * batch * CTX
+    return {"d": d, "batch": batch, "N": N, "D": D, "C": 6 * N * D, "loss": val_loss(model)}
 
-
-data = prepare(STEPS)
-P = make_params()
-opt = make_optimizer(P)
-fast_losses = [float(v) for v in [fast_step(P, opt, data, s) for s in range(STEPS)]]
-P = make_params()
-opt = make_optimizer(P)
-for s in range(2):
-    fast_step(P, opt, data, s)
-sync()
-t0 = time.perf_counter()
-for s in range(STEPS):
-    fast_step(P, opt, data, s)
-sync()
-fast_time = (time.perf_counter() - t0) / STEPS
-speedup = slow_time / fast_time
-print(f"fast step: {fast_time * 1e3:.2f} ms, speedup {speedup:.1f}x")
-print("largest loss difference:", max(abs(a - b) for a, b in zip(slow_losses, fast_losses)))
-
-P = make_params()
-opt = make_optimizer(P)
-with profile(activities=ACTIVITIES) as prof_fast:
-    for s in range(3):
-        fast_step(P, opt, data, s)
-    sync()
-print(prof_fast.key_averages().table(sort_by=SORT, row_limit=12))
-fast_kernels = kernel_count(prof_fast, 3)
-print("per step:", fast_kernels)
 
 # %% [markdown]
-# ## 5. Report
+# ## 4. The sweep
 #
-# In at least 80 words: what the profiler showed in the slow step (where the time went, how many
-# kernels ran), each change you made and why it helps, and your measured speedup.
+# Twenty runs: every width at every token budget. The largest budget is about four epochs of the
+# training text, the limit beyond which repeated data loses value quickly (L11 exercise 10).
+
+# %%
+runs = []
+t0 = time.time()
+for d in CFG["widths"]:
+    for batch in CFG["batches"]:
+        runs.append(train_run(d, batch))
+        r = runs[-1]
+        print(f"d = {d:3d}: N = {r['N']:>8,}  D = {r['D']:>9,}  C = {r['C']:.2e}  loss {r['loss']:.4f}  ({time.time() - t0:.0f} s)")
+N = np.array([r["N"] for r in runs], dtype=float)
+D = np.array([r["D"] for r in runs], dtype=float)
+L = np.array([r["loss"] for r in runs])
+
+# %% [markdown]
+# ## 5. Fit the scaling law
+#
+# Fit $L = E + A N^{-\alpha} + B D^{-\beta}$ to the twenty runs the way you did in exercise 5:
+# for fixed exponents, $(E, A, B)$ follow from least squares on the relative errors; search
+# $\alpha, \beta$ over 0.02, 0.04, ..., 1.50, then over a grid ten times finer within 0.02 of the
+# best pair. One change: a loss floor below zero means nothing, so `fit_for_exponents` refits with
+# $E = 0$ whenever the free solve gives $E < 0$. Return a dictionary with keys `E, A, B, alpha, beta`.
+
+# %%
+def law(N, D, E, A, B, alpha, beta):
+    return E + A * N ** -alpha + B * D ** -beta
+
+
+def fit_for_exponents(alpha, beta, N, D, L):
+    X = np.stack([np.ones_like(N), N ** -alpha, D ** -beta], axis=1) / L[:, None]
+    coef = np.linalg.lstsq(X, np.ones_like(L), rcond=None)[0]
+    if coef[0] < 0:
+        coef = np.r_[0.0, np.linalg.lstsq(X[:, 1:], np.ones_like(L), rcond=None)[0]]
+    r = X @ coef - 1
+    return coef[0], coef[1], coef[2], float(r @ r)
+
+
+def fit_parametric(N, D, L):
+    # BEGIN SOLUTION
+    def search(alphas, betas, best):
+        for a in alphas:
+            for b in betas:
+                fit = fit_for_exponents(a, b, N, D, L)
+                if best is None or fit[3] < best[0]:
+                    best = (fit[3], a, b, fit)
+        return best
+
+    coarse = np.arange(0.02, 1.501, 0.02)
+    best = search(coarse, coarse, None)
+    fine = np.arange(-0.02, 0.0201, 0.002)
+    best = search(best[1] + fine, best[2] + fine, best)
+    _, a, b, (E, A, B, _) = best
+    return {"E": E, "A": A, "B": B, "alpha": a, "beta": b}
+    # END SOLUTION
+
+
+fit = fit_parametric(N, D, L)
+pred = law(N, D, **fit)
+fit_rmse = float(np.sqrt(np.mean((pred / L - 1) ** 2)))
+print("fit:", {k: round(float(v), 4) for k, v in fit.items()}, f"relative RMS error {fit_rmse:.2%}")
+
+# %% [markdown]
+# ## 6. The compute-optimal frontier, with and without enough data
+#
+# From the fit, the best split of a budget $C = 6ND$ is
+# $N^* = G (C/6)^{\beta/(\alpha+\beta)}$ with $G = (\alpha A / \beta B)^{1/(\alpha+\beta)}$ (L11,
+# section 3). Write `optimal_allocation(C, fit)` returning $(N^*, D^*, L^*)$. But the corpus is
+# finite: at most `D_MAX` tokens (four epochs). Write `constrained_allocation(C, fit, d_max)`, which
+# uses the unconstrained optimum when $D^* \le$ `d_max` and otherwise spends the budget on
+# parameters, $D = $ `d_max`, $N = C / (6\,$`d_max`$)$, since the loss falls in both $N$ and $D$.
+
+# %%
+D_MAX = max(r["D"] for r in runs)
+
+
+def optimal_allocation(C, fit):
+    # BEGIN SOLUTION
+    a, b = fit["alpha"], fit["beta"]
+    G = (a * fit["A"] / (b * fit["B"])) ** (1 / (a + b))
+    n = G * (C / 6) ** (b / (a + b))
+    d_ = C / (6 * n)
+    return n, d_, law(n, d_, **fit)
+    # END SOLUTION
+
+
+def constrained_allocation(C, fit, d_max):
+    # BEGIN SOLUTION
+    n, d_, l = optimal_allocation(C, fit)
+    if d_ <= d_max:
+        return n, d_, l
+    n = C / (6 * d_max)
+    return n, d_max, law(n, d_max, **fit)
+    # END SOLUTION
+
+
+budgets = np.logspace(np.log10(min(r["C"] for r in runs)), np.log10(max(r["C"] for r in runs)), 5)
+exponent_N = fit["beta"] / (fit["alpha"] + fit["beta"])
+print(f"unconstrained: N* grows as C^{exponent_N:.2f}")
+for c in budgets:
+    n, d_, l = optimal_allocation(c, fit)
+    nc, dc, lc = constrained_allocation(c, fit, D_MAX)
+    best_run = min((r for r in runs if r["C"] <= c * 1.05), key=lambda r: r["loss"], default=None)
+    seen = f"; best run trained at or below it: d = {best_run['d']}, D = {best_run['D']:,}, loss {best_run['loss']:.3f}" if best_run else ""
+    print(f"C = {c:.2e}: unconstrained N* = {n:,.0f} on D* = {d_:,.0f}; with D <= {D_MAX:,}: N = {nc:,.0f}, L = {lc:.3f}{seen}")
+
+# %% [markdown]
+# ## 7. Predict, then train
+#
+# The held-out model is larger than any in the sweep. Write down the fit's prediction for it at the
+# largest token budget **before** training it; the cell records the time of the prediction. Then
+# train it and compare.
+
+# %%
+HD = CFG["heldout_width"]
+probe = GPT(len(chars), CTX, HD, N_LAYER, HD // 16)
+heldout_N, heldout_D = non_embedding_params(probe), max(r["D"] for r in runs)
+prediction = float(law(heldout_N, heldout_D, **fit))
+predicted_at = time.time()
+print(f"prediction for N = {heldout_N:,}, D = {heldout_D:,}: {prediction:.4f} nats per character")
+
+# %%
+heldout_started = time.time()
+heldout = train_run(HD, max(CFG["batches"]))
+prediction_error = (prediction - heldout["loss"]) / heldout["loss"]
+print(f"held-out run: {heldout['loss']:.4f}; predicted {prediction:.4f} ({prediction_error:+.2%})")
+
+# %% [markdown]
+# ## 8. Report
+#
+# In `REPORT`, write at least 80 words: the fitted exponents and what they say about splitting a
+# budget, how close the prediction was, and one reason a fit on this sweep could mislead at much
+# larger scale.
 
 # %%
 # BEGIN SOLUTION -> REPORT = """Write your report here."""
-REPORT = """
-The profiler showed that the slow step spent most of its time outside the GPU's arithmetic: every
-step generated its batch with NumPy on the CPU, converted it from float64, copied it from pageable
-memory, launched eight separate elementwise kernels for the GELU in the forward pass and more in the
-backward pass, updated the four parameters with separate small kernels, and called .item(), which
-made the CPU wait for the GPU at the end of every step. The fast step moves all batches to the device
-once before training, uses the fused tanh GELU and addmm so bias, matmul and activation take fewer
-kernels, runs the matrix products in fp16 under autocast on the tensor cores, updates the parameters
-with a foreach SGD, and returns the loss as a tensor so the CPU keeps queueing work. The losses
-agree with the slow step to within fp16 rounding, and the measured speedup is printed above.
-"""
+big = optimal_allocation(budgets[-1], fit)
+frontier_text = (
+    f"Its unconstrained optimum at the largest budget is a {big[0]:,.0f}-parameter model on {big[1]:,.0f} tokens, far more than\n"
+    "the corpus holds, so with the corpus capped at four epochs the data limit binds and extra compute can only go into\n"
+    "parameters."
+    if big[1] > D_MAX
+    else f"On the frontier N* grows as C^{exponent_N:.2f}, and within this sweep the corpus holds enough tokens for the optimum."
+)
+REPORT = f"""The fit gives alpha = {fit['alpha']:.2f} for parameters and beta = {fit['beta']:.2f} for tokens, with an
+irreducible loss E = {fit['E']:.2f} nats per character and a relative RMS error of {fit_rmse:.1%} over {len(runs)} runs.
+{frontier_text}
+I predicted {prediction:.3f} for the held-out model before training it and measured {heldout['loss']:.3f},
+an error of {prediction_error:+.1%}. The fit could mislead at much larger scale: these runs are early in training,
+where the loss still falls roughly linearly in the logarithm of the tokens, so the floor is not determined
+({'the fit puts it at zero' if fit['E'] < 1e-9 else 'the fitted value is a weak constraint'}) and the exponents describe this regime only. The sweep also covers at most four epochs
+of one small corpus, and the learning-rate rule was not tuned per size. A bootstrap over the runs would show how
+wide the uncertainty of the exponents is."""
 # END SOLUTION
+print(REPORT)

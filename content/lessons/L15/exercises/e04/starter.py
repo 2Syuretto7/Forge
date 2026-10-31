@@ -1,13 +1,15 @@
 import numpy as np
 
 
-def huber(r, delta):
-    """Elementwise Huber loss and its derivative: r^2 / 2 for |r| <= delta, linear beyond."""
+def detect_spikes(losses, window, k):
+    """1-based steps whose loss exceeds the mean of the previous `window` losses by more than k of
+    their standard deviations (a non-finite loss always counts). Steps before a full window are
+    never flagged."""
     raise NotImplementedError
 
 
-def hoffmann_objective(theta, N, D, L, delta=1e-3):
-    """theta = (a, b, e, alpha, beta), with A = exp(a), B = exp(b), E = exp(e). The predicted log
-    loss is LSE(a - alpha log N, b - beta log D, e); return the sum over runs of
-    huber(predicted - log L, delta) and its gradient with respect to theta."""
+def rollback_point(flagged_step, checkpoint_every):
+    """The loss at step s is measured before update s, so update s - 1 may already be damaged:
+    return the last checkpoint step saved before it (checkpoints are saved after steps
+    checkpoint_every, 2 checkpoint_every, ...; step 0 is the initialization)."""
     raise NotImplementedError

@@ -1,8 +1,8 @@
-# Build: an MLP with a hand-written backward pass
+# Build: models of GPU cost
 
-Seven exercises, built in the order you would build a library: one module per layer type, each with its own gradient check, then the whole network, then a dataset and a training loop. Four exercises include gradient checks; a mistake in any layer shows up there first.
+These exercises turn the derivation into small tools you can apply to any kernel. They run in the browser; the measurements come in the Colab notebook.
 
-## Layers
+## Counting and the roofline
 
 :::exercise{ref=e01}
 :::
@@ -10,23 +10,28 @@ Seven exercises, built in the order you would build a library: one module per la
 :::exercise{ref=e02}
 :::
 
+## Tiling and occupancy
+
 :::exercise{ref=e03}
 :::
-
-## The network
 
 :::exercise{ref=e04}
 :::
 
-::::predict{id=p3 kind=numeric answer=0.000001 tol=0.00002}
-Your MLP's backward pass is correct. You check the gradient of $W_1$ with central differences at $h = 10^{-6}$ in float64 and compute the relative error. Roughly what value do you expect, to within an order of magnitude? Enter it as a decimal (the accepted range is generous).
+::::predict{id=p3 kind=choice answer=b}
+A kernel uses blocks of 256 threads and 128 registers per thread on a T4 SM (65536 registers, at most 32 warps). What is its occupancy?
+
+- 100 percent.
+- 50 percent.
+- 25 percent.
+- 12.5 percent.
 
 :::reveal
-Values around $10^{-8}$ to $10^{-10}$ are typical for a correct gradient of a smooth network; ReLU kinks near the test point can push it toward $10^{-6}$. Anything near $10^{-3}$ or larger means a bug. The tests in this course use $10^{-5}$ as the cutoff.
+Each block needs $256 \cdot 128 = 32768$ registers, so only two blocks fit: 16 warps of the possible 32, an occupancy of 50 percent. Heavy register use is the most common occupancy limiter, and it is often worth it: registers are where tiled kernels keep their reused values.
 :::
 ::::
 
-## Data and training
+## Fusion and the backward pass
 
 :::exercise{ref=e05}
 :::

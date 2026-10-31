@@ -1,13 +1,17 @@
 import numpy as np
 
 
-def residual_rms(depth, alpha, branch="linear", width=256, batch=256, seed=0):
-    """h <- h + alpha * F(h) with fresh weights per layer, from unit-normal h, where F(h) = h W with
-    W ~ N(0, 1/width) ("linear") or relu(h W) with He-initialized W ("relu").
-    Return the RMS of h before the first layer and after each layer (depth + 1 numbers)."""
+def train_val_split(ids, frac=0.9):
+    """The first frac of the tokens for training, the rest for validation (never shuffled across)."""
     raise NotImplementedError
 
 
-def predicted_growth(depth, alpha):
-    """RMS(h_depth) / RMS(h_0) when each layer multiplies the second moment by 1 + alpha^2."""
+def get_batch(ids, ctx, batch, rng):
+    """batch random windows: x[b] = ids[s:s + ctx] and y[b] = ids[s + 1:s + ctx + 1], with starts
+    drawn by rng.integers(0, len(ids) - ctx, size=batch)."""
+    raise NotImplementedError
+
+
+def tokens_per_epoch(n_tokens, ctx, batch):
+    """Training steps per pass over the data, if every window position is used once: n / (ctx * batch)."""
     raise NotImplementedError

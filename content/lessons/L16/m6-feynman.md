@@ -1,10 +1,11 @@
-# Explain it plainly: from a crawl to training data
+# Explain it plainly: adapting a pretrained model
 
-Explain to a new engineer what happens between a raw web crawl and the token stream a model trains on, and why each step matters.
+Explain to an engineer how to adapt a pretrained language model to follow instructions cheaply, and what can go wrong.
 
 - Write 150 to 400 words.
-- Cover deduplication (including how near-duplicates are found without comparing every pair), quality filtering and decontamination.
-- Give one way a careless pipeline makes a model look better than it is.
+- Explain the fine-tuning loss and why the prompt is masked.
+- Explain LoRA and why a low-rank update is usually enough.
+- Explain forgetting and how to measure and limit it, and mention distillation.
 
-:::feynman{id=f1 prompt="Explain the steps that turn a raw web crawl into training data, including how near-duplicates are found efficiently, and one way a careless pipeline can make a model look better than it is." key_points="Exact duplicates are removed by hashing normalized documents, and repeated boilerplate lines are stripped|Near-duplicates are found with MinHash signatures, whose agreement rate estimates Jaccard similarity of shingle sets|Locality-sensitive hashing with bands makes only likely pairs candidates, avoiding comparing every pair|Quality filters use rules or a classifier trained against reference text, and a classifier can remove good text unlike its reference|Evaluation text leaking into training data inflates scores, so training data is decontaminated with n-gram overlap against evaluation sets"}
+:::feynman{id=f1 prompt="Explain how supervised fine-tuning and LoRA adapt a pretrained language model to instructions, why a low-rank update is usually enough, and how forgetting is measured and limited; mention distillation." key_points="Supervised fine-tuning maximizes the likelihood of the response given the prompt, with the prompt tokens masked out of the loss|Fine-tuning moves the weights away from the pretrained solution, raising the loss on the original data, which must be measured on a base evaluation|LoRA freezes the weights and learns a low-rank update B A, starting from zero, training far fewer parameters and merging into the weights afterwards|Fine-tuning updates have quickly decaying singular values, so a low rank captures most of the update, as the truncated SVD shows|Distillation trains a small model on a large model's softened output distribution, which carries more information than the correct answer alone"}
 :::

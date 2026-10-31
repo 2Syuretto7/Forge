@@ -1,7 +1,17 @@
 import numpy as np
 
 
-def rope(X, positions, base=10000.0):
-    """Rotate each pair of features (2i, 2i+1) of row p by the angle p * theta_i, with
-    theta_i = base^(-2i/d). X has shape (n, d) with d even; positions has shape (n,)."""
+def round_down_up(x, step):
+    """The two grid points around x on a grid of spacing `step`."""
+    raise NotImplementedError
+
+
+def stochastic_round(x, step, rng):
+    """Round x to lo or hi = lo + step, choosing hi with probability (x - lo) / step."""
+    raise NotImplementedError
+
+
+def accumulate(w0, update, n, step, mode, rng=None):
+    """Apply w <- round(w + update) n times on a grid of spacing `step`, with round-to-nearest or
+    stochastic rounding."""
     raise NotImplementedError

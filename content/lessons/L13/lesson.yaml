@@ -1,42 +1,36 @@
 id: L13
-hours: 11
-capstone: "Train a two-layer transformer on character-level Shakespeare (public domain) to a validation loss below 1.70 nats per character"
-teaser: "Derive attention as a soft lookup, build multi-head attention and its backward pass by hand, then train a small transformer on Shakespeare."
+hours: 7
+capstone: "The GPT trained with fp16 automatic mixed precision and loss scaling, matching the fp32 loss with a measured speedup and lower memory on a T4"
+teaser: "What fp32, bf16, fp16 and fp8 can and cannot represent, and how mixed precision with loss scaling trains just as well, faster."
 movements:
-  - {file: m0-recall.md,     mode: theory,   minutes: 30}
-  - {file: m1-puzzle.md,     mode: theory,   minutes: 45}
-  - {file: m2-derivation.md, mode: theory,   minutes: 200}
-  - {file: m3-build.md,      mode: practice, minutes: 170}
-  - {file: m4-scale.md,      mode: practice, minutes: 60}
-  - {file: m5-break.md,      mode: both,     minutes: 50}
-  - {file: m6-feynman.md,    mode: theory,   minutes: 30}
-  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+  - {file: m0-recall.md,     mode: theory,   minutes: 20}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 30}
+  - {file: m2-derivation.md, mode: theory,   minutes: 130}
+  - {file: m3-build.md,      mode: practice, minutes: 110}
+  - {file: m4-scale.md,      mode: practice, minutes: 45}
+  - {file: m5-break.md,      mode: both,     minutes: 35}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 20}
+  - {file: m7-capstone.md,   mode: practice, minutes: 30}
 hooks:
-  - {to: L12, text: "The softmax over the score matrix becomes one fused kernel: FlashAttention."}
-  - {to: L14, text: "Add a tokenizer, a data pipeline and sampling, and this model becomes a GPT."}
-  - {to: L20, text: "Fine-tuning methods such as LoRA adapt exactly these projection matrices."}
-  - {to: L22, text: "At inference the keys and values of past tokens are cached instead of recomputed."}
-  - {to: L23, text: "Individual attention heads implement recognizable algorithms, such as copying the token after a match."}
+  - {to: L14, text: "Sixteen bytes per parameter for weights, gradients and Adam state is the budget distributed training splits across GPUs."}
+  - {to: L18, text: "Inference goes further: int8 and fp8 weights, and low-precision caches of keys and values."}
+  - {to: L10, text: "The GPT you train in L10 runs faster in mixed precision with the same loss."}
 reuses:
-  - {from: M10, concept: "dot products as similarity and matrix products"}
-  - {from: L05, concept: "the softmax and its Jacobian"}
-  - {from: L07, concept: "backpropagation through matrix products"}
-  - {from: L10, concept: "pre-norm residual blocks"}
-  - {from: L11, concept: "arithmetic intensity and the roofline"}
+  - {from: L07, concept: "tensor cores and the roofline"}
 annotations:
-  - {target: L05, movement: m2-derivation, anchor: "Softmax regression for many classes", text: "The same softmax turns attention scores into weights over positions in L13."}
-  - {target: L10, movement: m2-derivation, anchor: "Pre-norm and post-norm", text: "Every transformer block in L13 is this pre-norm residual block, with attention as one branch and an MLP as the other."}
+  - {target: L07, movement: m2-derivation, anchor: "Arithmetic intensity and the roofline", text: "Half precision raises both roofs, the compute roof eightfold on a T4; L13 makes it numerically safe."}
+  - {target: L09, movement: m2-derivation, anchor: "Why divide by the square root of the dimension", text: "In fp16 the scale matters for range too: scores above about 11 overflow the exponential, and large unscaled dot products overflow outright (L13)."}
 concepts:
-  - q: "What does an attention layer compute for one query?"
-    a: "A weighted average of value vectors, with weights given by the softmax of the query's dot products with every key."
-  - q: "Why are attention scores divided by the square root of the head dimension?"
-    a: "With unit-variance entries a dot product of length d has variance d; dividing by sqrt(d) keeps the scores at unit scale, so the softmax does not saturate and its gradient does not vanish."
-  - q: "How does a causal mask work, and why does it allow training on every position at once?"
-    a: "Scores for keys after the query are set to minus infinity before the softmax, so each position attends only to itself and the past; every position's next-token prediction is then a valid training example in a single forward pass."
-  - q: "Why does a transformer need positional information?"
-    a: "Attention without positions is permutation-equivariant: shuffling the inputs shuffles the outputs the same way, so the model cannot tell word order."
-  - q: "What property makes rotary position embeddings useful?"
-    a: "Rotating queries and keys by angles proportional to their positions makes their dot product depend only on the difference of the positions."
-  - q: "About how many parameters does one transformer block with model width d have?"
-    a: "About 12 d^2: 4 d^2 in the attention projections and 8 d^2 in the MLP with hidden width 4d."
-katas: [e01, e02, e07]
+  - q: "How do bf16 and fp16 differ?"
+    a: "Both use 16 bits; bf16 keeps fp32's 8 exponent bits (same range, about 3 significant digits) while fp16 has 5 exponent bits and 10 mantissa bits (more precision, but a maximum of 65504 and early underflow)."
+  - q: "Why does mixed-precision training keep fp32 master weights?"
+    a: "Updates are often smaller than the spacing between half-precision numbers near the weight's value, so applied directly to fp16 weights they round away; an fp32 copy accumulates them."
+  - q: "What does loss scaling do?"
+    a: "It multiplies the loss by a large factor before the backward pass so small gradients do not underflow in fp16, then divides the gradients by the same factor before the update; dynamic scaling lowers the factor when gradients overflow."
+  - q: "Why is a long sum accumulated in fp32 even when its inputs are fp16?"
+    a: "Once the running sum is large, its spacing exceeds the small addends, which then round away; tensor cores and well-written kernels accumulate in fp32."
+  - q: "What is stochastic rounding and why is it useful?"
+    a: "Rounding up or down at random with probabilities that make the expected result exact; tiny updates then accumulate on average instead of always rounding away."
+  - q: "How many bytes per parameter does mixed-precision training with Adam need, without activations?"
+    a: "About 16: fp16 weights and gradients (2 + 2) plus fp32 master weights and two Adam moments (4 + 4 + 4)."
+katas: [e01, e04, e06]

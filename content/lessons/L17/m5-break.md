@@ -1,24 +1,22 @@
-# Break it: overflowing scores and the range-precision trade
+# Break it: hacking the reward, losing the leash
 
-## Attention logits in fp16
-
-Dot products of long vectors grow with their length and with the magnitude of their entries. In an fp16 matrix product without scaling, scores can exceed 65504 and become infinite, and an infinity in a softmax produces NaN everywhere it touches.
+## A flawed reward
 
 :::exercise{ref=e11}
 :::
 
-## bf16 or fp16?
+## No penalty
 
-::::predict{id=p5 kind=choice answer=c}
-You must store both activations as large as $10^5$ and the difference between $1.000$ and $1.001$. Which 16-bit format keeps both?
+::::predict{id=p4 kind=choice answer=d}
+You remove the KL penalty from an RL run with a reward that is correct but sparse. After many steps, the policy's entropy is:
 
-- fp16.
-- bf16.
-- Neither: fp16 overflows at $10^5$ and bf16 cannot tell 1.000 from 1.001.
-- Both.
+- Unchanged.
+- Higher, because the policy explores more.
+- Exactly that of the reference.
+- Near zero: it answers every prompt the same way, and has stopped exploring alternatives.
 
 :::reveal
-fp16's largest value is 65504, so $10^5$ overflows; bf16's spacing near 1 is about 0.0078, so 1.001 rounds to 1.000. Each 16-bit format gives up one of the two, which is why training recipes keep reductions and master weights in fp32, and why fp8 needs per-tensor scale factors.
+Policy gradients concentrate probability on whatever earned reward, and nothing pushes back. The policy collapses toward deterministic answers. This can look fine on the training reward, but diversity is gone, later training has nothing to explore, and on imperfect rewards the collapse is onto the exploit. Exercise 12 measures it.
 :::
 ::::
 
@@ -27,6 +25,7 @@ fp16's largest value is 65504, so $10^5$ overflows; bf16's spacing near 1 is abo
 
 ## What to take away
 
-- Use bf16 where the hardware supports it (no loss scaling needed); use fp16 with a dynamic loss scaler otherwise.
-- Keep master weights, optimizer state and reductions in fp32.
-- When a half-precision run produces NaN, look for an overflow first: large logits, an unscaled product, a loss scale that is too high.
+- Use a baseline: group means or a value function cut the variance of policy gradients.
+- Keep a KL penalty to the starting model, and watch KL alongside the reward.
+- Check true quality on held-out evaluations; a rising reward is not enough.
+- Prefer rewards you can verify; when you cannot, expect the policy to find the reward model's mistakes.

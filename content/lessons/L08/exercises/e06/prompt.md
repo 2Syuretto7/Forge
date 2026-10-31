@@ -1,11 +1,9 @@
-# Elementwise operations
+# FlashAttention, forward
 
-Add the elementwise operations a network needs (earlier stages provided). A helper `_unary(self, value, local, op)` is given: it creates the output and a backward rule that multiplies the incoming gradient by `local()`.
-
-Implement `_exp`, `_log`, `_relu`, `_tanh`, `_pow` (by a constant), and the derived operations `_neg`, `_sub`, `_rsub`, `_div`, `_rdiv` and `_mean(axis=None, keepdims=False)`. The derived ones need no backward rule of their own: build them from operations that already have one.
+`reference_attention(Q, K, V)` (non-causal, scaled) is provided. Implement `flash_attention(Q, K, V, Br=4, Bc=4)` exactly as the derivation describes: for each block of `Br` queries, loop over blocks of `Bc` keys and values, keeping per query a running maximum `m`, a running sum `l` and an output accumulator, rescaled by $\alpha = e^{m - m'}$ whenever the maximum grows. Never build the full $N \times N$ score matrix. Return `(O, L)`, where `L[i] = m + log(l)` is row $i$'s log-sum-exp of scores.
 
 ## Hints
 
-1. `exp`: the local derivative is the output itself; `log`: `1 / x`; `relu`: `(x > 0)`; `tanh`: `1 - t**2`; `pow`: `p * x**(p-1)`.
-2. `a - b` is `a + (-b)`; `a / b` is `a * b**-1`; `mean` is a `sum` times `1/n`.
-3. `_rsub` and `_rdiv` handle a number on the left, as in `1 - t` and `1 / t`.
+1. Initialize `m` to $-\infty$, `l` and the accumulator to zeros, per query block.
+2. Inside the loop: `s = q @ K_j.T * c`, `m_new = max(m, s.max(1))`, `p = exp(s - m_new)`, `alpha = exp(m - m_new)`.
+3. `l = l * alpha + p.sum(1)` and `acc = acc * alpha[:, None] + p @ V_j`.

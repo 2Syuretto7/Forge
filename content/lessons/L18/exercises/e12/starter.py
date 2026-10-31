@@ -1,18 +1,13 @@
 import numpy as np
 
 
-def correct_average(grad_sums, counts):
-    """Each rank holds the SUM of its examples' gradients and its example count. The full-batch
-    mean gradient is the sum over ranks divided by the total count."""
+def per_tensor_int8(W):
+    """One scale for the whole matrix (largest absolute value / 127); return dequantized weights."""
     raise NotImplementedError
 
 
-def mean_of_means(grad_sums, counts):
-    """A common bug: average the ranks' mean gradients, which weights a rank with few examples as
-    much as one with many."""
-    raise NotImplementedError
-
-
-def sum_of_means(grad_sums, counts):
-    """Another bug: all-reduce with a sum and forget to divide by the number of ranks."""
+def mixed_precision_int8(W, X, k):
+    """LLM.int8-style: the k input features (columns of W) with the largest typical activation
+    magnitude in X (mean absolute value over the rows of X) stay in full precision; the other
+    columns are quantized per output row. Return the effective weights."""
     raise NotImplementedError

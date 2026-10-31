@@ -6,7 +6,7 @@ A program that applies functions one after another, $x \to g_1(x) \to g_2(g_1(x)
 - `reverse_accumulate(chain, x)`: first run forward, storing every intermediate input; then walk backward multiplying local derivatives. Return `(value, derivative)` and make sure you call each `dg` exactly once.
 - `stored_values(chain, x)`: the list of intermediate inputs the reverse pass must remember (one per function).
 
-Both orders give the same number; reverse needs memory for the stored values. That memory is what L08 and L18 have to manage.
+Both orders give the same number; reverse needs memory for the stored values. That memory is what L04 and L14 have to manage.
 
 ## Hints
 

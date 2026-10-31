@@ -1,16 +1,13 @@
-# Capstone: a calibrated multi-class classifier
+# Capstone: an optimizer bake-off
 
-You receive a tabular dataset with eight features on wildly different scales and three classes. Build the full pipeline: split, standardize, train a regularized softmax classifier, evaluate it on held-out data, and analyze its calibration. The target is at least 87 percent test accuracy with a calibration error below 0.06.
+Race the optimizers you built on the L03 task, tune each one on a validation split, and write down a recipe that reaches at least 92 percent test accuracy within 800 steps. The L03 baseline, plain SGD at a fixed rate, reached about 90 percent.
 
 :::exercise{ref=capstone}
 :::
 
 ## When you finish
 
-You now have a complete, honest supervised learning pipeline. Every later model reuses it with a more expressive function in place of $XW + b$: L07 replaces it with a multi-layer network trained by backpropagation, L13 with a transformer. The loss, the gradient $P - Y$ at the output, the standardization, the held-out evaluation and the calibration check all stay.
+Your recipe tunes four numbers for one small network. At scale the same questions return with higher stakes: L06 adds normalization so that deep networks stay trainable, L11 asks how the best learning rate moves as models grow, and L15 shows what a learning-rate mistake costs in a long run.
 
-:::edge{to=L07 text="Replace the linear score with a learned multi-layer function and keep everything else."}
-:::
-
-:::edge{to=L06 text="Why does held-out error behave the way it does? Bias, variance and double descent."}
+:::edge{to=L06 text="Normalization keeps deep networks trainable after initialization."}
 :::

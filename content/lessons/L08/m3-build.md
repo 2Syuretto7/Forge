@@ -1,8 +1,8 @@
-# Build: a tensor autograd engine
+# Build: kernel algorithms in NumPy
 
-You will build the engine in stages. Each exercise's starter contains a working version of the previous stages, so you can always move on, but write each stage yourself before reading ahead.
+These exercises implement, in NumPy, exactly the algorithms the Triton kernels in the notebook run: the same loops over blocks, the same running statistics. Get them right here, where you can print every intermediate value.
 
-## Graph basics
+## Blocks and memory
 
 :::exercise{ref=e01}
 :::
@@ -10,42 +10,37 @@ You will build the engine in stages. Each exercise's starter contains a working 
 :::exercise{ref=e02}
 :::
 
-## A scalar engine first
-
 :::exercise{ref=e03}
 :::
-
-## Tensors
 
 :::exercise{ref=e04}
 :::
 
+## Fused normalization
+
 :::exercise{ref=e05}
 :::
+
+## FlashAttention
 
 :::exercise{ref=e06}
 :::
 
-::::predict{id=p3 kind=choice answer=a}
-You compute `loss = (x * x).sum()` with your engine and call `loss.backward()` twice without resetting gradients. What is `x.grad` compared with the true gradient $2x$?
+::::predict{id=p3 kind=choice answer=c}
+Your tiled FlashAttention processes key blocks in order $1, 2, \dots$. What happens to the output if you process them in reverse order?
 
-- $4x$: the second backward adds to the existing gradient.
-- $2x$: the second call overwrites.
-- An error: a graph can only be traversed once.
-- Zero: the second call cancels the first.
+- It changes slightly, because the running maximum is different.
+- It is wrong, because the rescaling assumes increasing positions.
+- It is the same up to floating-point rounding.
+- It is the same only without a causal mask.
 
 :::reveal
-Gradients accumulate. Your engine (like PyTorch, if you pass `retain_graph=True` so it is allowed) adds the second pass's contribution to the first. This is deliberate, because accumulation is how a tensor used in several places gets the sum of its contributions; it is also why every training step starts with `zero_grad()`.
+The merge of two online-softmax summaries is symmetric and associative: whatever order the blocks arrive in, the final $m$ is the overall maximum and $l$ and the accumulator are rescaled to it exactly. Only rounding differs. This freedom is what lets kernels split the key dimension across programs and merge the partial results.
 :::
 ::::
 
 :::exercise{ref=e07}
 :::
 
-## Modules and training
-
 :::exercise{ref=e08}
-:::
-
-:::exercise{ref=e09}
 :::

@@ -1,19 +1,24 @@
 import numpy as np
 
 
-def forward(x, Ws):
-    """h_{i+1} = tanh(h_i W_i), with h_0 = x. Return the list of all activations h_0 .. h_L."""
+def emitted_distribution(p, q):
+    """Speculative decoding's rule for one token: draw x from the draft q, accept it with
+    probability min(1, p(x)/q(x)), otherwise draw from max(0, p - q) renormalized. Return the
+    exact distribution of the emitted token."""
     raise NotImplementedError
 
 
-def backward(hs, Ws, dout):
-    """Gradients of the loss with respect to each W, given dL/dh_L = dout and all activations."""
+def acceptance_rate(p, q):
+    """The probability the draft's token is accepted: sum min(p, q) = 1 - total variation."""
     raise NotImplementedError
 
 
-def checkpointed_grads(x, Ws, dout, k):
-    """Keep only every k-th activation (h_0, h_k, h_2k, ...) in the forward pass. In backward,
-    recompute each segment's activations from its checkpoint, then backpropagate through it.
-    Return (grads, peak number of activations stored at once, counting checkpoints and one
-    recomputed segment)."""
+def acceptance_grad(p, z):
+    """The gradient of acceptance_rate(p, softmax(z)) with respect to the draft's logits z."""
+    raise NotImplementedError
+
+
+def expected_tokens(alpha, gamma):
+    """Tokens produced per target-model call when gamma draft tokens are each accepted with
+    probability alpha: (1 - alpha^(gamma + 1)) / (1 - alpha)."""
     raise NotImplementedError

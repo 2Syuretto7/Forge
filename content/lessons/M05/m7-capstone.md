@@ -6,7 +6,7 @@ Eight algorithms are provided with counters: each records how many times it perf
 2. Prove each closed form by induction: give the cost of one more step, so that the tests can check the base case and the step.
 3. Predict how each count grows when $n$ doubles, and compare with the counters.
 
-The two matrix multiplications do the same $n^3$ multiply-adds, but the blocked one loads each block once per block product. Counting loads is the first step toward the roofline model of L11, where memory traffic, not arithmetic, decides speed.
+The two matrix multiplications do the same $n^3$ multiply-adds, but the blocked one loads each block once per block product. Counting loads is the first step toward the roofline model of L07, where memory traffic, not arithmetic, decides speed.
 
 :::exercise{ref=capstone}
 :::

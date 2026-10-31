@@ -1,11 +1,12 @@
-# Attention memory and intensity
+# Predicting the speedup
 
-1. `score_bytes(batch, heads, n_ctx, bytes_per=2)`: memory of one layer's attention weights.
-2. `scores_intensity(n_ctx, d_head, bytes_per=2)`: arithmetic intensity of computing $S = QK^\top$ for one head ($2n^2d$ FLOPs, reading $Q$ and $K$, writing $S$).
-3. `max_ctx_for_memory(budget_bytes, batch, heads, bytes_per=2)`: the largest context whose attention weights for one layer fit in the budget.
+1. `amdahl_speedup(fractions, speedups)`: the overall speedup when parts of a run that take the given fractions of the original time are sped up by the given factors.
+2. `t4_part_speedups()`: the speedup bounds on a T4 for matrix products (fp32 cores to fp16 tensor cores) and for memory-bound operations (half the bytes).
+
+If 70 percent of a step is matrix products and 30 percent memory-bound work, what speedup can mixed precision give at most? Compare it with what the capstone measures.
 
 ## Hints
 
-1. The weights are a `batch x heads x n_ctx x n_ctx` array.
-2. For large $n$ the intensity approaches $2d/b$: 64 FLOP/byte for 64-dimensional fp16 heads.
-3. Solve $B h n^2 b \le \text{budget}$ for $n$ and round down.
+1. New time $= \sum_i f_i / s_i$; the speedup is its inverse.
+2. The memory-bound part limits the result: even infinitely fast matrix products leave $0.3/2$.
+3. Real tensor-core kernels reach well below their peak, so measured speedups are lower than this bound.

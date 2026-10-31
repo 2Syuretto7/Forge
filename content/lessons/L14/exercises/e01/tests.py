@@ -1,18 +1,19 @@
 import sub
 
 
-def test_bytes_roundtrip():
-    for s in ["hello", "naïve café", "東京", ""]:
-        b = sub.to_bytes(s)
-        assert all(0 <= v < 256 for v in b) and sub.from_bytes(b) == s
-    assert len(sub.to_bytes("é")) == 2 and len(sub.to_bytes("東")) == 3
+def test_zero_figure_one():
+    def total(z):
+        return sum(sub.model_state_bytes(7.5e9, z, 64).values()) / 1e9
+    assert abs(total(0) - 120) < 1e-9
+    assert abs(total(1) - 31.40625) < 1e-9
+    assert abs(total(2) - 16.640625) < 1e-9
+    assert abs(total(3) - 1.875) < 1e-9
 
 
-def test_pairs_and_merge():
-    ids = sub.to_bytes("aaabdaaabac")
-    c = sub.count_pairs(ids)
-    a, b = ord("a"), ord("b")
-    assert c[(a, a)] == 4 and c[(a, b)] == 2 and list(c)[0] == (a, a)
-    m = sub.merge(ids, (a, a), 256)
-    assert len(m) == 9 and m[:3] == [256, a, b]
-    assert sub.merge([1, 1, 1], (1, 1), 9) == [9, 1]
+def test_activations():
+    full = sub.activation_bytes(2048, 1, 12288, 96, 96)
+    assert full == 96 * 2048 * 12288 * (34 + 80)
+    assert sub.activation_bytes(2048, 1, 12288, 96, 96, tp=8, flash=True) == 96 * 2048 * 12288 * 34 / 8
+    ck = sub.activation_bytes(2048, 1, 12288, 96, 96, checkpoint=True)
+    assert ck == 96 * 2 * 2048 * 12288 + 2048 * 12288 * 114
+    assert ck < full / 30

@@ -1,13 +1,12 @@
-# Learning-rate schedules
+# Positions: equivariance and sinusoidal encodings
 
-Implement three schedules as functions of the step $t$ (counted from 1). All three ramp linearly from 0 to `peak` over the first `warmup` steps (rate `peak * t / warmup` while `t < warmup`), then:
+1. `sinusoidal(n, d, base=10000.0)`: the `(n, d)` table with $\text{PE}_{p, 2i} = \sin(p / \text{base}^{2i/d})$ and $\text{PE}_{p, 2i+1} = \cos(p / \text{base}^{2i/d})$.
+2. `is_permutation_equivariant(f, X, perm)`: whether `f(X[perm])` equals `f(X)[perm]` to within `1e-9`.
 
-1. `warmup_cosine(t, total, warmup, peak, floor=0.0)`: cosine decay from `peak` at `t = warmup` to `floor` at `t = total`, as in the derivation; stay at `floor` after `total`.
-2. `warmup_linear(t, total, warmup, peak)`: linear decay to zero at `total`.
-3. `inverse_sqrt(t, warmup, peak)`: `peak * sqrt(warmup / t)`, the schedule of the original transformer paper.
+Then check: attention without a mask is permutation-equivariant; adding sinusoidal encodings to the input before attention breaks it; and the causal mask also breaks it (it depends on order).
 
 ## Hints
 
-1. The cosine phase uses the progress $p = (t - W)/(T - W)$ and the rate $\eta_{\min} + \tfrac12(\eta_{\max} - \eta_{\min})(1 + \cos \pi p)$.
-2. Clamp the progress at 1 so the rate stays at the floor after `total`.
-3. Check continuity: every schedule must give exactly `peak` at `t = warmup`.
+1. Build the angles as an outer product of positions `(n, 1)` and frequencies `(1, d/2)`.
+2. Fill even and odd columns with slices `0::2` and `1::2`.
+3. `np.allclose(a, b, atol=1e-9)`.

@@ -1,24 +1,24 @@
-# Break it: a saturated softmax and a mask that leaks
+# Break it: overflowing scores and the range-precision trade
 
-## Forgetting the scale
+## Attention logits in fp16
+
+Dot products of long vectors grow with their length and with the magnitude of their entries. In an fp16 matrix product without scaling, scores can exceed 65504 and become infinite, and an infinity in a softmax produces NaN everywhere it touches.
 
 :::exercise{ref=e11}
 :::
 
-## An off-by-one mask
+## bf16 or fp16?
 
-The most dangerous transformer bug produces a model that looks excellent in training. If the causal mask lets position $i$ see position $i + 1$, the model can read the token it is supposed to predict; the training loss falls far below anything achievable, and generation, where the next token does not exist yet, produces garbage.
+::::predict{id=p5 kind=choice answer=c}
+You must store both activations as large as $10^5$ and the difference between $1.000$ and $1.001$. Which 16-bit format keeps both?
 
-::::predict{id=p5 kind=choice answer=d}
-How can you detect a leaking mask without training anything?
-
-- Check that every row of attention weights sums to 1.
-- Check the loss after one step.
-- Count the masked entries.
-- Change the input at one position and check that no output at an earlier position changes.
+- fp16.
+- bf16.
+- Neither: fp16 overflows at $10^5$ and bf16 cannot tell 1.000 from 1.001.
+- Both.
 
 :::reveal
-Causality is a statement about dependence: the output at position $t$ must not depend on inputs after $t$. Perturbing one position and checking earlier outputs tests exactly that, for any implementation, without trusting how the mask was built. Row sums and counts can look right with the diagonal in the wrong place.
+fp16's largest value is 65504, so $10^5$ overflows; bf16's spacing near 1 is about 0.0078, so 1.001 rounds to 1.000. Each 16-bit format gives up one of the two, which is why training recipes keep reductions and master weights in fp32, and why fp8 needs per-tensor scale factors.
 :::
 ::::
 
@@ -27,6 +27,6 @@ Causality is a statement about dependence: the output at position $t$ must not d
 
 ## What to take away
 
-- Always scale scores by $1/\sqrt{d_k}$; watch for weights near one-hot early in training.
-- Test causality by perturbation, not by inspecting the mask.
-- When a model's training loss is suspiciously good, look for a leak before celebrating.
+- Use bf16 where the hardware supports it (no loss scaling needed); use fp16 with a dynamic loss scaler otherwise.
+- Keep master weights, optimizer state and reductions in fp32.
+- When a half-precision run produces NaN, look for an overflow first: large logits, an unscaled product, a loss scale that is too high.

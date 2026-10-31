@@ -1,25 +1,27 @@
-# Scale and measure: the threshold, in numbers
+# Scale and measure: training at depth
 
-Two experiments test Section 5's claims directly: the smallest singular value of a random design collapses at $p = n$, and the variance of the fitted weights follows the two exact formulas on either side. Then a learning curve shows how error falls with more data.
+Statistics at initialization predict trouble; training confirms it. These exercises train 20- and 30-layer stacks on the L03 digits with Adam.
+
+::::predict{id=p4 kind=choice answer=a}
+Train a 20-layer residual stack without normalization, with He-initialized branches, using Adam for 300 steps. What happens?
+
+- It barely trains: the forward pass is already enormous at initialization.
+- It trains as well as the pre-norm stack, because the skip connections carry the gradient.
+- It trains slowly but steadily.
+- It trains better than the pre-norm stack, because there is no normalization to slow it down.
+
+:::reveal
+At initialization the stream is about 20,000 times larger at the top than at the bottom, the logits are enormous, and the loss starts near 30,000; after 300 Adam steps it is still above 3, worse than guessing uniformly ($\ln 10 \approx 2.3$). Scaling every branch by $1/\sqrt{20}$, with no normalization at all, is enough to make the same network train: exercise 9.
+:::
+::::
 
 :::exercise{ref=e08}
 :::
 
-::::predict{id=p3 kind=numeric answer=18 tol=3}
-Noise only ($y = \epsilon$, $\sigma^2 = 1$), $n = 20$ standard Gaussian points, $p = 18$ standard Gaussian features, least squares. What is the expected squared norm of the fitted weights?
-
-:::reveal
-$\sigma^2 p/(n - p - 1) = 18/(20 - 18 - 1) = 18$. Two more features and the formula's denominator would hit zero. The exercise below checks the formula by simulation on both sides of the threshold.
-:::
-::::
-
 :::exercise{ref=e09}
 :::
 
-:::exercise{ref=e13}
-:::
+## Batch statistics
 
-:::widget{name=DistributionPlayground dist=gaussian mu=0 sigma=1 n=5}
+:::exercise{ref=e10}
 :::
-
-Draw several samples of size 5 in the widget and watch the fitted curve move: that movement, from one training set to the next, is what the variance term measures. Raise $n$ and the fit stops moving.

@@ -1,6 +1,6 @@
-# Capstone: train a transformer on Shakespeare
+# Capstone: the GPT in mixed precision
 
-In the notebook, write causal multi-head attention, the pre-norm block and the model in PyTorch, check your attention against PyTorch's fused implementation, check causality by perturbation, and train a two-layer model on about a megabyte of Shakespeare to a validation loss below 1.70 nats per character. With the reference settings this takes about a minute on a T4.
+In the notebook, read the formats' limits from `torch.finfo`, then train the same GPT twice from identical weights: once in fp32 and once with `torch.autocast` in fp16 and a `GradScaler`. The final losses must agree within 3 percent, and on a T4 the mixed-precision run must be at least 1.5 times faster and use less memory.
 
 :::exercise{ref=capstone}
 :::
@@ -10,13 +10,7 @@ In the notebook, write causal multi-head attention, the pre-norm block and the m
 
 ## When you finish
 
-Your model reads characters. L14 builds a byte-pair tokenizer, a proper data pipeline and sampling controls, and turns the same architecture into a small GPT; L12 rewrites its attention as one fused kernel.
+Sixteen bytes per parameter, and activations on top, will not fit one GPU for a large model. L14 splits them across many.
 
-:::edge{to=L14 text="Add a tokenizer and a data pipeline: a GPT from scratch."}
-:::
-
-:::edge{to=L20 text="Fine-tuning adapts these projection matrices."}
-:::
-
-:::edge{to=L23 text="What individual heads learn to do."}
+:::edge{to=L14 text="Split the 16 bytes per parameter across GPUs."}
 :::

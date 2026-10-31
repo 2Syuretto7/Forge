@@ -113,12 +113,12 @@ For $g: \mathbb{R} \to \mathbb{R}^{1000}$, the full Jacobian needs 1 forward pas
 :::
 ::::
 
-Reverse mode pays in memory: every intermediate value used by a backward step must be stored or recomputed. Activation memory is the main constraint on training large models (L18), and checkpointing trades it for recomputation.
+Reverse mode pays in memory: every intermediate value used by a backward step must be stored or recomputed. Activation memory is the main constraint on training large models (L14), and checkpointing trades it for recomputation.
 
-:::edge{to=L07 text="backpropagation is reverse mode applied to a network's layers."}
+:::edge{to=L03 text="backpropagation is reverse mode applied to a network's layers."}
 :::
 
-:::edge{to=L08 text="an autograd engine for tensors, built from these VJPs."}
+:::edge{to=L04 text="an autograd engine for tensors, built from these VJPs."}
 :::
 
 :::edge{to=M26 text="automatic differentiation has no step size and no truncation error; finite differences have both."}

@@ -1,31 +1,29 @@
 import numpy as np
 import sub
 
-D = np.diag(np.linspace(1.0, 100.0, 20))
-grad = lambda x: D @ x
-x0 = np.ones(20)
+rng = np.random.default_rng(3)
 
 
-def test_beta_zero_is_gd():
-    assert np.allclose(sub.heavy_ball(grad, x0, 0.01, 0.0, 30), sub.gd(grad, x0, 0.01, 30))
+def _check(causal):
+    Q, K, V = rng.normal(size=(5, 4)), rng.normal(size=(5, 4)), rng.normal(size=(5, 3))
+    G = rng.normal(size=(5, 3))
+    O, P = sub.attention(Q, K, V, causal=causal)
+    grads = sub.attention_backward(G, Q, K, V, P)
+    f = lambda Q, K, V: float(np.sum(sub.attention(Q, K, V, causal=causal)[0] * G))
+    for pos, (arr, g) in enumerate(zip((Q, K, V), grads)):
+        num = np.zeros_like(arr)
+        for idx in np.ndindex(arr.shape):
+            args = [Q.copy(), K.copy(), V.copy()]
+            args[pos][idx] += 1e-6
+            fp = f(*args)
+            args[pos][idx] -= 2e-6
+            num[idx] = (fp - f(*args)) / 2e-6
+        assert np.allclose(g, num, atol=1e-7), (causal, pos)
 
 
-def test_two_steps():
-    xs = sub.heavy_ball(grad, x0, 0.01, 0.5, 2)
-    v1 = grad(x0)
-    x1 = x0 - 0.01 * v1
-    v2 = 0.5 * v1 + grad(x1)
-    assert np.allclose(xs[1], x1) and np.allclose(xs[2], x1 - 0.01 * v2)
+def test_grad_causal():
+    _check(True)
 
 
-def test_tuned_values():
-    lr, beta = sub.tuned_heavy_ball(np.diag([1.0, 100.0]))
-    assert abs(lr - 4 / 121) < 1e-12 and abs(beta - (9 / 11) ** 2) < 1e-12
-
-
-def test_faster_than_gd():
-    lr, beta = sub.tuned_heavy_ball(D)
-    hb = np.linalg.norm(sub.heavy_ball(grad, x0, lr, beta, 100)[-1])
-    plain = np.linalg.norm(sub.gd(grad, x0, 2 / 101, 100)[-1])
-    assert hb < 1e-5, hb
-    assert plain > 0.1, plain
+def test_grad_full():
+    _check(False)

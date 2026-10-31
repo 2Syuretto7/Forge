@@ -1,13 +1,11 @@
 import numpy as np
 
 
-def ols(X, y):
+def quad_fg(A, b, x):
+    """f(x) = 0.5 x^T A x - b^T x and its gradient, for symmetric A."""
     raise NotImplementedError
 
 
-def gaussian_nll(w, sigma, X, y):
-    raise NotImplementedError
-
-
-def noise_mle(X, y, w):
+def gd(grad, x0, lr, steps):
+    """Gradient descent from x0. Return all iterates, shape (steps + 1, d)."""
     raise NotImplementedError

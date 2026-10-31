@@ -1,13 +1,12 @@
-# Break it: fitting too narrow a range
+# Break it: a resume that changes the data order
 
-You have compute-optimal runs between $10^{18}$ and $10^{21}$ FLOPs and want the loss at $10^{24}$. The true frontier is $L^*(C) = E + K C^{-\gamma}$, which curves in log-log coordinates as it approaches $E$.
+`batch_ids(seed, epoch, n, batch_size)` gives an epoch's batches as tuples of example ids. `buggy_resume` shows a common mistake: after a restart in the middle of an epoch it starts that epoch over, so the run sees the epoch's first batches twice and the rest of the data at different steps than the original run.
 
-1. `fit_pure(C, L)`: the pure power law $L = k C^{-g}$, by a log-log line.
-2. `fit_floor(C, L, grid=400)`: $L = E + k C^{-g}$: for each $E$ in `np.linspace(0, min(L) * (1 - 1e-6), grid + 1)`, fit $\log(L - E)$ by a line and keep the $E$ with the smallest squared error. Return $(E, k, g)$.
-3. `extrapolation_errors(C, L, target_C, target_L)`: the relative errors (prediction / truth − 1) of both fits at `target_C`.
+1. `stream(seed, epoch, batch_index, n, batch_size, count)`: the correct continuation, `count` batches from `batch_index` of `epoch` onward.
+2. `first_divergence(reference, resumed)`: the first position where two batch sequences differ, or `None`.
 
 ## Hints
 
-1. `np.polyfit(x, y, 1, full=True)` also returns the sum of squared residuals.
-2. A straight line cannot bend toward a floor, so the pure fit keeps falling at the same log-log slope.
-3. With no floor the pure fit predicts too low a loss: it is optimistic.
+1. Slice the first epoch's batches from `batch_index`; later epochs start at 0.
+2. To test a resume, record the batch ids of an uninterrupted run and compare.
+3. Nothing crashes with the buggy resume and the loss looks fine: only a comparison like this one reveals it.

@@ -1,15 +1,18 @@
-def summarize(events):
-    """events: dicts with "name", "start" and "dur" (microseconds) for kernels on one GPU stream.
-    Return {name: (count, total_us)} sorted by total time, largest first."""
+import numpy as np
+
+
+def law(N, D, E, A, B, alpha, beta):
+    """The parametric loss L(N, D) = E + A N^-alpha + B D^-beta."""
+    return E + A * N ** -alpha + B * D ** -beta
+
+
+def tokens_needed(N, target, E, A, B, alpha, beta):
+    """Training tokens a model of N parameters needs to reach the target loss; inf if it cannot."""
     raise NotImplementedError
 
 
-def gpu_idle_fraction(events):
-    """Fraction of the span from the first kernel's start to the last kernel's end with no kernel
-    running (kernels on one stream do not overlap)."""
-    raise NotImplementedError
-
-
-def top_fraction(events, k=1):
-    """Share of all kernel time taken by the k most expensive kernel names."""
+def cheapest_model(target, inference_tokens, E, A, B, alpha, beta):
+    """Among models that reach the target loss, minimize training plus inference FLOPs,
+    6 N D + 2 N inference_tokens, over N on 4001 log-spaced sizes from 1e6 to 1e13.
+    Return (N, D, total FLOPs)."""
     raise NotImplementedError

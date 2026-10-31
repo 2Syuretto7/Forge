@@ -1,10 +1,15 @@
-def shingles(text, k=5):
-    """The set of character k-grams of text, lowercased and with whitespace runs collapsed to a
-    single space. A text shorter than k is its own single shingle."""
-    t = " ".join(text.lower().split())
-    return {t[i:i + k] for i in range(len(t) - k + 1)} if len(t) >= k else {t}
+import numpy as np
 
 
-def jaccard(a, b):
-    """|a and b| / |a or b| for two sets; 1.0 if both are empty."""
-    return len(a & b) / len(a | b) if (a or b) else 1.0
+def masked_ce(logits, targets, mask):
+    """Mean softmax cross-entropy of logits (T, V) against integer targets, over the positions where
+    mask is 1 only. Return (loss, gradient with respect to logits), the gradient zero wherever the
+    mask is 0."""
+    m = logits.max(axis=1, keepdims=True)
+    logp = logits - m - np.log(np.exp(logits - m).sum(axis=1, keepdims=True))
+    n = mask.sum()
+    rows = np.arange(len(targets))
+    loss = -(logp[rows, targets] * mask).sum() / n
+    g = np.exp(logp)
+    g[rows, targets] -= 1
+    return loss, g * mask[:, None] / n

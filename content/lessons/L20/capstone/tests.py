@@ -1,50 +1,58 @@
 import unittest
-import torch
+import numpy as np
 import sub
 
 
-def test_encode_example():
-    ids, mask = sub.encode_example("UPPER", "king")
-    assert bytes(ids).decode() == "UPPER: king\n=KING\n"
-    assert mask == [0] * 13 + [1] * 5
+def test_plan_within_budget():
+    for key in ["pretrain", "sft", "rl"]:
+        assert key in sub.PLAN
+    assert sub.plan_flops <= sub.BUDGET, sub.plan_flops
 
 
-def test_masked_loss():
-    torch.manual_seed(0)
-    logits, y = torch.randn(2, 3, 5), torch.randint(0, 5, (2, 3))
-    mask = torch.tensor([[0.0, 1, 1], [0, 0, 1]])
-    per = torch.nn.functional.cross_entropy(logits.flatten(0, 1), y.flatten(), reduction="none").view(2, 3)
-    assert torch.allclose(sub.masked_loss(logits, y, mask), (per[0, 1] + per[0, 2] + per[1, 2]) / 3)
+def test_clean_crawl():
+    kinds = sub.kept_kinds
+    assert kinds.count("leak") == 0
+    assert kinds.count("junk") <= 0.02 * sub.kinds.count("junk")
+    assert kinds.count("source") >= 0.8 * sub.kinds.count("source")
+    assert all(sub.FOOTER not in sub.cleaned[i] for i in sub.kept)
 
 
-def test_lora_layer():
-    torch.manual_seed(0)
-    lin = torch.nn.Linear(6, 4)
-    lora = sub.LoRALinear(lin, 2, 4)
-    x = torch.randn(3, 6)
-    assert torch.allclose(lora(x), lin(x))
-    with torch.no_grad():
-        lora.B.normal_()
-    expected = lin(x) + 2.0 * (x @ lora.A.T) @ lora.B.T
-    assert torch.allclose(lora(x), expected, atol=1e-6)
-    assert torch.allclose(lora.merge()(x), expected, atol=1e-5)
+def test_manifest():
+    assert [r["stage"] for r in sub.MANIFEST] == ["clean", "pretrain", "finetune", "rl", "serve"]
+    assert sub.check_chain(sub.MANIFEST, sub.raw_digest) is None
+    broken = [dict(r) for r in sub.MANIFEST]
+    broken[2]["input"] = "000000000000"
+    assert sub.check_chain(broken, sub.raw_digest) == 2
 
 
-def test_adapters_and_merge():
-    r = sub.results["lora"]
-    assert r["trainable"] < (0.5 if sub.SMALL else 0.15) * sum(p.numel() for p in sub.base.parameters())
-    assert sub.merge_error < 1e-4
+def test_evaluation():
+    for stage in ["pretrained", "fine-tuned", "RL"]:
+        r = sub.STAGES[stage]
+        for task in ["UPPER", "REVERSE"]:
+            assert len(r[task]) == len(sub.test_words) and set(np.unique(r[task])) <= {0.0, 1.0}
+            assert len(r[task + "_sampled"]) == len(sub.test_words)
+    assert sub.rl_reward("UPPER", "king", "KING\n") == 1.0 and sub.rl_reward("UPPER", "king", "KING ") == 0.0
 
 
-def test_targets():
-    assert set(sub.test_words).isdisjoint(sub.train_words)
+def test_stages_improve():
     if sub.SMALL:
         raise unittest.SkipTest("checked on the full-size run")
-    assert sub.lora_accuracy >= sub.TARGETS["accuracy"], sub.results["lora"]["eval"]
-    assert sub.lora_forgetting <= sub.TARGETS["forgetting"], sub.lora_forgetting
+    assert sub.pretrain_val < 1.9, sub.pretrain_val
+    ft, rl = sub.STAGES["fine-tuned"], sub.STAGES["RL"]
+    assert ft["UPPER"].mean() >= 0.8, ft["UPPER"].mean()
+    assert ft["val"] - sub.pretrain_val < 0.1
+    assert sub.rl_gain[1] > 0, sub.rl_gain
+
+
+def test_serving():
+    assert sub.serving["match"] >= 0.95
+    if sub.SMALL:
+        raise unittest.SkipTest("latency is checked on the full-size run")
+    assert sub.serving["p95_itl_ms"] <= 50, sub.serving
 
 
 def test_report():
     text = sub.REPORT.lower()
-    assert len(text.split()) >= 80
-    assert "lora" in text and "forgetting" in text and "full fine-tuning" in text and "replay" in text
+    assert len(text.split()) >= 200
+    for word in ["clean", "pretrain", "lora", "rl", "serv", "["]:
+        assert word in text, word

@@ -1,14 +1,13 @@
-# Calibration curves and expected calibration error
+# L2 penalty and gradient clipping
 
-For a classifier's predicted probabilities `P` `(n, K)` and labels `y`, use the **confidence** $c_i = \max_k P_{ik}$ and **correctness** $a_i = [\arg\max_k P_{ik} = y_i]$.
+The L03 network is provided: `init`, `loss_and_grads` and `evaluate`.
 
-- `calibration_bins(P, y, n_bins)`: split $(0, 1]$ into `n_bins` equal-width bins (a confidence of exactly 1 goes in the last bin; bin $b$ holds $c \in (b/n, (b+1)/n]$). Return three arrays of length `n_bins`: mean confidence, accuracy, and count per bin (use 0 for the means of empty bins).
-- `ece(P, y, n_bins)`: $\sum_b \frac{n_b}{n}|\text{acc}_b - \text{conf}_b|$ over nonempty bins.
-
-The tests use a synthetic perfectly calibrated predictor (ECE near 0) and an overconfident one.
+1. `loss_and_grads_l2(params, X, y, lam)`: the L03 loss plus $\tfrac{\lambda}{2}\sum \lVert W \rVert^2$ over the weight matrices only, with its gradients.
+2. `global_norm(grads)`: the Euclidean norm of all gradient entries together.
+3. `clip_by_global_norm(grads, max_norm)`: if the global norm exceeds `max_norm`, scale every gradient by the same factor so that it equals `max_norm`; otherwise return the gradients unchanged. Clipping by the global norm keeps the update's direction, which clipping each entry separately would not.
 
 ## Hints
 
-1. `idx = np.minimum(np.ceil(c * n_bins).astype(int) - 1, n_bins - 1)`, then clip below at 0.
-2. Loop over bins with a mask.
-3. ECE weights each bin by its share of the data.
+1. Call `loss_and_grads` first, then add the penalty and `lam * W` for keys starting with `"W"`.
+2. Return a new dictionary from `clip_by_global_norm`; do not modify the input.
+3. Large-model training clips at a global norm of about 1; L15 shows why.

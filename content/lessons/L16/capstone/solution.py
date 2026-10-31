@@ -1,22 +1,23 @@
 # %% [markdown]
-# # L16 capstone: clean a crawl, then prove it helped
+# # L16 capstone: teach a pretrained model two tasks without making it forget
 #
-# Choose **Runtime, Change runtime type, T4 GPU**, then run the cells in order. You get a noisy
-# "crawl" built from Tiny Shakespeare: the plays cut into documents, plus exact and near copies,
-# boilerplate footers, junk pages and copies of part of the validation set. You write the cleaning
-# pipeline (exact deduplication, boilerplate removal, quality rules, MinHash near-deduplication and
-# decontamination), then train the same small byte-level GPT for the same number of steps on the raw
-# and on the cleaned crawl, and compare them on held-out text that never leaked. The last cell is
-# the autograder; it prints a completion code to paste into the lesson.
+# Choose **Runtime, Change runtime type, T4 GPU**, then run the cells in order. The notebook
+# pretrains a small byte-level GPT on Tiny Shakespeare for a few minutes, so there is a base model
+# that knows English spelling but follows no instructions. You then teach it two tasks, writing a
+# word in capitals and spelling it backwards, from instruction examples: with LoRA adapters, and
+# with full fine-tuning for comparison. Each is scored on words it never saw in training, with a
+# bootstrap interval, and on how much its loss on ordinary text rose. The last cell is the
+# autograder; it prints a completion code to paste into the lesson.
 
 # %%
+import copy
 import hashlib
 import math
 import os
 import pathlib
+import re
 import time
 import urllib.request
-import zlib
 
 import numpy as np
 import torch
@@ -28,285 +29,57 @@ DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
 print("device:", torch.cuda.get_device_name(0) if DEVICE == "cuda" else "CPU")
 
 # %% [markdown]
-# ## 1. The corpus and three splits
+# ## 1. Configuration and targets
 #
-# The first 80% of the text is the source of training documents. The next 10% is a **validation**
-# set, part of which leaks into the crawl, as benchmark questions leak onto the web. The last 10%
-# is a **test** set that never leaks.
+# The LoRA model must reach `accuracy` exact-match accuracy on unseen words, averaged over both
+# tasks, while its loss on held-out Shakespeare rises by at most `forgetting` nats per byte. Both
+# methods replay pretraining text during fine-tuning: each step adds `replay` times the language
+# modeling loss on `replay_batch` windows of Shakespeare. Without it, either method forgets most of
+# what pretraining taught (set `replay=0` to see).
 
 # %%
+CFG = dict(d=192, n_layer=4, n_head=6, ctx=128, batch=32, pre_steps=2000, pre_lr=3e-3, sft_steps=1500,
+           rank=16, alpha=32, lora_lr=2e-3, full_lr=3e-4, replay=2.0, replay_batch=8, n_test=300, seed=0)
+TARGETS = dict(accuracy=0.8, forgetting=0.05)
+if SMALL:
+    CFG.update(d=48, n_layer=2, n_head=2, pre_steps=40, sft_steps=20, n_test=20)
+
 CORPUS_URL = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
 CORPUS_SHA256 = "86c4e6aa9db7c042ec79f339dcb96d42b0075e16b8fc2e86bf0ca57e2dc565ed"
 local = [p for p in (pathlib.Path("data/tinyshakespeare.txt"), pathlib.Path("../data/tinyshakespeare.txt")) if p.exists()]
 raw_bytes = local[0].read_bytes() if local else urllib.request.urlopen(CORPUS_URL, timeout=60).read()
 assert hashlib.sha256(raw_bytes).hexdigest() == CORPUS_SHA256, "unexpected corpus contents"
 text = raw_bytes.decode("utf-8")
-n = len(text)
-train_text, val_text, test_text = text[: int(0.8 * n)], text[int(0.8 * n): int(0.9 * n)], text[int(0.9 * n):]
-
-
-def chunk_docs(t, size=1000):
-    """Cut text at blank lines into documents of about `size` characters."""
-    docs, cur = [], ""
-    for block in t.split("\n\n"):
-        cur += block + "\n\n"
-        if len(cur) >= size:
-            docs.append(cur.strip())
-            cur = ""
-    if cur.strip():
-        docs.append(cur.strip())
-    return docs
-
-
-source_docs = chunk_docs(train_text)
-val_docs = chunk_docs(val_text)
-print(f"{len(source_docs)} source documents, {len(val_docs)} validation documents")
+data = torch.tensor(list(raw_bytes), dtype=torch.long)
+split = int(0.9 * len(data))
+train_data, val_data = data[:split], data[split:]
 
 # %% [markdown]
-# ## 2. The crawl
+# ## 2. The base model
 #
-# `make_crawl` builds the raw crawl deterministically. It also returns each document's kind and the
-# source document it came from (-1 for junk and leaked text), which only the autograder uses to
-# check your pipeline; do not use them in your code.
+# The GPT of L10 at byte level, pretrained for a few minutes. `base_loss` is its loss on fixed
+# windows of held-out text: the yardstick for forgetting.
 
 # %%
-FOOTER = "Share this page: Facebook | Twitter | Email | Print"
-SPAM = "buy cheap free best deal online discount offer click now win prize casino bonus".split()
-
-
-def make_crawl(seed=0):
-    rng = np.random.default_rng(seed)
-
-    def perturb(doc, rate):
-        w = doc.split(" ")
-        for i in range(len(w)):
-            if rng.random() < rate:
-                w[i] = w[rng.integers(len(w))]
-        return " ".join(w)
-
-    crawl = []
-    for i, d in enumerate(source_docs):
-        crawl.append((d + ("\n" + FOOTER if rng.random() < 0.6 else ""), "source", i))
-    for i in rng.choice(len(source_docs), len(source_docs) // 10, replace=False):
-        for _ in range(10):
-            d = source_docs[i]
-            crawl.append((d.upper() if rng.random() < 0.3 else d.replace("\n", "\n "), "exact", int(i)))
-    for i in rng.choice(len(source_docs), len(source_docs) // 10, replace=False):
-        for _ in range(3):
-            crawl.append((perturb(source_docs[i], 0.03), "near", int(i)))
-    for _ in range(len(source_docs) // 4):
-        kind = rng.integers(3)
-        if kind == 0:
-            junk = " ".join(rng.choice(SPAM, 200))
-        elif kind == 1:
-            junk = "\n".join(" | ".join(str(v) for v in rng.integers(0, 10000, 6)) for _ in range(40))
-        else:
-            junk = bytes(rng.integers(33, 127, 1000).tolist()).decode("ascii")
-        crawl.append((junk, "junk", -1))
-    leaked = sorted(rng.choice(len(val_docs), len(val_docs) // 10, replace=False).tolist())
-    for i in leaked:
-        for _ in range(40):
-            crawl.append((val_docs[i], "leak", -1))
-    order = rng.permutation(len(crawl))
-    return [crawl[i][0] for i in order], [crawl[i][1] for i in order], [crawl[i][2] for i in order], leaked
-
-
-raw_docs, kinds, origins, leaked_val = make_crawl()
-print(f"{len(raw_docs)} crawl documents, {sum(map(len, raw_docs)):,} characters")
-print({k: kinds.count(k) for k in sorted(set(kinds))})
-
-# %% [markdown]
-# ## 3. Exact duplicates and boilerplate
-#
-# Write `exact_dedup(docs)`, the indices of the first occurrence of each document after
-# normalizing case and whitespace (compare SHA-1 digests), and `strip_boilerplate(docs, min_docs)`,
-# which removes every line that occurs in at least `min_docs` different documents.
-
-# %%
-def normalize(doc):
-    return " ".join(doc.lower().split())
-
-
-def exact_dedup(docs):
-    # BEGIN SOLUTION
-    seen, keep = set(), []
-    for i, d in enumerate(docs):
-        h = hashlib.sha1(normalize(d).encode("utf-8")).hexdigest()
-        if h not in seen:
-            seen.add(h)
-            keep.append(i)
-    return keep
-    # END SOLUTION
-
-
-def strip_boilerplate(docs, min_docs):
-    # BEGIN SOLUTION
-    counts = {}
-    for d in docs:
-        for line in {l.strip() for l in d.split("\n") if l.strip()}:
-            counts[line] = counts.get(line, 0) + 1
-    common = {line for line, c in counts.items() if c >= min_docs}
-    return ["\n".join(l for l in d.split("\n") if l.strip() not in common) for d in docs]
-    # END SOLUTION
-
-
-# %% [markdown]
-# ## 4. Quality rules
-#
-# Write `passes_quality(doc)` with the Gopher rules from exercise 6: 50 to 100,000 words, mean word
-# length 3 to 10, at most 0.1 `#` or `...` per word, at least 80% of words containing a letter, and
-# at least two of the stop words.
-
-# %%
-STOP_WORDS = {"the", "be", "to", "of", "and", "that", "have", "with"}
-
-
-def passes_quality(doc):
-    # BEGIN SOLUTION
-    words = doc.split()
-    if not 50 <= len(words) <= 100_000:
-        return False
-    mean_len = sum(map(len, words)) / len(words)
-    alpha = sum(any(c.isalpha() for c in w) for w in words) / len(words)
-    stops = {w.strip(".,;:!?\"'()").lower() for w in words} & STOP_WORDS
-    symbols = max(doc.count("#"), doc.count("...")) / len(words)
-    return 3 <= mean_len <= 10 and alpha >= 0.8 and len(stops) >= 2 and symbols <= 0.1
-    # END SOLUTION
-
-
-# %% [markdown]
-# ## 5. Near duplicates with MinHash and LSH
-#
-# Write `minhash(doc, a, b)`: the signature of the document's character 5-gram shingles (after
-# `normalize`), hashed with CRC-32 and then with $h_i(x) = (a_i x + b_i) \bmod (2^{31} - 1)$. Then
-# write `near_dedup(signatures, bands, rows, min_similarity)`, returning the sorted positions to
-# keep: put each band in a bucket, confirm every pair sharing a bucket by its signature agreement
-# rate, join confirmed pairs with union-find and keep the smallest position of each cluster.
-
-# %%
-PRIME = 2 ** 31 - 1
-NUM_PERM, BANDS, ROWS = 128, 16, 8
-_hrng = np.random.default_rng(1)
-HASH_A, HASH_B = _hrng.integers(1, PRIME, NUM_PERM), _hrng.integers(0, PRIME, NUM_PERM)
-
-
-def minhash(doc, a=HASH_A, b=HASH_B):
-    # BEGIN SOLUTION
-    t = normalize(doc)
-    sh = {t[i:i + 5] for i in range(len(t) - 4)} or {t}
-    x = np.array(sorted(zlib.crc32(s.encode("utf-8")) for s in sh), dtype=np.int64) % PRIME
-    return ((np.outer(a, x) + b[:, None]) % PRIME).min(axis=1)
-    # END SOLUTION
-
-
-def near_dedup(signatures, bands=BANDS, rows=ROWS, min_similarity=0.7):
-    # BEGIN SOLUTION
-    parent = list(range(len(signatures)))
-
-    def find(i):
-        while parent[i] != i:
-            parent[i] = parent[parent[i]]
-            i = parent[i]
-        return i
-
-    buckets = {}
-    for i, sig in enumerate(signatures):
-        for band in range(bands):
-            buckets.setdefault((band, tuple(sig[band * rows:(band + 1) * rows].tolist())), []).append(i)
-    for members in buckets.values():
-        for j in members[1:]:
-            if np.mean(signatures[j] == signatures[members[0]]) >= min_similarity:
-                ri, rj = find(j), find(members[0])
-                parent[max(ri, rj)] = min(ri, rj)
-    return sorted({find(i) for i in range(len(signatures))})
-    # END SOLUTION
-
-
-# %% [markdown]
-# ## 6. Decontamination
-#
-# Write `decontaminate(docs, eval_docs, n=13)`: the positions of the documents that share no
-# 13-word sequence with any validation document (words lowercased, surrounding punctuation
-# stripped, as in exercise 9).
-
-# %%
-def words_of(doc):
-    return [w for w in (x.strip(".,;:!?\"'()[]").lower() for x in doc.split()) if w]
-
-
-def decontaminate(docs, eval_docs, n=13):
-    # BEGIN SOLUTION
-    index = set()
-    for d in eval_docs:
-        w = words_of(d)
-        index |= {tuple(w[i:i + n]) for i in range(len(w) - n + 1)}
-    keep = []
-    for j, d in enumerate(docs):
-        w = words_of(d)
-        if not any(tuple(w[i:i + n]) in index for i in range(len(w) - n + 1)):
-            keep.append(j)
-    return keep
-    # END SOLUTION
-
-
-# %% [markdown]
-# ## 7. The pipeline
-#
-# Run the steps in order, keeping track of which crawl documents survive. Boilerplate goes first,
-# so that a page and its copy without the footer become exact duplicates.
-
-# %%
-t0 = time.time()
-cleaned = strip_boilerplate(raw_docs, min_docs=50)
-kept = exact_dedup(cleaned)
-kept = [i for i in kept if passes_quality(cleaned[i])]
-signatures = [minhash(cleaned[i]) for i in kept]
-kept = [kept[j] for j in near_dedup(signatures)]
-kept = [kept[j] for j in decontaminate([cleaned[i] for i in kept], val_docs)]
-clean_docs = [cleaned[i] for i in kept]
-kept_kinds = [kinds[i] for i in kept]
-kept_origins = [origins[i] for i in kept]
-print(f"pipeline: {time.time() - t0:.0f} s; kept {len(clean_docs)} of {len(raw_docs)} documents")
-for k in sorted(set(kinds)):
-    print(f"  {k:7s}: kept {kept_kinds.count(k):5d} of {kinds.count(k):5d}")
-raw_corpus = "\n\n".join(raw_docs)
-clean_corpus = "\n\n".join(clean_docs)
-print(f"{len(raw_corpus):,} characters before, {len(clean_corpus):,} after")
-
-# %% [markdown]
-# ## 8. Equal compute, two datasets
-#
-# The same byte-level GPT, trained for the same number of steps (so the same compute and the same
-# number of tokens) on each corpus. Each is scored on the test split, which never leaked, and on the
-# leaked and unleaked parts of the validation split.
-
-# %%
-CFG = dict(ctx=128, batch=16, d=128, n_layer=4, n_head=4, steps=800, lr=3e-3, warmup=100)
-if SMALL:
-    CFG.update(ctx=32, batch=8, d=32, n_layer=1, n_head=2, steps=60, lr=3e-3, warmup=10)
-CTX = CFG["ctx"]
-
-
 class Block(nn.Module):
     def __init__(self, d, n_head):
         super().__init__()
-        self.n_head = n_head
+        self.d, self.n_head = d, n_head
         self.ln1, self.ln2 = nn.LayerNorm(d), nn.LayerNorm(d)
         self.qkv, self.proj = nn.Linear(d, 3 * d), nn.Linear(d, d)
-        self.mlp = nn.Sequential(nn.Linear(d, 4 * d), nn.GELU(), nn.Linear(4 * d, d))
+        self.fc1, self.fc2 = nn.Linear(d, 4 * d), nn.Linear(4 * d, d)
 
     def forward(self, x):
         B, T, d = x.shape
-        q, k, v = self.qkv(self.ln1(x)).split(d, dim=2)
-        q, k, v = (t.view(B, T, self.n_head, d // self.n_head).transpose(1, 2) for t in (q, k, v))
+        q, k, v = (t.view(B, T, self.n_head, d // self.n_head).transpose(1, 2) for t in self.qkv(self.ln1(x)).split(d, dim=2))
         x = x + self.proj(F.scaled_dot_product_attention(q, k, v, is_causal=True).transpose(1, 2).reshape(B, T, d))
-        return x + self.mlp(self.ln2(x))
+        return x + self.fc2(F.gelu(self.fc1(self.ln2(x))))
 
 
 class GPT(nn.Module):
-    def __init__(self, d, n_layer, n_head):
+    def __init__(self, d, n_layer, n_head, ctx):
         super().__init__()
-        self.tok, self.pos = nn.Embedding(256, d), nn.Embedding(CTX, d)
+        self.tok, self.pos = nn.Embedding(256, d), nn.Embedding(ctx, d)
         nn.init.normal_(self.tok.weight, std=0.02)
         nn.init.normal_(self.pos.weight, std=0.02)
         self.blocks = nn.ModuleList([Block(d, n_head) for _ in range(n_layer)])
@@ -319,69 +92,259 @@ class GPT(nn.Module):
         return self.ln_f(x) @ self.tok.weight.T
 
 
-def encode(t):
-    return torch.tensor(list(t.encode("utf-8")), dtype=torch.long)
+def windows(src, gen, n):
+    ix = torch.randint(len(src) - CFG["ctx"] - 1, (n,), generator=gen)
+    x = torch.stack([src[i:i + CFG["ctx"]] for i in ix])
+    y = torch.stack([src[i + 1:i + CFG["ctx"] + 1] for i in ix])
+    return x.to(DEVICE), y.to(DEVICE)
 
 
 @torch.no_grad()
-def loss_on(model, t):
+def base_loss(model, n=128):
     model.eval()
-    ids = encode(t)
-    n = (len(ids) - 1) // CTX
-    x, y = ids[: n * CTX].view(n, CTX), ids[1: n * CTX + 1].view(n, CTX)
-    total = 0.0
-    for i in range(0, n, 256):
-        logits = model(x[i:i + 256].to(DEVICE))
-        total += F.cross_entropy(logits.flatten(0, 1), y[i:i + 256].to(DEVICE).flatten(), reduction="sum").item()
+    x, y = windows(val_data, torch.Generator().manual_seed(1), n)
+    loss = F.cross_entropy(model(x).flatten(0, 1), y.flatten()).item()
     model.train()
-    return total / (n * CTX)
+    return loss
 
 
-def train_on(corpus):
-    torch.manual_seed(0)
-    ids = encode(corpus)
-    model = GPT(CFG["d"], CFG["n_layer"], CFG["n_head"]).to(DEVICE)
-    opt = torch.optim.AdamW(model.parameters(), lr=CFG["lr"], betas=(0.9, 0.95), weight_decay=0.1)
-    gen = torch.Generator().manual_seed(0)
-    for step in range(1, CFG["steps"] + 1):
-        for group in opt.param_groups:
-            group["lr"] = CFG["lr"] * min(1.0, step / CFG["warmup"]) * (0.1 + 0.45 * (1 + math.cos(math.pi * step / CFG["steps"])))
-        ix = torch.randint(len(ids) - CTX - 1, (CFG["batch"],), generator=gen)
-        x = torch.stack([ids[i:i + CTX] for i in ix]).to(DEVICE)
-        y = torch.stack([ids[i + 1:i + CTX + 1] for i in ix]).to(DEVICE)
-        loss = F.cross_entropy(model(x).flatten(0, 1), y.flatten())
-        opt.zero_grad(set_to_none=True)
-        loss.backward()
-        torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
-        opt.step()
+torch.manual_seed(CFG["seed"])
+base = GPT(CFG["d"], CFG["n_layer"], CFG["n_head"], CFG["ctx"]).to(DEVICE)
+opt = torch.optim.AdamW(base.parameters(), lr=CFG["pre_lr"], betas=(0.9, 0.95), weight_decay=0.1)
+gen = torch.Generator().manual_seed(0)
+t0 = time.time()
+for step in range(1, CFG["pre_steps"] + 1):
+    lr = CFG["pre_lr"] * min(1.0, step / 100) * (0.1 + 0.45 * (1 + math.cos(math.pi * step / CFG["pre_steps"])))
+    for group in opt.param_groups:
+        group["lr"] = lr
+    x, y = windows(train_data, gen, CFG["batch"])
+    loss = F.cross_entropy(base(x).flatten(0, 1), y.flatten())
+    opt.zero_grad(set_to_none=True)
+    loss.backward()
+    torch.nn.utils.clip_grad_norm_(base.parameters(), 1.0)
+    opt.step()
+    if step % 500 == 0 or step == CFG["pre_steps"]:
+        print(f"pretraining step {step}: loss {loss.item():.3f} ({time.time() - t0:.0f} s)")
+pre_loss = base_loss(base)
+print(f"base model: {sum(p.numel() for p in base.parameters()):,} parameters, held-out loss {pre_loss:.4f} nats per byte")
+
+# %% [markdown]
+# ## 3. Instruction data
+#
+# Two tasks on words from the plays: `UPPER: word\n=` answered by the word in capitals, and
+# `REVERSE: word\n=` answered by the word spelled backwards, each answer ending with a newline.
+# The words are split once, before any training, into training words and test words.
+#
+# Write `encode_example(task, word)`: the bytes of prompt and answer joined, and a mask with 0 on
+# every prompt byte and 1 on every answer byte (including the final newline, so the model learns to
+# stop).
+
+# %%
+TASKS = {"UPPER": lambda w: w.upper(), "REVERSE": lambda w: w[::-1]}
+words = sorted({w for w in re.findall(r"[a-z]+", text.lower()) if 3 <= len(w) <= 8})
+rng = np.random.default_rng(CFG["seed"])
+rng.shuffle(words)
+test_words, train_words = words[:CFG["n_test"]], words[CFG["n_test"]:]
+assert not set(test_words) & set(train_words)
+
+
+def prompt_of(task, word):
+    return f"{task}: {word}\n="
+
+
+def answer_of(task, word):
+    return TASKS[task](word) + "\n"
+
+
+def encode_example(task, word):
+    # BEGIN SOLUTION
+    p, a = prompt_of(task, word).encode(), answer_of(task, word).encode()
+    return list(p) + list(a), [0] * len(p) + [1] * len(a)
+    # END SOLUTION
+
+
+def sft_batch(n, gen):
+    """Inputs, targets and the mask on the targets, padded with newlines that the mask ignores."""
+    xs, ys, ms = [], [], []
+    for _ in range(n):
+        task = list(TASKS)[int(gen.integers(len(TASKS)))]
+        ids, mask = encode_example(task, train_words[int(gen.integers(len(train_words)))])
+        pad = CFG["ctx"] + 1 - len(ids)
+        ids, mask = ids + [10] * pad, mask + [0] * pad
+        xs.append(ids[:-1])
+        ys.append(ids[1:])
+        ms.append(mask[1:])
+    return torch.tensor(xs).to(DEVICE), torch.tensor(ys).to(DEVICE), torch.tensor(ms, dtype=torch.float).to(DEVICE)
+
+
+print(encode_example("REVERSE", "crown"))
+
+# %% [markdown]
+# ## 4. The loss and the adapters
+#
+# Write `masked_loss(logits, y, mask)`, the mean cross-entropy over the positions where the mask is
+# 1. Then write `LoRALinear.forward`, the frozen layer plus $(\alpha / r)\, x A^\top B^\top$, and
+# `merge`, which returns a plain `nn.Linear` with the update folded into its weight.
+# `add_lora` wraps the four linear layers of every block and freezes everything else.
+
+# %%
+def masked_loss(logits, y, mask):
+    # BEGIN SOLUTION
+    per = F.cross_entropy(logits.flatten(0, 1), y.flatten(), reduction="none")
+    return (per * mask.flatten()).sum() / mask.sum()
+    # END SOLUTION
+
+
+class LoRALinear(nn.Module):
+    def __init__(self, base_layer, r, alpha):
+        super().__init__()
+        self.base, self.r, self.alpha = base_layer, r, alpha
+        self.A = nn.Parameter(torch.randn(r, base_layer.in_features, device=base_layer.weight.device) / math.sqrt(base_layer.in_features))
+        self.B = nn.Parameter(torch.zeros(base_layer.out_features, r, device=base_layer.weight.device))
+
+    def forward(self, x):
+        # BEGIN SOLUTION
+        return self.base(x) + (self.alpha / self.r) * (x @ self.A.T) @ self.B.T
+        # END SOLUTION
+
+    def merge(self):
+        # BEGIN SOLUTION
+        layer = copy.deepcopy(self.base)
+        layer.weight.data += (self.alpha / self.r) * self.B.data @ self.A.data
+        return layer
+        # END SOLUTION
+
+
+LINEARS = ["qkv", "proj", "fc1", "fc2"]
+
+
+def add_lora(model, r, alpha):
+    for p in model.parameters():
+        p.requires_grad_(False)
+    for b in model.blocks:
+        for name in LINEARS:
+            setattr(b, name, LoRALinear(getattr(b, name), r, alpha))
     return model
 
 
-leaked_text = "\n\n".join(val_docs[i] for i in leaked_val)
-unleaked_text = "\n\n".join(d for i, d in enumerate(val_docs) if i not in set(leaked_val))
-results = {}
-for name, corpus in [("raw", raw_corpus), ("clean", clean_corpus)]:
-    t0 = time.time()
-    model = train_on(corpus)
-    results[name] = {"test": loss_on(model, test_text), "leaked": loss_on(model, leaked_text), "unleaked": loss_on(model, unleaked_text)}
-    print(name, {k: round(v, 4) for k, v in results[name].items()}, f"({time.time() - t0:.0f} s)")
+def merge_lora(model):
+    merged = copy.deepcopy(model)
+    for b in merged.blocks:
+        for name in LINEARS:
+            layer = getattr(b, name)
+            if isinstance(layer, LoRALinear):
+                setattr(b, name, layer.merge())
+    return merged
+
 
 # %% [markdown]
-# ## 9. Report
+# ## 5. Fine-tune and evaluate
 #
-# In `REPORT`, write at least 80 words: what each step removed, the test-loss difference between
-# the two models, and what the leaked and unleaked validation losses show about contamination.
+# `finetune` trains a copy of the base model, with adapters or with every weight, on the same
+# batches. `evaluate` decodes greedily on the test words and scores exact matches, with a bootstrap
+# interval over words for each task.
+
+# %%
+def finetune(kind):
+    model = copy.deepcopy(base)
+    if kind == "lora":
+        add_lora(model, CFG["rank"], CFG["alpha"])
+        lr = CFG["lora_lr"]
+    else:
+        lr = CFG["full_lr"]
+    params = [p for p in model.parameters() if p.requires_grad]
+    opt = torch.optim.AdamW(params, lr=lr, weight_decay=0.0)
+    gen = np.random.default_rng(1)
+    replay_gen = torch.Generator().manual_seed(2)
+    model.train()
+    for step in range(1, CFG["sft_steps"] + 1):
+        for group in opt.param_groups:
+            group["lr"] = lr * min(1.0, step / 50)
+        x, y, m = sft_batch(CFG["batch"], gen)
+        loss = masked_loss(model(x), y, m)
+        if CFG["replay"]:
+            xr, yr = windows(train_data, replay_gen, CFG["replay_batch"])
+            loss = loss + CFG["replay"] * F.cross_entropy(model(xr).flatten(0, 1), yr.flatten())
+        opt.zero_grad(set_to_none=True)
+        loss.backward()
+        torch.nn.utils.clip_grad_norm_(params, 1.0)
+        opt.step()
+    model.eval()
+    return model, sum(p.numel() for p in params)
+
+
+@torch.no_grad()
+def generate(model, task, word, max_new=12):
+    ids = torch.tensor([list(prompt_of(task, word).encode())], device=DEVICE)
+    out = []
+    for _ in range(max_new):
+        nxt = int(model(ids)[0, -1].argmax())
+        out.append(nxt)
+        if nxt == 10:
+            break
+        ids = torch.cat([ids, torch.tensor([[nxt]], device=DEVICE)], dim=1)
+    return bytes(out).decode("utf-8", errors="replace")
+
+
+def evaluate(model, n_boot=2000):
+    result = {}
+    for task in TASKS:
+        correct = np.array([generate(model, task, w) == answer_of(task, w) for w in test_words], dtype=float)
+        means = correct[np.random.default_rng(0).integers(0, len(correct), (n_boot, len(correct)))].mean(axis=1)
+        result[task] = (float(correct.mean()), *np.quantile(means, [0.025, 0.975]).tolist())
+    result["mean"] = float(np.mean([result[t][0] for t in TASKS]))
+    return result
+
+
+results = {}
+for kind in ["lora", "full"]:
+    t0 = time.time()
+    model, n_trainable = finetune(kind)
+    results[kind] = dict(eval=evaluate(model), loss=base_loss(model), trainable=n_trainable, model=model)
+    r = results[kind]
+    print(f"{kind}: {n_trainable:,} trainable parameters, accuracy "
+          + ", ".join(f"{t} {r['eval'][t][0]:.2f} [{r['eval'][t][1]:.2f}, {r['eval'][t][2]:.2f}]" for t in TASKS)
+          + f", held-out loss {r['loss']:.4f} (+{r['loss'] - pre_loss:.4f}) ({time.time() - t0:.0f} s)")
+base_eval = evaluate(base)
+print(f"base model accuracy: UPPER {base_eval['UPPER'][0]:.2f}, REVERSE {base_eval['REVERSE'][0]:.2f}")
+
+lora_model = results["lora"]["model"]
+merged = merge_lora(lora_model)
+x_check, _ = windows(val_data, torch.Generator().manual_seed(5), 4)
+with torch.no_grad():
+    merge_error = (merged(x_check) - lora_model(x_check)).abs().max().item()
+print(f"merged model matches the adapted one to {merge_error:.1e}")
+for task in TASKS:
+    for w in test_words[:3]:
+        print(f"{task}: {w} -> {generate(merged, task, w)!r}")
+
+lora_accuracy = results["lora"]["eval"]["mean"]
+lora_forgetting = results["lora"]["loss"] - pre_loss
+full_forgetting = results["full"]["loss"] - pre_loss
+
+# %% [markdown]
+# ## 6. Report
+#
+# In `REPORT`, write at least 80 words: the accuracy of each method on each task with intervals,
+# the forgetting of each, the number of trainable parameters, which method you would ship and
+# why, and why the second task is harder for a model that reads one byte at a time.
 
 # %%
 # BEGIN SOLUTION -> REPORT = """Write your report here."""
-gain = results["raw"]["test"] - results["clean"]["test"]
-REPORT = f"""The crawl had {len(raw_docs)} documents; the pipeline kept {len(clean_docs)}. Exact deduplication removed the
-copies that differed only in case and spacing, the boilerplate step stripped the shared footer, the quality rules
-removed {kinds.count('junk') - kept_kinds.count('junk')} of {kinds.count('junk')} junk pages, MinHash with LSH removed the near copies,
-and decontamination removed every document containing validation text. At equal compute the model trained on the
-cleaned crawl reached a test loss of {results['clean']['test']:.3f} nats per byte against {results['raw']['test']:.3f}
-for the raw crawl, a gain of {gain:.3f}. The raw model scored {results['raw']['leaked']:.3f} on the leaked validation
-documents and {results['raw']['unleaked']:.3f} on the unleaked ones: contamination makes a model look better exactly
-where it memorized, so the leaked part of the validation set no longer measures generalization."""
+L, F_ = results["lora"], results["full"]
+less = "LoRA" if lora_forgetting < full_forgetting else "full fine-tuning"
+met = lora_accuracy >= TARGETS["accuracy"] and lora_forgetting <= TARGETS["forgetting"]
+harder = min(TASKS, key=lambda t: L["eval"][t][0])
+REPORT = f"""Fine-tuning report. The base model ({sum(p.numel() for p in base.parameters()):,} parameters, held-out loss {pre_loss:.3f} nats per
+byte) could do neither task (UPPER {base_eval['UPPER'][0]:.2f}, REVERSE {base_eval['REVERSE'][0]:.2f}). After {CFG['sft_steps']} steps on the same
+masked instruction batches, each with replayed Shakespeare at weight {CFG['replay']}, LoRA of rank {CFG['rank']} on every linear layer
+({L['trainable']:,} trainable parameters) reached UPPER {L['eval']['UPPER'][0]:.2f} [{L['eval']['UPPER'][1]:.2f}, {L['eval']['UPPER'][2]:.2f}] and
+REVERSE {L['eval']['REVERSE'][0]:.2f} [{L['eval']['REVERSE'][1]:.2f}, {L['eval']['REVERSE'][2]:.2f}] on {len(test_words)} unseen words, with forgetting of
+{lora_forgetting:+.4f} nats per byte. Full fine-tuning ({F_['trainable']:,} parameters) reached UPPER {F_['eval']['UPPER'][0]:.2f} and
+REVERSE {F_['eval']['REVERSE'][0]:.2f}, with forgetting of {full_forgetting:+.4f}; by this measure {less} disturbed the base model less. The
+LoRA model {'meets' if met else 'misses'} the targets of {TARGETS['accuracy']:.0%} accuracy and {TARGETS['forgetting']} nats of forgetting. I would ship it merged
+into the base weights: no inference cost, and the adapter alone is {L['trainable'] * 4 / 1e6:.1f} MB to store per task, against
+{F_['trainable'] * 4 / 1e6:.1f} MB for a fully fine-tuned copy. {harder} was the harder task for LoRA; replaying pretraining text was
+what kept forgetting small, since without it the fine-tuning loss alone pulls every weight toward the new format."""
 # END SOLUTION
 print(REPORT)

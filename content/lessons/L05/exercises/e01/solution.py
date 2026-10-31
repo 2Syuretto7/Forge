@@ -1,15 +1,15 @@
 import numpy as np
 
 
-def ols(X, y):
-    return np.linalg.lstsq(X, y, rcond=None)[0]
+def quad_fg(A, b, x):
+    """f(x) = 0.5 x^T A x - b^T x and its gradient, for symmetric A."""
+    Ax = A @ x
+    return 0.5 * x @ Ax - b @ x, Ax - b
 
 
-def gaussian_nll(w, sigma, X, y):
-    r = y - X @ w
-    return float(0.5 * np.log(2 * np.pi * sigma ** 2) + np.mean(r ** 2) / (2 * sigma ** 2))
-
-
-def noise_mle(X, y, w):
-    r = y - X @ w
-    return float(np.mean(r ** 2))
+def gd(grad, x0, lr, steps):
+    """Gradient descent from x0. Return all iterates, shape (steps + 1, d)."""
+    xs = [np.array(x0, dtype=float)]
+    for _ in range(steps):
+        xs.append(xs[-1] - lr * grad(xs[-1]))
+    return np.array(xs)

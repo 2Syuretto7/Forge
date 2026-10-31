@@ -1,35 +1,35 @@
 import numpy as np
-import math
 
 
-C = math.sqrt(2.0 / math.pi)
+def law(N, D, E, A, B, alpha, beta):
+    """The parametric loss L(N, D) = E + A N^-alpha + B D^-beta."""
+    return E + A * N ** -alpha + B * D ** -beta
 
 
-def gelu(x):
-    """The tanh approximation used by GPT-2: 0.5 x (1 + tanh(c (x + 0.044715 x^3)))."""
-    return 0.5 * x * (1.0 + np.tanh(C * (x + 0.044715 * x ** 3)))
+def fit_for_exponents(alpha, beta, N, D, L):
+    """With the exponents fixed, L = E + A N^-alpha + B D^-beta is linear in (E, A, B). Solve for
+    them by least squares on the relative errors (each run's equation divided by its L). Return
+    (E, A, B, sum of squared relative errors)."""
+    X = np.stack([np.ones_like(N), N ** -alpha, D ** -beta], axis=1) / L[:, None]
+    coef = np.linalg.lstsq(X, np.ones_like(L), rcond=None)[0]
+    r = X @ coef - 1
+    return coef[0], coef[1], coef[2], float(r @ r)
 
 
-def gelu_grad(x):
-    """d gelu / dx."""
-    u = C * (x + 0.044715 * x ** 3)
-    t = np.tanh(u)
-    return 0.5 * (1.0 + t) + 0.5 * x * (1.0 - t * t) * C * (1.0 + 3 * 0.044715 * x * x)
+def fit_parametric(N, D, L):
+    """Search alpha and beta over 0.05, 0.07, ..., 0.95, then over a grid ten times finer
+    (step 0.002) within 0.02 of the best pair. Return a dict with E, A, B, alpha, beta."""
+    def search(alphas, betas, best):
+        for a in alphas:
+            for b in betas:
+                fit = fit_for_exponents(a, b, N, D, L)
+                if best is None or fit[3] < best[0]:
+                    best = (fit[3], a, b, fit)
+        return best
 
-
-def bias_gelu_forward(x, b):
-    """y = gelu(x + b) in one pass; return (y, cache)."""
-    z = x + b
-    return gelu(z), z
-
-
-def bias_gelu_backward(dy, cache):
-    """Return (dx, db)."""
-    g = dy * gelu_grad(cache)
-    return g, g.sum(axis=0)
-
-
-def traffic(n, bytes_per=2, fused=True):
-    """Bytes moved for x + b followed by gelu on n elements (the bias vector is negligible).
-    Unfused: the add reads x and writes z, the GELU reads z and writes y. Fused: read x, write y."""
-    return 2 * n * bytes_per if fused else 4 * n * bytes_per
+    coarse = np.arange(0.05, 0.951, 0.02)
+    best = search(coarse, coarse, None)
+    fine = np.arange(-0.02, 0.0201, 0.002)
+    best = search(best[1] + fine, best[2] + fine, best)
+    _, a, b, (E, A, B, _) = best
+    return {"E": E, "A": A, "B": B, "alpha": a, "beta": b}

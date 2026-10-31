@@ -7,7 +7,7 @@ The starter holds a letter F drawn as a polygon and eight target shapes, each th
 
 ## When you finish
 
-Every layer of a neural network is a matrix like these followed by a nonlinearity. M11 asks the reverse question, which input produces a given output; M18 finds the matrix that best approximates a curved map near a point; and L13 builds attention from batched products whose shapes you can now read at a glance.
+Every layer of a neural network is a matrix like these followed by a nonlinearity. M11 asks the reverse question, which input produces a given output; M18 finds the matrix that best approximates a curved map near a point; and L09 builds attention from batched products whose shapes you can now read at a glance.
 
-:::edge{to=L13 text="attention is batched matrix products: queries times keys, then weights times values."}
+:::edge{to=L09 text="attention is batched matrix products: queries times keys, then weights times values."}
 :::

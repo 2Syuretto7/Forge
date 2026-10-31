@@ -1,11 +1,11 @@
-# Explain it plainly: why training in half precision works
+# Explain it plainly: training a model with rewards
 
-Explain to an engineer who knows that fp16 has only about three significant digits why neural networks can be trained in it without losing accuracy.
+Explain to an engineer how a language model is improved with reinforcement learning from a reward, and why the KL penalty is there.
 
 - Write 150 to 400 words.
-- Use the example of a small weight update being added to a weight.
-- Explain master weights, fp32 accumulation and loss scaling.
-- Mention the difference between fp16 and bf16.
+- Explain the policy gradient and the role of a baseline.
+- Explain where rewards come from: preferences and a reward model, or an exact check.
+- Explain the KL penalty and one way optimization against a reward goes wrong; mention DPO.
 
-:::feynman{id=f1 prompt="Explain why neural networks can be trained in 16-bit floating point without losing accuracy, covering master weights, fp32 accumulation, loss scaling and the difference between fp16 and bf16." key_points="Half precision has few mantissa bits, so a small update added to a much larger weight can round away entirely|An fp32 master copy of the weights accumulates the updates, while forward and backward passes use half-precision copies|Matrix products accumulate in fp32 and reductions such as softmax and normalization stay in fp32|fp16's narrow range makes small gradients underflow, so the loss is scaled up before the backward pass and the gradients scaled back down|bf16 keeps fp32's exponent range so it needs no loss scaling, at the cost of less precision"}
+:::feynman{id=f1 prompt="Explain how reinforcement learning improves a language model using a reward, where the reward comes from, why a KL penalty to the starting model is used, and how DPO relates; include one way reward optimization goes wrong." key_points="The policy gradient raises the log-probability of sampled responses in proportion to their reward, estimated from samples|Subtracting a baseline such as the mean reward of a group of samples reduces variance without bias|Rewards come from a reward model trained on human preferences with the Bradley-Terry model, or from an exact check such as a correct math answer|The KL penalty keeps the policy near the starting model, where the reward model is trustworthy, and prevents collapse|Optimizing a flawed reward too hard raises the reward while true quality falls, which is reward hacking|DPO trains directly on preferences by writing the reward in terms of the policy's log-probability ratio to the reference"}
 :::

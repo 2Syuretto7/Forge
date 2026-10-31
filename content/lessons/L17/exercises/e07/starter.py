@@ -1,17 +1,12 @@
 import numpy as np
 
 
-def round_down_up(x, step):
-    """The two grid points around x on a grid of spacing `step`."""
+def bt_loss(w, F_win, F_lose):
+    """A linear reward r = F w. The Bradley-Terry negative log-likelihood that the preferred
+    response wins, mean over pairs of log(1 + exp(-(r_win - r_lose))), and its gradient."""
     raise NotImplementedError
 
 
-def stochastic_round(x, step, rng):
-    """Round x to lo or hi = lo + step, choosing hi with probability (x - lo) / step."""
-    raise NotImplementedError
-
-
-def accumulate(w0, update, n, step, mode, rng=None):
-    """Apply w <- round(w + update) n times on a grid of spacing `step`, with round-to-nearest or
-    stochastic rounding."""
+def fit_bt(F_win, F_lose, steps=2000, lr=1.0):
+    """Gradient descent from zero."""
     raise NotImplementedError

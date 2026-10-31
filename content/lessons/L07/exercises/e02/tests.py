@@ -1,38 +1,23 @@
-import numpy as np
 import sub
 
-rng = np.random.default_rng(2)
-Z = rng.normal(size=(6, 5))
-Z[np.abs(Z) < 1e-3] = 0.5
-G = rng.normal(size=(6, 5))
+T4 = sub.T4
 
 
-def _num(f, P, h=1e-6):
-    g = np.zeros_like(P)
-    for idx in np.ndindex(P.shape):
-        E = np.zeros_like(P)
-        E[idx] = h
-        g[idx] = (f(P + E) - f(P - E)) / (2 * h)
-    return g
+def test_ridge():
+    assert abs(sub.ridge(T4["fp16"], T4["bw"]) - 203.125) < 1e-9
+    assert abs(sub.ridge(T4["fp32"], T4["bw"]) - 25.3125) < 1e-9
 
 
-def _rel(a, b):
-    return np.linalg.norm(a - b) / (np.linalg.norm(a) + np.linalg.norm(b))
+def test_time_and_bound():
+    n = 1 << 26
+    t = sub.roofline_time(n, 6 * n, T4["fp16"], T4["bw"])
+    assert abs(t - 6 * n / 320e9) < 1e-15
+    assert sub.bound(n, 6 * n, T4["fp16"], T4["bw"]) == "memory"
+    f, b = 2 * 4096 ** 3, 3 * 4096 ** 2 * 2
+    assert sub.bound(f, b, T4["fp16"], T4["bw"]) == "compute"
+    assert abs(sub.roofline_time(f, b, T4["fp16"], T4["bw"]) - f / 65e12) < 1e-15
 
 
-def test_grad_relu():
-    Y, c = sub.relu_forward(Z)
-    assert np.allclose(Y, np.maximum(Z, 0))
-    dZ = sub.relu_backward(G, c)
-    assert _rel(dZ, _num(lambda P: np.sum(sub.relu_forward(P)[0] * G), Z)) < 1e-5
-
-
-def test_grad_tanh():
-    _, c = sub.tanh_forward(Z)
-    dZ = sub.tanh_backward(G, c)
-    assert _rel(dZ, _num(lambda P: np.sum(sub.tanh_forward(P)[0] * G), Z)) < 1e-5
-
-
-def test_relu_derivative_at_zero_is_zero():
-    _, c = sub.relu_forward(np.zeros((1, 3)))
-    assert np.all(sub.relu_backward(np.ones((1, 3)), c) == 0)
+def test_efficiency():
+    f, b = 2 * 4096 ** 3, 3 * 4096 ** 2 * 2
+    assert abs(sub.efficiency(f, b, 2 * f / 65e12, T4["fp16"], T4["bw"]) - 0.5) < 1e-12

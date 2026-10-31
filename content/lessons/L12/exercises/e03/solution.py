@@ -1,9 +1,21 @@
-def transactions(stride, n_threads=32, elem_bytes=4, segment=32):
-    """Thread t of a warp loads the element at byte address t * stride * elem_bytes. Count the distinct
-    aligned memory segments of `segment` bytes the warp touches."""
-    return len({(t * stride * elem_bytes) // segment for t in range(n_threads)})
+def candidate_probability(s, bands, rows):
+    """Probability that two documents with Jaccard similarity s share at least one band, with the
+    signature split into `bands` bands of `rows` rows."""
+    return 1 - (1 - s ** rows) ** bands
 
 
-def efficiency(stride, n_threads=32, elem_bytes=4, segment=32):
-    """Useful bytes divided by bytes transferred."""
-    return n_threads * elem_bytes / (transactions(stride, n_threads, elem_bytes, segment) * segment)
+def dprob_ds(s, bands, rows):
+    """The derivative of candidate_probability with respect to s."""
+    return bands * rows * s ** (rows - 1) * (1 - s ** rows) ** (bands - 1)
+
+
+def threshold(bands, rows):
+    """The similarity where the S-curve is steepest, approximately (1 / bands) ** (1 / rows)."""
+    return (1 / bands) ** (1 / rows)
+
+
+def choose_bands(num_perm, target):
+    """Among the (bands, rows) with bands * rows == num_perm, the pair whose threshold is closest
+    to target."""
+    pairs = [(num_perm // r, r) for r in range(1, num_perm + 1) if num_perm % r == 0]
+    return min(pairs, key=lambda p: abs(threshold(*p) - target))

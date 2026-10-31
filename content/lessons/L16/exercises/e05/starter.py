@@ -1,22 +1,16 @@
-import hashlib
+import numpy as np
 
 
-def normalize(doc):
-    """Lowercase and collapse whitespace runs to single spaces."""
+def best_rank_r(M, r):
+    """The rank-r matrix closest to M in Frobenius norm: the truncated SVD (Eckart-Young)."""
     raise NotImplementedError
 
 
-def exact_dedup(docs):
-    """Indices of the first occurrence of each document, comparing SHA-1 digests of the normalized
-    text."""
+def relative_error(M, r):
+    """|M - best_rank_r(M, r)|_F / |M|_F, from the singular values alone."""
     raise NotImplementedError
 
 
-def boilerplate_lines(docs, min_docs):
-    """The set of stripped, non-empty lines that occur in at least min_docs different documents."""
-    raise NotImplementedError
-
-
-def strip_lines(doc, lines):
-    """doc without the lines whose stripped text is in `lines`."""
+def rank_for(M, tol):
+    """The smallest rank whose relative error is at most tol."""
     raise NotImplementedError

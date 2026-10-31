@@ -1,6 +1,6 @@
-# Build: SFT, LoRA and distillation
+# Build: the stages, one function each
 
-## Supervised fine-tuning
+## Planning and data
 
 :::exercise{ref=e01}
 :::
@@ -8,10 +8,10 @@
 :::exercise{ref=e02}
 :::
 
-## Adapters
-
 :::exercise{ref=e03}
 :::
+
+## Fine-tuning and alignment
 
 :::exercise{ref=e04}
 :::
@@ -21,8 +21,6 @@
 
 :::exercise{ref=e06}
 :::
-
-## Distillation
 
 :::exercise{ref=e07}
 :::

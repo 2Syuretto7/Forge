@@ -1,11 +1,8 @@
 import numpy as np
 
 
-def softmax_rows(S):
-    """Softmax of every row, stable for large entries; -inf entries get weight 0."""
-    raise NotImplementedError
-
-
-def softmax_backward(P, dP):
-    """Given P = softmax_rows(S) and dL/dP, return dL/dS."""
+def round_to_format(x, exp_bits, man_bits):
+    """Round float64 values to the nearest value representable with exp_bits exponent bits and
+    man_bits mantissa bits (IEEE layout: bias 2^(e-1) - 1, subnormals, infinities), ties to even.
+    Values beyond the largest finite number become +-inf."""
     raise NotImplementedError

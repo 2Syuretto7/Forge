@@ -1,11 +1,11 @@
-# Rollback and skip
+# Activation patching
 
-`poisoned_batch(rng, step, bad_steps)` gives a regression batch whose targets are garbage at the steps in `bad_steps`. Implement `run(steps, bad_steps, ...)`: SGD where step $t$'s batch comes from `np.random.default_rng([seed, t])`, a checkpoint every `every` steps, and, when `recover`, a spike check on each step's loss before the update: if it exceeds the mean of the previous `window` kept losses by $k$ standard deviations, restore the checkpoint at `(step - 2) // every * every`, mark every step from there to `skip_ahead` steps past the flagged one as skipped, drop the loss history after the checkpoint, and continue. Return the final weights and the flagged steps.
+Which internal component makes a model's output change between two inputs? Run the model on a **corrupted** input, overwrite one component with its value from the **clean** run, and see how much of the output difference comes back.
 
-The run never consults `bad_steps`: like PaLM's recovery, it skips everything seen around the spike.
+The provided network decides whether token A appears at position 0 and token B at position 1, through four hidden units. Implement `patch_effects(x_clean, x_corrupt)`: for each hidden unit, the fraction of `output(clean) - output(corrupt)` restored by patching that unit alone.
 
 ## Hints
 
-1. Keep the loss history as (step, loss) pairs so you can cut it back to the checkpoint.
-2. Generating each step's batch from `(seed, step)` makes skipping trivial: a skipped step's batch is simply never drawn.
-3. Compare three runs: clean, poisoned without recovery and poisoned with recovery.
+1. Compute both hidden vectors first; patch a copy of the corrupted one.
+2. A unit that is the same in both runs has effect 0: patching can only find components that differ.
+3. Effects need not sum to 1: components interact, and a fraction above 1 means patching overshoots.

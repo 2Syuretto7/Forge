@@ -1,18 +1,18 @@
-import numpy as np
+import math
 
 
-def logistic_loss_grad(w, X, y):
-    """Mean logistic loss of labels y in {0, 1} and its gradient."""
-    z = X @ w
-    p = 1 / (1 + np.exp(-z))
-    return float(np.mean(np.logaddexp(0, z) - y * z)), X.T @ (p - y) / len(y)
+def kv_bytes(layers, kv_heads, head_dim, tokens, bytes_per=2):
+    """Bytes of keys and values cached for `tokens` tokens."""
+    return 2 * layers * kv_heads * head_dim * bytes_per * tokens
 
 
-def finetune(w_pre, X, y, lam, steps=500, lr=0.5):
-    """Gradient descent from the pretrained weights on the new task's loss plus
-    lam / 2 |w - w_pre|^2, which pulls the weights back toward where they started."""
-    w = w_pre.copy()
-    for _ in range(steps):
-        _, g = logistic_loss_grad(w, X, y)
-        w -= lr * (g + lam * (w - w_pre))
-    return w
+def max_sequences(memory, weight_bytes, layers, kv_heads, head_dim, ctx, bytes_per=2, reserve=0.1):
+    """Full-length sequences whose caches fit in memory after the weights and a reserved
+    fraction of memory for activations."""
+    free = memory * (1 - reserve) - weight_bytes
+    return max(0, math.floor(free / kv_bytes(layers, kv_heads, head_dim, ctx, bytes_per)))
+
+
+def decode_step_ms(weight_bytes, cache_bytes, bandwidth):
+    """Memory-bound time of one decode step that reads the weights and the caches once."""
+    return 1e3 * (weight_bytes + cache_bytes) / bandwidth

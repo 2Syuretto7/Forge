@@ -1,16 +1,23 @@
 import numpy as np
 
 
-def rates(A):
-    """Speed limits of gradient descent on a quadratic with symmetric positive definite Hessian A."""
+def softmax_rows(S):
+    """Softmax of every row, stable for large entries; -inf entries get weight 0."""
+    m = S.max(axis=-1, keepdims=True)
+    E = np.exp(S - m)
+    return E / E.sum(axis=-1, keepdims=True)
+
+
+def softmax_backward(P, dP):
+    """Given P = softmax_rows(S) and dL/dP, return dL/dS."""
+    return P * (dP - (dP * P).sum(axis=-1, keepdims=True))
+
+
+def causal_mask(n):
+    """Boolean (n, n) array, True where query i may not see key j (j > i)."""
     raise NotImplementedError
 
 
-def contraction(A, lr):
-    """Worst-case factor by which one step multiplies the error: max_i |1 - lr * lambda_i|."""
-    raise NotImplementedError
-
-
-def steps_needed(A, eps):
-    """Steps at the optimal fixed rate until the worst-case error shrinks by eps."""
+def attention(Q, K, V, causal=True, scale=True):
+    """Single-head attention for Q, K of shape (n, d) and V of shape (n, dv). Return (O, P)."""
     raise NotImplementedError

@@ -1,31 +1,31 @@
-# Break it: the wrong loss and the wrong rank
+# Break it: leaks between stages and skew at the end
 
-## Training on the prompt
+## Evaluating on what you trained on
+
+::::predict{id=p4 kind=choice answer=b}
+The fine-tuning set and the evaluation set were sampled from the same list of words, with replacement. Fine-tuned accuracy is 92%. What is the likely problem?
+
+- None: sampling with replacement is the standard way to build both sets.
+- Some evaluation words were also trained on, so 92% mixes memory with generalization; the accuracy on words never trained on may be much lower.
+- The evaluation set is too large.
+- The model overfits, so the true accuracy is higher.
+
+:::reveal
+Any overlap between training and evaluation inflates the score on exactly the overlapping items (L12, L19). Split the word list once, before any training, and check the overlap explicitly (exercise 11). Report the clean accuracy.
+:::
+::::
 
 :::exercise{ref=e11}
 :::
 
-## Too few directions
-
-::::predict{id=p4 kind=choice answer=a}
-A LoRA fine-tune with rank 1 plateaus at a training loss well above full fine-tuning's, while rank 16 matches it. What is the best explanation?
-
-- The update the task needs has more than one important direction, and a rank-1 adapter can only represent one.
-- Rank 1 needs a larger learning rate, and nothing else.
-- Rank 1 overfits.
-- The adapter was initialized wrongly.
-
-:::reveal
-A rank-$r$ adapter can only produce rank-$r$ updates; by Eckart-Young its best possible loss is set by the singular values it cannot reach. More steps cannot fix that. Raise the rank, or adapt more matrices, and compare against full fine-tuning to see how much is left.
-:::
-::::
+## Train/serve skew
 
 :::exercise{ref=e12}
 :::
 
 ## What to take away
 
-- Mask the prompt; include the end token in the response.
-- Measure the base evaluation before and after every fine-tune.
-- Start LoRA at rank 8 or 16 on all the large matrices, and check against full fine-tuning once.
-- Distill with softened targets, and store only the teacher's top probabilities.
+- Plan from the binding constraint: on a small corpus, data, not compute.
+- Fix the evaluation sets before training and check every stage's data against them.
+- Measure each stage against the one before, paired by item, with intervals.
+- Record what each stage read and wrote, and share one encoder between training and serving.

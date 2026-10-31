@@ -1,12 +1,15 @@
-# Curved boundaries from a linear model
+# Break it: weight decay inside Adam
 
-A linear classifier on engineered features can draw curved boundaries in the original space. Two classes separated by a circle are impossible for logistic regression on $(x_1, x_2)$ and easy on quadratic features.
+Your dictionary optimizers from exercise 8 are provided. A single weight `W` starts at 1, and its data gradient alternates $+s, -s, +s, \dots$, so on average the data does not push it anywhere and only the decay should move it.
 
-- `poly2(X)`: map `(n, 2)` inputs to `(n, 6)` features $[1, x_1, x_2, x_1^2, x_1 x_2, x_2^2]$.
-- `fit_and_score(F_train, y_train, F_test, y_test, l2)`: train logistic regression (no separate bias: the constant feature is in `F`) by gradient descent with `lr=0.5` for 3000 steps from zero, and return test accuracy.
+1. `simulate(method, s, lr=0.01, wd=0.1, steps=1000)`: run Adam with `weight_decay=wd`, decoupled for `method="adamw"` and as an L2 term for `method="adam_l2"`, and return the final weight.
+2. `predicted_adamw(lr, wd, steps)`: the decoupled prediction $(1 - \eta\lambda)^{\text{steps}}$.
+3. `predicted_l2_noisy(s, lr, wd, steps)`: the L2 prediction when $s$ dominates: Adam divides the decay term $\lambda W$ by $\sqrt{\hat v} \approx s$, so each step removes about $\eta\lambda W/s$, giving $e^{-\text{steps}\cdot\eta\lambda/s}$.
+
+Run both methods for $s$ from $0.01$ to $10$. AdamW decays the weight identically at every gradient scale; L2 inside Adam barely decays a weight with large gradients and wipes out one with small gradients.
 
 ## Hints
 
-1. `np.column_stack` the six columns.
-2. For the linear baseline, the tests pass `np.column_stack([ones, X])`.
-3. A small L2 penalty keeps the weights finite if the training data happen to be separable.
+1. Keep the weight in a dictionary `{"W": np.array([1.0])}` so the optimizer treats it as a weight matrix.
+2. The gradient at step `t` (from 1) is `s` when `t` is odd and `-s` when it is even.
+3. For small $s$ the L2 term dominates the gradient, so Adam's step is about $\eta$ per step regardless of $W$: linear, not exponential, decay.

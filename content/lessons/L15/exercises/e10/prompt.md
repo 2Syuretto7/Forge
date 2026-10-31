@@ -1,16 +1,12 @@
-# Running out of data
+# Watching update sizes
 
-Data is finite. Muennighoff et al. (2023) model repeated data with diminishing returns: $U$ unique tokens seen for $1 + R$ epochs are worth
-$$
-D' = U + U R^* \bigl(1 - e^{-R/R^*}\bigr)
-$$
-fresh tokens, with a fitted constant $R^*$ (about 15 in their fits). `law` is provided.
+The ratio of an update's size to the parameter's size, $\|\Delta W\|/\|W\|$, says how far one step moves each layer. Around $10^{-3}$ is typical for Adam; much larger means the layer is moving too fast to be stable, much smaller that it has stopped learning.
 
-1. `effective_tokens(unique, epochs, r_star=15.4)`.
-2. `loss_with_repeats(N, unique, epochs, E, A, B, alpha, beta, r_star=15.4)`: the parametric loss with $D$ replaced by $D'$.
+1. `update_ratios(params, updates)`: a dictionary from each name to the ratio of Frobenius norms.
+2. `flag_layers(ratios, low=1e-5, high=1e-2)`: the sorted names outside $[\text{low}, \text{high}]$.
 
 ## Hints
 
-1. $R$ counts repetitions: one epoch means $R = 0$.
-2. For small $R$, $1 - e^{-R/R^*} \approx R/R^*$, so a few epochs are worth almost as much as fresh data.
-3. As the epochs grow, $D'$ approaches $U(1 + R^*)$: no amount of repetition is worth more than that.
+1. `np.linalg.norm` of a matrix is the Frobenius norm by default.
+2. Compute the update as the parameter after the step minus before, so it includes weight decay and clipping.
+3. Logging these per layer costs almost nothing and often points at the layer where a spike starts.

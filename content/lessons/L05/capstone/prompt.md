@@ -1,13 +1,12 @@
-# Capstone: a calibrated multi-class classifier
+# Capstone: an optimizer bake-off
 
-`make_dataset()` in the starter generates 900 examples with 8 features on very different scales (one is in the thousands, one in tenths) and 3 classes. Use the first 600 rows for training and the last 300 for testing; never let the test rows influence training, including standardization statistics.
+Your optimizers (exercise 8), training loop (exercise 10), a warmup-cosine schedule and the L03 network are provided. Train on `make_digits(2000, 0)`, tune on the validation split `make_digits(1000, 2)`, and report test accuracy on `make_digits(1000, 1)` only for your final recipe.
 
-Implement `train_and_evaluate(X_train, y_train, X_test, y_test)`, choosing the learning rate, number of steps and L2 strength yourself. Return a dict with:
+A recipe is a dictionary with `optimizer` (`"sgd"`, `"momentum"`, `"adam"` for L2 inside Adam, or `"adamw"`), `lr`, `steps` (at most 800), `batch` (at most 100), `schedule` (`"constant"` or `"cosine"`), `warmup`, `weight_decay`, and `momentum` for `"momentum"`.
 
-- `"accuracy"`, `"log_loss"`, `"ece"` (10 bins) on the test set,
-- `"confusion"`: the 3 x 3 test confusion matrix (`C[true, predicted]`),
-- `"W"` and `"b"`: the trained parameters (for standardized inputs).
+1. `make_optimizer(recipe)` and `run(recipe, seed=0)`, which trains the L03 network (64-64-32-10) with the recipe and returns the parameters.
+2. `BAKEOFF`: for each of the four optimizers, the best recipe you found and its validation accuracy with seed 0, as `{"sgd": {"recipe": {...}, "val_acc": 0.93}, ...}`. The tests rerun every recipe and check your numbers.
+3. `RECIPE`: your final choice, which must be at least as good on validation as every bake-off entry (within half a point) and reach at least 92 percent mean test accuracy over seeds 0 and 1.
+4. `REPORT`: at least 80 words naming all four optimizers with their validation accuracies, your recipe and its test accuracy, and what made the difference.
 
-Targets: test accuracy at least 0.87, log loss at most 0.30, ECE at most 0.06.
-
-Then write `REPORT` (at least 80 words): your hyperparameters and why, the three numbers, which classes are confused with which, and whether the model is over- or under-confident according to the calibration bins.
+Keep the values you report in `BAKEOFF` as numbers you computed; do not tune on the test split.

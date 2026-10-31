@@ -133,7 +133,7 @@ $$
 
 ## 6. Blocks and batches
 
-A matrix can be cut into **blocks**, and blocks multiply like entries, as long as the cuts fit: the $(I, J)$ block of $AB$ is $\sum_K A_{IK} B_{KJ}$. GPUs multiply large matrices this way, one tile at a time (L12).
+A matrix can be cut into **blocks**, and blocks multiply like entries, as long as the cuts fit: the $(I, J)$ block of $AB$ is $\sum_K A_{IK} B_{KJ}$. GPUs multiply large matrices this way, one tile at a time (L08).
 
 A **batch** is a stack of matrices. NumPy's `A @ B` with shapes $(\beta, m, n)$ and $(\beta, n, p)$ multiplies them pair by pair and returns $(\beta, m, p)$. Each product costs $mp$ dot products of length $n$, that is $2mnp$ floating-point operations (one multiply and one add per term).
 
@@ -163,4 +163,4 @@ That is about $1.7 \times 10^{10}$. At a sustained $10^{11}$ operations per seco
 | Inverse | $(AB)^{-1} = B^{-1} A^{-1}$; none when $\det = 0$ | undo a map |
 | Transpose | $(Ax) \cdot y = x \cdot A^\top y$; $(AB)^\top = B^\top A^\top$ | gradients (M19) |
 | Determinant | area factor, $ad - bc$; $\det AB = \det A \det B$ | invertibility, densities (M20) |
-| Batch | $(\beta, m, n)$ @ $(\beta, n, p)$ costs $2\beta mnp$ | attention (L13) |
+| Batch | $(\beta, m, n)$ @ $(\beta, n, p)$ costs $2\beta mnp$ | attention (L09) |

@@ -1,23 +1,23 @@
+import numpy as np
 import sub
 
-TEXT = "low lower lowest newer newest widest low lower newest " * 3
+rng = np.random.default_rng(0)
 
 
-def test_first_merges():
-    merges = sub.train_bpe(TEXT, 260)
-    v = sub.vocab_bytes(merges)
-    assert len(merges) == 4 and list(merges.values()) == [256, 257, 258, 259]
-    first = list(merges)[0]
-    ids = sub.to_bytes(TEXT)
-    counts = sub.count_pairs(ids)
-    assert counts[first] == max(counts.values())
-    assert all(len(v[i]) >= 2 for i in range(256, 260))
+def test_allreduce_sums():
+    for P in [1, 2, 3, 5]:
+        xs = [rng.normal(size=11) for _ in range(P)]
+        out, _ = sub.ring_allreduce(xs)
+        assert len(out) == P and all(np.allclose(o, sum(xs)) for o in out)
 
 
-def test_vocab_roundtrip_and_stop():
-    merges = sub.train_bpe(TEXT, 400)
-    v = sub.vocab_bytes(merges)
-    assert len(merges) < 400 - 256
-    for (a, b), i in merges.items():
-        assert v[i] == v[a] + v[b]
-    assert sub.train_bpe("abcdef", 300) == {}
+def test_traffic():
+    for P in [2, 4, 8]:
+        _, sent = sub.ring_allreduce([np.ones(64) for _ in range(P)])
+        assert sent == 2 * (P - 1) * 64 // P
+
+
+def test_inputs_unchanged():
+    xs = [np.ones(4), 2 * np.ones(4)]
+    sub.ring_allreduce(xs)
+    assert np.all(xs[0] == 1) and np.all(xs[1] == 2)

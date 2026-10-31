@@ -1,22 +1,22 @@
 import numpy as np
 
 
-def _fit(x, y, d):
-    return np.linalg.lstsq(np.vander(x, d + 1, increasing=True), y, rcond=None)[0]
+class BatchNorm:
+    """Batch norm with running statistics for evaluation, as in PyTorch's BatchNorm1d."""
 
+    def __init__(self, n, momentum=0.1, eps=1e-5):
+        self.gamma, self.beta = np.ones(n), np.zeros(n)
+        self.running_mean, self.running_var = np.zeros(n), np.ones(n)
+        self.momentum, self.eps = momentum, eps
+        self.training = True
 
-def _pred(c, x):
-    return np.vander(x, len(c), increasing=True) @ c
-
-
-def curves(x_tr, y_tr, x_te, y_te, degrees):
-    tr, te = [], []
-    for d in degrees:
-        c = _fit(x_tr, y_tr, d)
-        tr.append(np.mean((_pred(c, x_tr) - y_tr) ** 2))
-        te.append(np.mean((_pred(c, x_te) - y_te) ** 2))
-    return np.array(tr), np.array(te)
-
-
-def best_degree(degrees, test_mse):
-    return int(np.asarray(degrees)[int(np.argmin(test_mse))])
+    def forward(self, x):
+        if self.training:
+            mu, var = x.mean(axis=0), x.var(axis=0)
+            n = x.shape[0]
+            m = self.momentum
+            self.running_mean = (1 - m) * self.running_mean + m * mu
+            self.running_var = (1 - m) * self.running_var + m * var * n / (n - 1)
+        else:
+            mu, var = self.running_mean, self.running_var
+        return self.gamma * (x - mu) / np.sqrt(var + self.eps) + self.beta

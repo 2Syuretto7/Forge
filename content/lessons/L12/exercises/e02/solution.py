@@ -1,20 +1,28 @@
 import numpy as np
 
+import zlib
 
-def tiled_matmul(A, B, T):
-    """C = A B computed in T x T output tiles, looping over K in steps of T, with sizes that need not be
-    multiples of T. Return (C, loads), where loads counts the elements read from A and B."""
-    M, K = A.shape
-    N = B.shape[1]
-    C = np.zeros((M, N))
-    loads = 0
-    for i in range(0, M, T):
-        for j in range(0, N, T):
-            acc = np.zeros((min(T, M - i), min(T, N - j)))
-            for k in range(0, K, T):
-                a = A[i:i + T, k:k + T]
-                b = B[k:k + T, j:j + T]
-                loads += a.size + b.size
-                acc += a @ b
-            C[i:i + T, j:j + T] = acc
-    return C, loads
+PRIME = 2 ** 31 - 1
+
+
+def make_hashes(num_perm, seed=0):
+    """Coefficients (a, b) of num_perm hash functions h(x) = (a x + b) mod PRIME."""
+    rng = np.random.default_rng(seed)
+    return rng.integers(1, PRIME, num_perm), rng.integers(0, PRIME, num_perm)
+
+
+def shingle_ids(sh):
+    """Each shingle as a 32-bit integer (CRC-32 of its UTF-8 bytes)."""
+    return np.array(sorted(zlib.crc32(s.encode("utf-8")) for s in sh), dtype=np.int64)
+
+
+def minhash(ids, a, b):
+    """The MinHash signature: for each hash function i, the minimum over the shingle ids x of
+    (a[i] x + b[i]) mod PRIME. ids are taken mod PRIME first."""
+    x = np.asarray(ids, dtype=np.int64) % PRIME
+    return ((np.outer(a, x) + b[:, None]) % PRIME).min(axis=1)
+
+
+def estimate_jaccard(sig1, sig2):
+    """The fraction of positions where two signatures agree."""
+    return float(np.mean(np.asarray(sig1) == np.asarray(sig2)))

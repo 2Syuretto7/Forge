@@ -1,6 +1,7 @@
 import numpy as np
 
 
-def unbroadcast(g, shape):
-    """Sum g over the axes that broadcasting added or stretched, to get `shape`."""
+def tiled_matmul(A, B, T):
+    """C = A B computed in T x T output tiles, looping over K in steps of T, with sizes that need not be
+    multiples of T. Return (C, loads), where loads counts the elements read from A and B."""
     raise NotImplementedError

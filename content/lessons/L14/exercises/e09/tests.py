@@ -1,23 +1,30 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(9)
-Z = rng.normal(size=(4, 7)) * 2
-Y = rng.integers(0, 7, size=4)
+rng = np.random.default_rng(5)
+Ws = [rng.normal(size=(4, 4)) * 0.6 for _ in range(16)]
+x = rng.normal(size=(3, 4))
+dout = rng.normal(size=(3, 4))
 
 
-def test_grad_tempered():
-    for T in (0.5, 2.0):
-        _, g = sub.tempered_xent(Z, Y, T)
-        num = np.zeros_like(Z)
-        for idx in np.ndindex(Z.shape):
-            E = np.zeros_like(Z)
-            E[idx] = 1e-6
-            num[idx] = (sub.tempered_xent(Z + E, Y, T)[0] - sub.tempered_xent(Z - E, Y, T)[0]) / 2e-6
-        assert np.allclose(g, num, atol=1e-8), T
+def test_grad_checkpointed():
+    grads, _ = sub.checkpointed_grads(x, Ws, dout, 4)
+    for layer, (i, j) in [(0, (1, 2)), (7, (0, 0)), (15, (3, 1))]:
+        P = [w.copy() for w in Ws]
+        P[layer][i, j] += 1e-6
+        up = np.sum(sub.forward(x, P)[-1] * dout)
+        P[layer][i, j] -= 2e-6
+        down = np.sum(sub.forward(x, P)[-1] * dout)
+        assert abs((up - down) / 2e-6 - grads[layer][i, j]) < 1e-6
 
 
-def test_entropy_increases():
-    z = np.array([3.0, 1.0, 0.5, 0.0, -2.0])
-    e = [sub.entropy_at(z, T) for T in (0.01, 0.5, 1.0, 2.0, 100.0)]
-    assert e[0] < 1e-6 and all(a < b for a, b in zip(e, e[1:])) and abs(e[-1] - np.log(5)) < 1e-3
+def test_same_as_plain_backward():
+    plain = sub.backward(sub.forward(x, Ws), Ws, dout)
+    for k in [1, 2, 4, 8, 16]:
+        grads, _ = sub.checkpointed_grads(x, Ws, dout, k)
+        assert all(np.allclose(a, b) for a, b in zip(plain, grads))
+
+
+def test_square_root_rule():
+    peaks = {k: sub.checkpointed_grads(x, Ws, dout, k)[1] for k in [1, 2, 4, 8, 16]}
+    assert peaks[1] == 17 and peaks[4] == min(peaks.values()) and peaks[4] < peaks[16]

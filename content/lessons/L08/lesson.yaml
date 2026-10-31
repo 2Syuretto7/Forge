@@ -1,34 +1,36 @@
 id: L08
-hours: 10
-capstone: "The NumPy autograd engine trains an MLP whose loss curve matches the PyTorch reference within tolerance"
-teaser: "Build a tensor autograd engine with broadcasting and a module API, then open PyTorch and recognize every piece."
+hours: 11
+capstone: "A Triton FlashAttention forward kernel that matches a reference within 1e-2 in fp16 and runs faster than unfused attention at sequence length 2048"
+teaser: "Write GPU kernels in Triton: coalesced loads, tiles, fusion, and the online softmax that lets FlashAttention keep attention on chip."
 movements:
   - {file: m0-recall.md,     mode: theory,   minutes: 25}
   - {file: m1-puzzle.md,     mode: theory,   minutes: 45}
-  - {file: m2-derivation.md, mode: theory,   minutes: 180}
+  - {file: m2-derivation.md, mode: theory,   minutes: 200}
   - {file: m3-build.md,      mode: practice, minutes: 160}
   - {file: m4-scale.md,      mode: practice, minutes: 70}
   - {file: m5-break.md,      mode: both,     minutes: 50}
   - {file: m6-feynman.md,    mode: theory,   minutes: 25}
-  - {file: m7-capstone.md,   mode: practice, minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 85}
 hooks:
-  - {to: L09, text: "Your engine's parameters and gradients are what optimizers consume; L09 writes SGD with momentum and Adam on top."}
-  - {to: L11, text: "Every operation on the tape becomes a GPU kernel launch; L11 measures what they cost."}
-  - {to: L18, text: "The tensors saved for backward are the activation memory that distributed training must budget."}
+  - {to: L18, text: "Inference kernels build on the same ideas: attention over a cached, paged set of keys and values."}
 reuses:
-  - {from: M19, concept: "reverse-mode differentiation and vector-Jacobian products"}
-  - {from: L07, concept: "hand-written backward passes for an MLP"}
+  - {from: L06, concept: "the layer norm forward and backward passes"}
+  - {from: L07, concept: "the roofline, tiling and kernel fusion"}
+  - {from: L09, concept: "scaled dot-product attention and its backward pass"}
 annotations:
-  - {target: L07, movement: m2-derivation, anchor: "4. Backpropagation", text: "L08 automates exactly this: each operation records its inputs and a VJP on a tape, and backward() replays the tape in reverse."}
+  - {target: L07, movement: m2-derivation, anchor: "Tiling: how a matmul actually reaches high intensity", text: "L08 writes this tiled kernel in Triton, and fuses attention the same way."}
+  - {target: L09, movement: m2-derivation, anchor: "Attention on the roofline", text: "L08 removes this bottleneck: FlashAttention keeps the score matrix on chip with an online softmax."}
 concepts:
-  - q: "Why must an autograd engine visit nodes in reverse topological order during backward?"
-    a: "A node's gradient is complete only after every node that uses it has passed its contribution back; reverse topological order guarantees all consumers are processed first."
-  - q: "How do you compute the gradient of an input that was broadcast in the forward pass?"
-    a: "Sum the output gradient over every dimension that was added or stretched from size 1, so the gradient has the input's original shape."
-  - q: "Why do frameworks complain about in-place modification of tensors needed for backward?"
-    a: "The backward pass reads tensors saved during the forward pass; changing them in place makes the gradient use wrong values silently, so frameworks track a version counter and raise an error."
-  - q: "What does torch.no_grad() do?"
-    a: "It stops the recording of operations, so no graph is built and no tensors are saved for backward, saving memory during inference."
-  - q: "Why do gradients accumulate rather than overwrite?"
-    a: "A tensor used several times receives one contribution per use, and the chain rule sums them; that is also why optimizers must zero gradients between steps."
-katas: [e02, e04, e06]
+  - q: "How does the online softmax compute a softmax in one pass over blocks?"
+    a: "It keeps a running maximum m and a running sum l of exp(x - m); when a new block raises the maximum, the old sum is multiplied by exp(m_old - m_new) before the block's terms are added."
+  - q: "Why does FlashAttention use less memory than standard attention?"
+    a: "It never stores the N by N score or probability matrix: it streams keys and values through on-chip memory with an online softmax, and keeps only one log-sum-exp per query for the backward pass."
+  - q: "What is memory coalescing?"
+    a: "When the 32 threads of a warp access consecutive addresses, the hardware serves them with a few wide transactions; scattered or strided accesses need many transactions and waste bandwidth."
+  - q: "Why are softmax and normalization kernels computed in fp32 even for fp16 tensors?"
+    a: "exp overflows fp16 above about 11, and sums of many fp16 values lose precision, so kernels load fp16, compute and accumulate in fp32, and store fp16."
+  - q: "Why does a Triton kernel need masks on its loads and stores?"
+    a: "Blocks have power-of-two sizes that rarely divide the data exactly; without a mask the last block reads and writes past the end of the tensor."
+  - q: "What does kernel fusion save in a row softmax?"
+    a: "The unfused version writes the exponentials to memory and reads them back several times; the fused kernel reads each row once and writes the result once, about a third of the traffic."
+katas: [e01, e03, e04]

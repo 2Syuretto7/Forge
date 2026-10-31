@@ -1,15 +1,15 @@
-# Matrix multiplication, transpose and reshape
+# One-pass statistics and a fused layer-norm backward
 
-Add three structural operations to the engine (the previous stage is provided):
+A fused layer-norm kernel computes each row's mean and variance in one pass over the row.
 
-- `_matmul(self, other)` for `self @ other` with 2-D operands: the gradient is `G @ B.T` to `A` and `A.T @ G` to `B`.
-- `_transpose(self)`, used as the property `t.T`: the gradient is `G.T`.
-- `_reshape(self, *shape)`: the gradient is `G` reshaped to the input's shape.
+1. `naive_moments(x)`: mean and variance as $\mathbb E[x^2] - \mathbb E[x]^2$, accumulating in the array's own dtype.
+2. `welford(x)`: mean and variance with Welford's update, also in the array's dtype.
+3. `layernorm_backward_recompute(dy, x, gamma, eps=1e-5)`: the layer-norm backward pass of L06, recomputing the mean and $1/\sigma$ from `x` instead of storing them, as a fused backward kernel does. Return `(dx, dgamma, dbeta)`.
 
-They are attached to the class at the bottom of the file.
+The tests feed float32 values near $10^4$ with unit spread: the naive variance cancels to garbage, Welford's does not.
 
 ## Hints
 
-1. Follow the pattern of `__add__`: compute, create the output with its parents and an op name, attach a closure, return.
-2. Shapes check the matmul rule: `G` is `(m, n)`, `B` is `(k, n)`, so `G @ B.T` is `(m, k)`, the shape of `A`.
-3. Do not unbroadcast in matmul here; the operands are 2-D and not broadcast.
+1. Use `x.dtype.type(...)` for constants so the arithmetic stays in float32.
+2. Welford: `d = v - mean; mean += d / i; m2 += d * (v - mean)`; the variance is `m2 / n`.
+3. The backward formula: with `g = dy * gamma`, `dx = r / d * (d * g - g.sum(1) - xh * (g * xh).sum(1))` (keepdims).

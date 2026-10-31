@@ -1,18 +1,29 @@
 import numpy as np
 
 
-def fit_lora(target, r, alpha, steps=3000, lr=0.05, seed=0):
-    """Fit (alpha / r) B A to the target update by gradient descent on 0.5 |(alpha / r) B A - target|^2,
-    starting from B = 0 and A with entries N(0, 1/r) as LoRA does. Return (A, B, final loss)."""
-    rng = np.random.default_rng(seed)
-    d_out, d_in = target.shape
-    A = rng.normal(size=(r, d_in)) / np.sqrt(r)
-    B = np.zeros((d_out, r))
-    s = alpha / r
-    for _ in range(steps):
-        E = s * B @ A - target
-        gB = s * E @ A.T
-        gA = s * B.T @ E
-        A -= lr * gA
-        B -= lr * gB
-    return A, B, 0.5 * float(np.sum((s * B @ A - target) ** 2))
+def log_softmax(z):
+    z = z - z.max(axis=1, keepdims=True)
+    return z - np.log(np.exp(z).sum(axis=1, keepdims=True))
+
+
+def group_advantages(rewards, eps=1e-6):
+    """Rewards (groups, k): each reward minus its group's mean, divided by the group's standard
+    deviation plus eps."""
+    r = np.asarray(rewards, dtype=float)
+    return (r - r.mean(axis=1, keepdims=True)) / (r.std(axis=1, keepdims=True) + eps)
+
+
+def pg_loss(logits, actions, adv, ref_logits, beta):
+    """Policy-gradient loss with a KL penalty for n sampled actions from policies given by
+    logits (n, V). With u = log pi_ref(a) - log pi(a), the loss is
+    mean(-adv * log pi(a) + beta * (exp(u) - 1 - u)). Return (loss, dlogits)."""
+    n = len(actions)
+    lp = log_softmax(logits)
+    rows = np.arange(n)
+    lpa = lp[rows, actions]
+    u = log_softmax(ref_logits)[rows, actions] - lpa
+    loss = np.mean(-adv * lpa + beta * (np.exp(u) - 1 - u))
+    coef = (-adv + beta * (1 - np.exp(u))) / n
+    onehot = np.zeros_like(logits)
+    onehot[rows, actions] = 1
+    return float(loss), coef[:, None] * (onehot - np.exp(lp))

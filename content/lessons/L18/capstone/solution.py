@@ -1,432 +1,451 @@
 # %% [markdown]
-# # L18 capstone: plan a run, then simulate it
+# # L18 capstone: an inference server that meets its targets
 #
-# This notebook runs on any runtime; the CPU runtime is enough. Part 1 plans the parallel layout of
-# a 13-billion-parameter model on 64 GPUs. Part 2 starts four processes on this machine, joined by
-# `torch.distributed` with the gloo backend, and implements the communication of that plan: ring
-# collectives from point-to-point messages, data parallelism, ZeRO stage 1 and a tensor-parallel
-# MLP, each checked against a single-process reference. The last cell is the autograder; it prints
-# a completion code to paste into the lesson.
+# Choose **Runtime, Change runtime type, T4 GPU**, then run the cells in order. The notebook trains
+# a small byte-level GPT on Tiny Shakespeare for a few minutes so there is a model to serve. You
+# write the serving engine: prefill and decode with a key-value cache, a continuous-batching server
+# loop over a fixed set of cache slots, and weight-only int8 quantization. Then you replay a
+# workload of requests arriving over time, measure time to first token, inter-token latency and
+# throughput, compare with serving one request at a time, and write the report. The last cell is
+# the autograder; it prints a completion code to paste into the lesson.
 
 # %%
+import copy
+import hashlib
 import math
 import os
-import socket
-import traceback
-from datetime import timedelta
+import pathlib
+import time
+import urllib.request
 
+import numpy as np
 import torch
-import torch.distributed as dist
-import torch.multiprocessing as mp
 import torch.nn as nn
 import torch.nn.functional as F
 
 SMALL = os.environ.get("SMALL") == "1"
-WORLD = 4
-torch.manual_seed(0)
+DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+print("device:", torch.cuda.get_device_name(0) if DEVICE == "cuda" else "CPU")
+# Exact float32 matmuls, so cached and uncached generation can be compared token by token.
+torch.backends.cuda.matmul.allow_tf32 = False
+torch.backends.cudnn.allow_tf32 = False
 
 # %% [markdown]
-# ## Part 1. The plan
+# ## 1. Configuration and targets
 #
-# The model has 40 layers of width 5120 with 40 heads, sequence length 2048, and is trained with a
-# global batch of 1024 sequences (about 2 million tokens). The cluster has 64 GPUs of 80 GB in 8
-# servers; NVLink connects the 8 GPUs inside a server, a slower network connects the servers.
-# `memory_per_gpu` is the planner's formula (FlashAttention, 1F1B pipeline schedule).
+# The server must beat serving one request at a time by `speedup` in throughput when every request
+# is queued, and on the arriving workload keep the 95th percentile of the gap between consecutive
+# tokens of a request under `p95_itl_ms` and the 95th percentile of the time from arrival to first
+# token under `p95_ttft_ms`.
 
 # %%
-MODEL = dict(layers=40, d=5120, heads=40, vocab=50257)
-N_GPUS, GPU_BYTES, NODE_SIZE, SEQ, GLOBAL_SEQS = 64, 80 * 2 ** 30, 8, 2048, 1024
+CFG = dict(d=384, n_layer=6, n_head=6, ctx=256, batch=32, steps=800, lr=2e-3, warmup=100,
+           n_requests=64, rate=40.0, max_batch=32, prompt_len=(16, 96), new_tokens=(32, 128), seed=0)
+TARGETS = dict(speedup=4.0, p95_itl_ms=50.0, p95_ttft_ms=500.0)
+if SMALL:
+    CFG.update(d=64, n_layer=2, n_head=2, ctx=64, batch=8, steps=30, n_requests=8, rate=50.0, max_batch=4,
+               prompt_len=(8, 24), new_tokens=(8, 24))
 
-
-def params(m):
-    return 12 * m["layers"] * m["d"] ** 2 + m["vocab"] * m["d"]
-
-
-def memory_per_gpu(m, tp, pp, dp, zero, micro, checkpoint, accum):
-    psi = params(m) / (tp * pp)
-    states = 2 * psi / (dp if zero >= 3 else 1) + 2 * psi / (dp if zero >= 2 else 1) + 12 * psi / (dp if zero >= 1 else 1)
-    layers = -(-m["layers"] // pp)
-    in_flight = min(pp, accum)
-    per_layer = SEQ * micro * m["d"] * 34 / tp
-    if checkpoint:
-        acts = layers * in_flight * 2 * SEQ * micro * m["d"] / tp + per_layer
-    else:
-        acts = layers * in_flight * per_layer
-    return states + acts
-
+CORPUS_URL = "https://raw.githubusercontent.com/karpathy/char-rnn/master/data/tinyshakespeare/input.txt"
+CORPUS_SHA256 = "86c4e6aa9db7c042ec79f339dcb96d42b0075e16b8fc2e86bf0ca57e2dc565ed"
+local = [p for p in (pathlib.Path("data/tinyshakespeare.txt"), pathlib.Path("../data/tinyshakespeare.txt")) if p.exists()]
+raw_bytes = local[0].read_bytes() if local else urllib.request.urlopen(CORPUS_URL, timeout=60).read()
+assert hashlib.sha256(raw_bytes).hexdigest() == CORPUS_SHA256, "unexpected corpus contents"
+data = torch.tensor(list(raw_bytes), dtype=torch.long)
+split = int(0.9 * len(data))
+train_data, val_data = data[:split], data[split:]
 
 # %% [markdown]
-# Choose the plan: tensor-parallel degree `tp` (inside a server), pipeline stages `pp`, data-parallel
-# degree `dp`, ZeRO stage, micro-batch size, and whether to checkpoint. `accum`, the micro-batches
-# each data-parallel replica runs per step, follows from the global batch. Keep the memory below
-# 90% of the card and the pipeline bubble below 10%.
-
-# %%
-# BEGIN SOLUTION -> PLAN = None
-PLAN = dict(tp=1, pp=1, dp=64, zero=1, micro=1, checkpoint=False)
-# END SOLUTION
-accum = GLOBAL_SEQS // (PLAN["dp"] * PLAN["micro"])
-plan_bytes = memory_per_gpu(MODEL, PLAN["tp"], PLAN["pp"], PLAN["dp"], PLAN["zero"], PLAN["micro"], PLAN["checkpoint"], accum)
-bubble = (PLAN["pp"] - 1) / (accum + PLAN["pp"] - 1)
-print(f"{params(MODEL) / 1e9:.1f}B parameters; {plan_bytes / 2 ** 30:.1f} GiB per GPU of {GPU_BYTES / 2 ** 30:.0f}; "
-      f"{accum} micro-batches per step; bubble {bubble:.1%}")
-
-# %% [markdown]
-# ## Part 2. Four processes on one machine
+# ## 2. A model to serve
 #
-# `run_parallel(fn, *args)` forks `WORLD` processes, joins them into a gloo process group and returns
-# the value of `fn(rank, world, *args)` from each, in rank order. Collectives time out after a
-# minute instead of hanging forever.
+# The GPT of L10 at byte level, with the parts of each block exposed so the serving code can call
+# them one at a time. Training takes about three minutes on a T4.
 
 # %%
-def _free_port():
-    s = socket.socket()
-    s.bind(("127.0.0.1", 0))
-    port = s.getsockname()[1]
-    s.close()
-    return port
+class Block(nn.Module):
+    def __init__(self, d, n_head):
+        super().__init__()
+        self.d, self.n_head = d, n_head
+        self.ln1, self.ln2 = nn.LayerNorm(d), nn.LayerNorm(d)
+        self.qkv, self.proj = nn.Linear(d, 3 * d), nn.Linear(d, d)
+        self.fc1, self.fc2 = nn.Linear(d, 4 * d), nn.Linear(4 * d, d)
+
+    def heads(self, t):
+        """(B, T, d) to (B, n_head, T, d_head)."""
+        B, T, _ = t.shape
+        return t.view(B, T, self.n_head, self.d // self.n_head).transpose(1, 2)
+
+    def merge(self, t):
+        """(B, n_head, T, d_head) to (B, T, d)."""
+        B, _, T, _ = t.shape
+        return t.transpose(1, 2).reshape(B, T, self.d)
+
+    def mlp(self, x):
+        return self.fc2(F.gelu(self.fc1(self.ln2(x))))
+
+    def forward(self, x):
+        q, k, v = (self.heads(t) for t in self.qkv(self.ln1(x)).split(self.d, dim=2))
+        x = x + self.proj(self.merge(F.scaled_dot_product_attention(q, k, v, is_causal=True)))
+        return x + self.mlp(x)
 
 
-def _convert(value, tensor_fn):
-    """Apply tensor_fn to every tensor (or array) inside nested tuples and lists."""
-    if isinstance(value, (list, tuple)):
-        return type(value)(_convert(v, tensor_fn) for v in value)
-    return tensor_fn(value)
+class GPT(nn.Module):
+    def __init__(self, d, n_layer, n_head, ctx):
+        super().__init__()
+        self.d, self.n_head, self.ctx = d, n_head, ctx
+        self.tok, self.pos = nn.Embedding(256, d), nn.Embedding(ctx, d)
+        nn.init.normal_(self.tok.weight, std=0.02)
+        nn.init.normal_(self.pos.weight, std=0.02)
+        self.blocks = nn.ModuleList([Block(d, n_head) for _ in range(n_layer)])
+        self.ln_f = nn.LayerNorm(d)
+
+    def head(self, x):
+        return self.ln_f(x) @ self.tok.weight.T
+
+    def forward(self, idx):
+        x = self.tok(idx) + self.pos(torch.arange(idx.shape[1], device=idx.device))
+        for b in self.blocks:
+            x = b(x)
+        return self.head(x)
 
 
-def _worker(fn, rank, world, port, args, queue):
-    torch.set_num_threads(1)
-    try:
-        dist.init_process_group("gloo", rank=rank, world_size=world, init_method=f"tcp://127.0.0.1:{port}", timeout=timedelta(seconds=60))
-        # Results travel by value: a tensor sent through the queue would point at this process's memory.
-        out = _convert(fn(rank, world, *args), lambda v: v.detach().numpy().copy() if isinstance(v, torch.Tensor) else v)
-        queue.put((rank, "ok", out))
-    except Exception:
-        queue.put((rank, "error", traceback.format_exc()))
-    finally:
-        if dist.is_initialized():
-            dist.destroy_process_group()
+def batch_of(src, gen, n=None):
+    ix = torch.randint(len(src) - CFG["ctx"] - 1, (n or CFG["batch"],), generator=gen)
+    x = torch.stack([src[i:i + CFG["ctx"]] for i in ix])
+    y = torch.stack([src[i + 1:i + CFG["ctx"] + 1] for i in ix])
+    return x.to(DEVICE), y.to(DEVICE)
 
 
-def run_parallel(fn, *args, world=WORLD):
-    ctx = mp.get_context("fork")
-    queue = ctx.SimpleQueue()
-    port = _free_port()
-    procs = [ctx.Process(target=_worker, args=(fn, r, world, port, args, queue)) for r in range(world)]
-    for p in procs:
-        p.start()
-    results = dict()
-    for _ in procs:
-        rank, status, value = queue.get()
-        if status == "error":
-            raise RuntimeError(f"rank {rank} failed:\n{value}")
-        results[rank] = _convert(value, lambda v: torch.from_numpy(v) if hasattr(v, "__array__") and not isinstance(v, (int, float)) else v)
-    for p in procs:
-        p.join()
-    return [results[r] for r in range(world)]
+@torch.no_grad()
+def val_loss(model, n=64):
+    model.eval()
+    x, y = batch_of(val_data, torch.Generator().manual_seed(1), n)
+    loss = F.cross_entropy(model(x).flatten(0, 1), y.flatten()).item()
+    model.train()
+    return loss
 
 
-print(run_parallel(lambda rank, world: f"rank {rank} of {world}"))
+torch.manual_seed(CFG["seed"])
+model = GPT(CFG["d"], CFG["n_layer"], CFG["n_head"], CFG["ctx"]).to(DEVICE)
+opt = torch.optim.AdamW(model.parameters(), lr=CFG["lr"], betas=(0.9, 0.95), weight_decay=0.1)
+gen = torch.Generator().manual_seed(0)
+t0 = time.time()
+for step in range(1, CFG["steps"] + 1):
+    for group in opt.param_groups:
+        group["lr"] = CFG["lr"] * min(1.0, step / CFG["warmup"]) * (0.1 + 0.45 * (1 + math.cos(math.pi * step / CFG["steps"])))
+    x, y = batch_of(train_data, gen)
+    loss = F.cross_entropy(model(x).flatten(0, 1), y.flatten())
+    opt.zero_grad(set_to_none=True)
+    loss.backward()
+    torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+    opt.step()
+    if step % 200 == 0 or step == CFG["steps"]:
+        print(f"step {step}: train loss {loss.item():.3f} ({time.time() - t0:.0f} s)")
+model.eval()
+base_val = val_loss(model)
+n_params = sum(p.numel() for p in model.parameters())
+print(f"{n_params:,} parameters, validation loss {base_val:.3f} nats per byte")
+
+
+@torch.no_grad()
+def generate_reference(model, prompt, n):
+    """Greedy decoding that recomputes the whole sequence for every token: slow and plainly correct."""
+    ids = torch.tensor([prompt], device=DEVICE)
+    out = []
+    for _ in range(n):
+        nxt = int(model(ids)[0, -1].argmax())
+        out.append(nxt)
+        ids = torch.cat([ids, torch.tensor([[nxt]], device=DEVICE)], dim=1)
+    return out
+
 
 # %% [markdown]
-# ## 3. Ring collectives from messages
+# ## 3. Prefill and decode with a key-value cache
 #
-# Write `ring_reduce_scatter(x, rank, world)` and `ring_all_gather(chunk, rank, world)` exactly as
-# in exercise 2, but with real messages: in each step, send one chunk to the right neighbour with
-# `dist.isend` while receiving one from the left with `dist.recv`, then `wait()` on the send.
-# After the reduce-scatter, rank `r` returns the fully summed chunk `(r + 1) % world`; the
-# all-gather takes that chunk and returns the whole concatenated array.
+# The cache holds keys and values for `slots` sequences at once, each in its own slot, with
+# `lengths[s]` positions filled. Write:
+#
+# - `prefill(model, cache, slot, prompt)`: run the prompt through the model in one pass, store
+#   every layer's keys and values for its positions in the slot, set the slot's length, and return
+#   the logits for the next token (a vector of 256).
+# - `decode_step(model, cache, slots, tokens)`: one new token for each of several slots at once,
+#   each at its own position. Store each token's keys and values at its slot's next position,
+#   attend over that slot's filled positions only, advance the lengths, and return the next-token
+#   logits, one row per slot.
+#
+# Hint: index the cache with a tensor of slots and a tensor of positions together, and build a
+# boolean mask of shape (batch, 1, 1, positions) for `scaled_dot_product_attention`, where `True`
+# means "may attend".
 
 # %%
-def ring_reduce_scatter(x, rank, world):
+class KVCache:
+    def __init__(self, model, slots, max_len):
+        shape = (len(model.blocks), slots, model.n_head, max_len, model.d // model.n_head)
+        self.k = torch.zeros(shape, device=DEVICE)
+        self.v = torch.zeros(shape, device=DEVICE)
+        self.lengths = torch.zeros(slots, dtype=torch.long, device=DEVICE)
+
+
+@torch.no_grad()
+def prefill(model, cache, slot, prompt):
     # BEGIN SOLUTION
-    chunks = [c.clone() for c in x.chunk(world)]
-    right, left = (rank + 1) % world, (rank - 1) % world
-    for s in range(world - 1):
-        send_i, recv_i = (rank - s) % world, (rank - s - 1) % world
-        buf = torch.empty_like(chunks[recv_i])
-        req = dist.isend(chunks[send_i], dst=right)
-        dist.recv(buf, src=left)
-        req.wait()
-        chunks[recv_i] += buf
-    return chunks[(rank + 1) % world]
+    ids = torch.tensor([prompt], device=DEVICE)
+    T = ids.shape[1]
+    x = model.tok(ids) + model.pos(torch.arange(T, device=DEVICE))
+    for layer, b in enumerate(model.blocks):
+        q, k, v = (b.heads(t) for t in b.qkv(b.ln1(x)).split(b.d, dim=2))
+        cache.k[layer, slot, :, :T] = k[0]
+        cache.v[layer, slot, :, :T] = v[0]
+        x = x + b.proj(b.merge(F.scaled_dot_product_attention(q, k, v, is_causal=True)))
+        x = x + b.mlp(x)
+    cache.lengths[slot] = T
+    return model.head(x[0, -1])
     # END SOLUTION
 
 
-def ring_all_gather(chunk, rank, world):
+@torch.no_grad()
+def decode_step(model, cache, slots, tokens):
     # BEGIN SOLUTION
-    chunks = [None] * world
-    chunks[(rank + 1) % world] = chunk.clone()
-    right, left = (rank + 1) % world, (rank - 1) % world
-    for s in range(world - 1):
-        send_i, recv_i = (rank + 1 - s) % world, (rank - s) % world
-        buf = torch.empty_like(chunk)
-        req = dist.isend(chunks[send_i], dst=right)
-        dist.recv(buf, src=left)
-        req.wait()
-        chunks[recv_i] = buf
-    return torch.cat(chunks)
+    s = torch.as_tensor(slots, device=DEVICE)
+    pos = cache.lengths[s]
+    width = int(pos.max()) + 1
+    mask = (torch.arange(width, device=DEVICE)[None, :] <= pos[:, None])[:, None, None, :]
+    x = (model.tok(torch.as_tensor(tokens, device=DEVICE)) + model.pos(pos))[:, None, :]
+    for layer, b in enumerate(model.blocks):
+        q, k, v = (b.heads(t) for t in b.qkv(b.ln1(x)).split(b.d, dim=2))
+        cache.k[layer, s, :, pos] = k[:, :, 0]
+        cache.v[layer, s, :, pos] = v[:, :, 0]
+        K, V = cache.k[layer, s, :, :width], cache.v[layer, s, :, :width]
+        x = x + b.proj(b.merge(F.scaled_dot_product_attention(q, K, V, attn_mask=mask)))
+        x = x + b.mlp(x)
+    cache.lengths[s] += 1
+    return model.head(x[:, 0])
     # END SOLUTION
 
 
-def check_ring(rank, world):
-    x = torch.arange(12, dtype=torch.float64) * (rank + 1) + rank
-    mine = ring_all_gather(ring_reduce_scatter(x, rank, world), rank, world)
-    ref = x.clone()
-    dist.all_reduce(ref)
-    return (mine - ref).abs().max().item()
+def generate_cached(model, prompt, n):
+    cache = KVCache(model, 1, CFG["ctx"])
+    out = [int(prefill(model, cache, 0, prompt).argmax())]
+    while len(out) < n:
+        out.append(int(decode_step(model, cache, [0], [out[-1]])[0].argmax()))
+    return out
 
 
-ring_errors = run_parallel(check_ring)
-print("ring all-reduce vs dist.all_reduce, largest difference per rank:", ring_errors)
+sample = list(val_data[:40].tolist())
+check_n = 48 if not SMALL else 16
+cached, reference = generate_cached(model, sample, check_n), generate_reference(model, sample, check_n)
+print("cached generation matches recomputation:", cached == reference)
+print(repr(bytes(sample + cached).decode("utf-8", errors="replace")))
 
 # %% [markdown]
-# ## 4. Data parallelism
+# ## 4. The workload
 #
-# Every rank builds the same model from the same seed and trains on its quarter of the batch. Write
-# `average_gradients(model, world)`: all-reduce every parameter's gradient and divide by the number
-# of ranks, so that each rank applies the full-batch gradient.
+# `n_requests` requests arrive as a Poisson process at `rate` per second, each with a prompt cut
+# from the validation text and a number of tokens to generate. Every request is decoded greedily,
+# so its output is fully determined and can be checked against `generate_reference`.
 
 # %%
-STEPS = 5 if SMALL else 20
+def make_workload(cfg=CFG):
+    rng = np.random.default_rng(cfg["seed"])
+    arrivals = np.cumsum(rng.exponential(1.0 / cfg["rate"], cfg["n_requests"]))
+    arrivals -= arrivals[0]
+    requests = []
+    for i, t in enumerate(arrivals):
+        n_prompt = int(rng.integers(cfg["prompt_len"][0], cfg["prompt_len"][1] + 1))
+        start = int(rng.integers(0, len(val_data) - n_prompt))
+        requests.append(dict(id=i, arrival=float(t), prompt=val_data[start:start + n_prompt].tolist(),
+                             max_new=int(rng.integers(cfg["new_tokens"][0], cfg["new_tokens"][1] + 1))))
+    return requests
 
 
-def make_model():
-    torch.manual_seed(0)
-    return nn.Sequential(nn.Linear(8, 32), nn.Tanh(), nn.Linear(32, 1)).double()
+requests = make_workload()
+print(f"{len(requests)} requests over {requests[-1]['arrival']:.2f} s, "
+      f"{sum(r['max_new'] for r in requests):,} tokens to generate")
 
+# %% [markdown]
+# ## 5. The server loop
+#
+# Write `serve(model, requests, max_batch)`, a continuous-batching loop with `max_batch` cache
+# slots. Time runs from the start of the call; a request may be admitted only once its arrival
+# time has passed. Repeat until every request is finished:
+#
+# 1. Admit arrived requests while slots are free: prefill each into a free slot and take its
+#    first token, recording the time.
+# 2. If no request is active, wait for the next arrival.
+# 3. Otherwise run one `decode_step` over all active slots, append each slot's next token and
+#    record the time; free the slot of every request that has `max_new` tokens.
+#
+# Return one record per request, in the order of `requests`, with keys `id`, `arrival`,
+# `tokens` (the generated tokens) and `times` (the time at which each token was produced, in
+# seconds from the start).
 
-def make_data():
-    g = torch.Generator().manual_seed(1)
-    X = torch.randn(64, 8, generator=g, dtype=torch.float64)
-    return X, torch.sin(X.sum(1, keepdim=True))
-
-
-def average_gradients(model, world):
+# %%
+def serve(model, requests, max_batch):
     # BEGIN SOLUTION
-    for p in model.parameters():
-        dist.all_reduce(p.grad)
-        p.grad /= world
+    cache = KVCache(model, max_batch, CFG["ctx"])
+    queue = sorted(requests, key=lambda r: r["arrival"])
+    free, active, done = list(range(max_batch))[::-1], {}, {}
+    start, i = time.perf_counter(), 0
+
+    def now():
+        return time.perf_counter() - start
+
+    while i < len(queue) or active:
+        while i < len(queue) and free and queue[i]["arrival"] <= now():
+            r = queue[i]
+            i += 1
+            slot = free.pop()
+            first = int(prefill(model, cache, slot, r["prompt"]).argmax())
+            rec = dict(id=r["id"], arrival=r["arrival"], tokens=[first], times=[now()])
+            if len(rec["tokens"]) == r["max_new"]:
+                done[r["id"]] = rec
+                free.append(slot)
+            else:
+                active[slot] = (r, rec)
+        if not active:
+            if i < len(queue):
+                time.sleep(max(0.0, min(queue[i]["arrival"] - now(), 0.002)))
+            continue
+        slots = list(active)
+        nxt = decode_step(model, cache, slots, [active[s][1]["tokens"][-1] for s in slots]).argmax(-1).tolist()
+        t = now()
+        for s, tok in zip(slots, nxt):
+            r, rec = active[s]
+            rec["tokens"].append(tok)
+            rec["times"].append(t)
+            if len(rec["tokens"]) == r["max_new"]:
+                done[r["id"]] = rec
+                free.append(s)
+                del active[s]
+    return [done[r["id"]] for r in requests]
     # END SOLUTION
 
 
-def ddp_worker(rank, world):
-    model = make_model()
-    X, y = make_data()
-    Xr, yr = X.chunk(world)[rank], y.chunk(world)[rank]
-    opt = torch.optim.SGD(model.parameters(), lr=0.1)
-    for _ in range(STEPS):
-        opt.zero_grad()
-        F.mse_loss(model(Xr), yr).backward()
-        average_gradients(model, world)
-        opt.step()
-    return torch.nn.utils.parameters_to_vector(model.parameters()).detach()
-
-
-def reference_sgd():
-    model = make_model()
-    X, y = make_data()
-    opt = torch.optim.SGD(model.parameters(), lr=0.1)
-    for _ in range(STEPS):
-        opt.zero_grad()
-        F.mse_loss(model(X), y).backward()
-        opt.step()
-    return torch.nn.utils.parameters_to_vector(model.parameters()).detach()
-
-
-ddp_params = run_parallel(ddp_worker)
-ddp_error = max((p - reference_sgd()).abs().max().item() for p in ddp_params)
-print(f"data parallel vs one process: largest difference {ddp_error:.2e}")
-
 # %% [markdown]
-# ## 5. ZeRO stage 1
+# ## 6. Measure
 #
-# Now each rank keeps Adam's moments only for its own slice of the flattened parameters: the slice
-# that `ring_reduce_scatter` leaves it, chunk `(rank + 1) % world`. Write `zero1_worker`: after
-# backward, flatten the gradients, reduce-scatter them and divide by the number of ranks, update
-# your slice with Adam (bias-corrected, `lr=0.01`, betas `(0.9, 0.999)`, `eps=1e-8`), all-gather
-# the updated slices and copy them back into the model. Return the final parameter vector and the
-# number of optimizer-state elements this rank stored.
+# `metrics` summarizes a run: time to first token (from arrival), the gaps between consecutive
+# tokens of each request, and throughput (generated tokens divided by the time from the first
+# arrival to the last token). Latency is measured on the workload as it arrives. Throughput is
+# compared at saturation, with every request queued at time zero, so that it measures the server
+# rather than the arrival rate: continuous batching against serving one request at a time
+# (`max_batch=1`).
 
 # %%
-def zero1_worker(rank, world, lr=0.01, b1=0.9, b2=0.999, eps=1e-8):
-    model = make_model()
-    X, y = make_data()
-    Xr, yr = X.chunk(world)[rank], y.chunk(world)[rank]
-    n = sum(p.numel() for p in model.parameters())
-    pad = -n % world
+def metrics(records):
+    ttft = np.array([r["times"][0] - r["arrival"] for r in records])
+    itl = np.concatenate([np.diff(r["times"]) for r in records if len(r["times"]) > 1])
+    span = max(r["times"][-1] for r in records) - min(r["arrival"] for r in records)
+    return dict(throughput=sum(len(r["tokens"]) for r in records) / span,
+                p50_ttft_ms=1e3 * float(np.percentile(ttft, 50)), p95_ttft_ms=1e3 * float(np.percentile(ttft, 95)),
+                p50_itl_ms=1e3 * float(np.percentile(itl, 50)), p95_itl_ms=1e3 * float(np.percentile(itl, 95)))
+
+
+def show(name, m):
+    print(f"{name:>10}: {m['throughput']:7.0f} tokens/s, first token p50 {m['p50_ttft_ms']:6.1f} ms "
+          f"p95 {m['p95_ttft_ms']:7.1f} ms, between tokens p50 {m['p50_itl_ms']:5.1f} ms p95 {m['p95_itl_ms']:5.1f} ms")
+
+
+serve(model, requests[: min(4, len(requests))], CFG["max_batch"])
+records = serve(model, requests, CFG["max_batch"])
+batched = metrics(records)
+show("arriving", batched)
+queued = [dict(r, arrival=0.0) for r in requests]
+saturated = metrics(serve(model, queued, CFG["max_batch"]))
+one_at_a_time = metrics(serve(model, queued, 1))
+show("all queued", saturated)
+show("one by one", one_at_a_time)
+speedup = saturated["throughput"] / one_at_a_time["throughput"]
+print(f"speedup at saturation {speedup:.1f}x")
+
+reference_outputs = [generate_reference(model, r["prompt"], r["max_new"]) for r in requests]
+served_match = float(np.mean([rec["tokens"] == ref for rec, ref in zip(records, reference_outputs)]))
+print(f"{served_match:.0%} of served requests match recomputation exactly")
+for name, target in TARGETS.items():
+    value = speedup if name == "speedup" else batched[name]
+    ok = value >= target if name == "speedup" else value <= target
+    print(f"target {name}: {value:.1f} against {target} -> {'met' if ok else 'MISSED'}")
+
+# %% [markdown]
+# ## 7. Weight-only int8
+#
+# Write `quantize_int8(W)`: symmetric per-row quantization, returning int8 values `q` and one
+# float32 scale per row with `W` approximately `q * scale[:, None]`; and `Int8Linear.forward`,
+# which dequantizes on the fly. `quantize_model` swaps every linear layer in the blocks. Storing
+# int8 weights cuts the bytes a decode step must read by four against float32; turning that into
+# speed needs a fused kernel that dequantizes as it loads (L08), so here we measure size and quality.
+
+# %%
+def quantize_int8(W):
     # BEGIN SOLUTION
-    flat = torch.cat([torch.nn.utils.parameters_to_vector(model.parameters()).detach(), torch.zeros(pad, dtype=torch.float64)])
-    own = (rank + 1) % world
-    size = flat.numel() // world
-    m = torch.zeros(size, dtype=torch.float64)
-    v = torch.zeros(size, dtype=torch.float64)
-    for t in range(1, STEPS + 1):
-        model.zero_grad()
-        F.mse_loss(model(Xr), yr).backward()
-        g = torch.cat([torch.cat([p.grad.flatten() for p in model.parameters()]), torch.zeros(pad, dtype=torch.float64)])
-        g_own = ring_reduce_scatter(g, rank, world) / world
-        w_own = flat[own * size:(own + 1) * size]
-        m = b1 * m + (1 - b1) * g_own
-        v = b2 * v + (1 - b2) * g_own ** 2
-        w_own = w_own - lr * (m / (1 - b1 ** t)) / ((v / (1 - b2 ** t)).sqrt() + eps)
-        flat = ring_all_gather(w_own, rank, world)
-        torch.nn.utils.vector_to_parameters(flat[:n], model.parameters())
-    return flat[:n], m.numel() + v.numel()
+    scale = W.abs().amax(dim=1).clamp_min(1e-12) / 127.0
+    q = torch.round(W / scale[:, None]).clamp(-127, 127).to(torch.int8)
+    return q, scale.float()
     # END SOLUTION
 
 
-def reference_adam(lr=0.01):
-    model = make_model()
-    X, y = make_data()
-    opt = torch.optim.Adam(model.parameters(), lr=lr, betas=(0.9, 0.999), eps=1e-8)
-    for _ in range(STEPS):
-        opt.zero_grad()
-        F.mse_loss(model(X), y).backward()
-        opt.step()
-    return torch.nn.utils.parameters_to_vector(model.parameters()).detach()
+class Int8Linear(nn.Module):
+    def __init__(self, linear):
+        super().__init__()
+        q, scale = quantize_int8(linear.weight.data)
+        self.register_buffer("q", q)
+        self.register_buffer("scale", scale)
+        self.bias = linear.bias
 
-
-zero_out = run_parallel(zero1_worker)
-n_params = sum(p.numel() for p in make_model().parameters())
-zero_error = max((w - reference_adam()).abs().max().item() for w, _ in zero_out)
-zero_state = [s for _, s in zero_out]
-print(f"ZeRO-1 vs torch.optim.Adam: largest difference {zero_error:.2e}; optimizer state per rank {zero_state} "
-      f"elements against {2 * n_params} unsharded")
-
-# %% [markdown]
-# ## 6. A tensor-parallel MLP
-#
-# Megatron-LM writes tensor parallelism with two autograd functions. `CopyToParallel` is the
-# identity in forward and all-reduces the gradient in backward (every rank uses the same input, so
-# the input's gradient is the sum of theirs). `ReduceFromParallel` all-reduces in forward and is the
-# identity in backward. Write both, then `tp_mlp`: rank `r` holds columns `r` of the first layer
-# (split into `world` blocks) and the matching rows of the second.
-
-# %%
-class CopyToParallel(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, x):
+    def forward(self, x):
         # BEGIN SOLUTION
-        return x.clone()
+        return F.linear(x, self.q.to(x.dtype) * self.scale[:, None].to(x.dtype), self.bias)
         # END SOLUTION
 
-    @staticmethod
-    def backward(ctx, grad):
-        # BEGIN SOLUTION
-        grad = grad.clone()
-        dist.all_reduce(grad)
-        return grad
-        # END SOLUTION
+
+def quantize_model(model):
+    qm = copy.deepcopy(model)
+    for b in qm.blocks:
+        for name in ["qkv", "proj", "fc1", "fc2"]:
+            setattr(b, name, Int8Linear(getattr(b, name)))
+    return qm
 
 
-class ReduceFromParallel(torch.autograd.Function):
-    @staticmethod
-    def forward(ctx, x):
-        # BEGIN SOLUTION
-        x = x.clone()
-        dist.all_reduce(x)
-        return x
-        # END SOLUTION
-
-    @staticmethod
-    def backward(ctx, grad):
-        # BEGIN SOLUTION
-        return grad
-        # END SOLUTION
+def linear_weight_bytes(m):
+    total = 0
+    for b in m.blocks:
+        for name in ["qkv", "proj", "fc1", "fc2"]:
+            layer = getattr(b, name)
+            total += layer.q.numel() + 4 * layer.scale.numel() if isinstance(layer, Int8Linear) else 4 * layer.weight.numel()
+    return total
 
 
-def tp_mlp(x, W1_r, b1_r, W2_r, b2):
-    h = F.gelu(CopyToParallel.apply(x) @ W1_r + b1_r)
-    return ReduceFromParallel.apply(h @ W2_r) + b2
-
-
-def tp_worker(rank, world):
-    g = torch.Generator().manual_seed(2)
-    x = torch.randn(5, 16, generator=g, dtype=torch.float64, requires_grad=True)
-    W1 = torch.randn(16, 64, generator=g, dtype=torch.float64) / 4
-    b1 = torch.randn(64, generator=g, dtype=torch.float64) / 4
-    W2 = torch.randn(64, 16, generator=g, dtype=torch.float64) / 8
-    b2 = torch.randn(16, generator=g, dtype=torch.float64)
-    cols = slice(rank * 64 // world, (rank + 1) * 64 // world)
-    W1_r = W1[:, cols].clone().requires_grad_()
-    b1_r = b1[cols].clone().requires_grad_()
-    W2_r = W2[cols, :].clone().requires_grad_()
-    y = tp_mlp(x, W1_r, b1_r, W2_r, b2)
-    y.pow(2).sum().backward()
-    xd, W1d, W2d = x.detach().clone().requires_grad_(), W1.clone().requires_grad_(), W2.clone().requires_grad_()
-    yd = F.gelu(xd @ W1d + b1) @ W2d + b2
-    yd.pow(2).sum().backward()
-    return max(
-        (y - yd).abs().max().item(),
-        (x.grad - xd.grad).abs().max().item(),
-        (W1_r.grad - W1d.grad[:, cols]).abs().max().item(),
-        (W2_r.grad - W2d.grad[cols, :]).abs().max().item(),
-    )
-
-
-tp_errors = run_parallel(tp_worker)
-print("tensor-parallel MLP vs dense, largest difference per rank:", tp_errors)
-
-# %% [markdown]
-# ## 7. Activation checkpointing
-#
-# Count the bytes autograd saves for backward through a stack of eight blocks, with and without
-# `torch.utils.checkpoint` around each block. Write `saved_bytes(fn)`, which runs `fn()` inside
-# `torch.autograd.graph.saved_tensors_hooks` and adds up the size of every tensor packed.
-
-# %%
-def saved_bytes(fn):
-    # BEGIN SOLUTION
-    total = [0]
-
-    def pack(t):
-        total[0] += t.numel() * t.element_size()
-        return t
-
-    with torch.autograd.graph.saved_tensors_hooks(pack, lambda t: t):
-        fn()
-    return total[0]
-    # END SOLUTION
-
-
-blocks = nn.ModuleList([nn.Sequential(nn.Linear(256, 1024), nn.GELU(), nn.Linear(1024, 256)) for _ in range(8)])
-inp = torch.randn(64, 256, requires_grad=True)
-
-
-def run_plain():
-    h = inp
-    for b in blocks:
-        h = h + b(h)
-    return h.sum()
-
-
-def run_checkpointed():
-    h = inp
-    for b in blocks:
-        h = h + torch.utils.checkpoint.checkpoint(b, h, use_reentrant=False)
-    return h.sum()
-
-
-plain_bytes, ckpt_bytes = saved_bytes(run_plain), saved_bytes(run_checkpointed)
-print(f"saved for backward: {plain_bytes / 2 ** 20:.2f} MiB plain, {ckpt_bytes / 2 ** 20:.2f} MiB checkpointed")
+qmodel = quantize_model(model)
+int8_val = val_loss(qmodel)
+agree = []
+for r in requests[:16]:
+    a, b = generate_cached(model, r["prompt"], 32), generate_cached(qmodel, r["prompt"], 32)
+    agree.append(np.mean([x == y for x, y in zip(a, b)]))
+int8_agreement = float(np.mean(agree))
+bytes_fp32, bytes_int8 = linear_weight_bytes(model), linear_weight_bytes(qmodel)
+print(f"linear weights {bytes_fp32 / 1e6:.1f} MB in float32, {bytes_int8 / 1e6:.1f} MB in int8; "
+      f"validation loss {base_val:.4f} -> {int8_val:.4f}; greedy tokens agree {int8_agreement:.0%}")
 
 # %% [markdown]
 # ## 8. Report
 #
-# In `REPORT`, write at least 80 words justifying your plan: the memory per GPU, why each degree of
-# parallelism is what it is, the communication it implies, and what you would change for a
-# 70-billion-parameter model.
+# In `REPORT`, write at least 80 words: the model and workload, the throughput and latency of the
+# batched server against one-at-a-time serving and the targets, why batching helps decode, and what
+# int8 did to size and quality.
 
 # %%
 # BEGIN SOLUTION -> REPORT = """Write your report here."""
-REPORT = f"""The 13B model needs {16 * params(MODEL) / 1e9:.0f} GB of model states, so plain data parallelism does not fit.
-With ZeRO stage 1 over all 64 GPUs each GPU keeps 16-bit weights and gradients but only a 64th of the fp32 optimizer
-states, and with micro-batches of one 2048-token sequence and FlashAttention the activations stay small, so the plan
-uses {plan_bytes / 2 ** 30:.1f} GiB of 80 and needs no tensor or pipeline parallelism, no bubble and no checkpointing.
-Communication is one reduce-scatter and one all-gather of the gradients per step, the same traffic as data
-parallelism, overlapped with backward; each GPU sends about 2 x 26 GB per step over the network, which is the
-cost to watch. For a 70B model the 16-bit weights and gradients alone take 280 GB, so I would move to ZeRO stage 3
-or add 8-way tensor parallelism inside each server and use pipeline stages across servers."""
+REPORT = f"""Serving report. A {CFG['n_layer']}-layer byte-level GPT of width {CFG['d']} ({n_params / 1e6:.1f} million parameters,
+validation loss {base_val:.3f}) served {len(requests)} requests arriving at {CFG['rate']:.0f} per second, greedy decoding,
+with continuous batching over {CFG['max_batch']} key-value cache slots. As the requests arrived, the 95th percentile
+inter-token latency was {batched['p95_itl_ms']:.1f} ms and the 95th percentile time to first token {batched['p95_ttft_ms']:.1f} ms, against targets
+of {TARGETS['p95_itl_ms']:.0f} ms and {TARGETS['p95_ttft_ms']:.0f} ms. With every request queued, the server reached a throughput of
+{saturated['throughput']:.0f} tokens per second against {one_at_a_time['throughput']:.0f} serving one request at a time, a speedup of {speedup:.1f}x.
+Batching helps because a decode step reads every weight once whatever the batch size, so each extra sequence adds little
+time until the step becomes compute-bound; one at a time, requests queue behind each other and the median first-token
+time grows to {one_at_a_time['p50_ttft_ms'] / 1e3:.1f} s. {served_match:.0%} of the
+served outputs matched full recomputation token for token. Int8 weight-only quantization with per-row scales cut the linear
+weights from {bytes_fp32 / 1e6:.1f} MB to {bytes_int8 / 1e6:.1f} MB, moved the validation loss from {base_val:.4f} to {int8_val:.4f}, and
+kept {int8_agreement:.0%} of greedy tokens unchanged; a fused dequantizing kernel would turn the smaller weights into faster steps."""
 # END SOLUTION
 print(REPORT)

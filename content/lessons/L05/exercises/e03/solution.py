@@ -1,24 +1,28 @@
 import numpy as np
 
 
-def mse(w, X, y):
-    r = X @ w - y
-    return float(np.mean(r ** 2))
-
-
-def mse_grad(w, X, y):
-    return 2.0 / X.shape[0] * X.T @ (X @ w - y)
-
-
-def gd(X, y, lr, steps):
-    w = np.zeros(X.shape[1])
-    losses = []
+def gd(grad, x0, lr, steps):
+    xs = [np.array(x0, dtype=float)]
     for _ in range(steps):
-        losses.append(mse(w, X, y))
-        w = w - lr * mse_grad(w, X, y)
-    return w, losses
+        xs.append(xs[-1] - lr * grad(xs[-1]))
+    return np.array(xs)
 
 
-def max_stable_lr(X):
-    n = X.shape[0]
-    return float(2.0 / np.linalg.eigvalsh(2.0 / n * X.T @ X).max())
+def heavy_ball(grad, x0, lr, beta, steps):
+    """v <- beta v + grad(x); x <- x - lr v, from v = 0. Return all iterates, shape (steps + 1, d)."""
+    x = np.array(x0, dtype=float)
+    v = np.zeros_like(x)
+    xs = [x.copy()]
+    for _ in range(steps):
+        v = beta * v + grad(x)
+        x = x - lr * v
+        xs.append(x.copy())
+    return np.array(xs)
+
+
+def tuned_heavy_ball(A):
+    """The optimal (lr, beta) for heavy ball on a quadratic with Hessian A."""
+    lam = np.linalg.eigvalsh(A)
+    mu, L = lam[0], lam[-1]
+    sk = np.sqrt(L / mu)
+    return 4.0 / (np.sqrt(L) + np.sqrt(mu)) ** 2, ((sk - 1.0) / (sk + 1.0)) ** 2

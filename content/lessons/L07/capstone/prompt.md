@@ -1,12 +1,11 @@
-# Capstone: a two-hidden-layer MLP on digit-like images
+# Capstone: profile and fix a slow training step
 
-`make_digits(n, seed)` in the starter renders 8 by 8 images of ten digit-like glyphs with random one-pixel shifts, random fading, missing pixels and Gaussian noise. Train on `make_digits(2000, 0)` and test on `make_digits(1000, 1)`.
+Open the Colab notebook with a **T4 GPU** runtime and run it top to bottom. You will:
 
-Implement, writing every gradient yourself (no autograd library):
+1. Fill in the FLOP and byte counts of the benchmarked matrix products and additions, and see them on the T4's roofline.
+2. Measure pageable and pinned host-to-device copies.
+3. Profile the provided `slow_step` with `torch.profiler` and count its kernels per step.
+4. Write `prepare`, `make_optimizer` and `fast_step` so that the training step runs at least twice as fast and produces the same losses (within half-precision rounding).
+5. Write a report of at least 80 words: what the profile showed, what you changed, and the measured speedup.
 
-1. `init(sizes, seed)` and `loss_and_grads(params, X, y)` for a ReLU network with **two hidden layers** and a softmax cross-entropy output.
-2. `train(X, y, seed)`: minibatch SGD with hyperparameters of your choice; return the trained `params`. Keep it under about 3 seconds of CPU time.
-3. `evaluate(params, X, y)`: test accuracy.
-4. `REPORT`: at least 60 words with your architecture, hyperparameters, test accuracy, and the accuracy of a linear softmax classifier on the same split for comparison (the tests compute it too), plus one sentence on why the MLP does better on shifted images.
-
-The tests require two hidden layers, a test accuracy of at least 0.88, a gradient check of your backward pass, and an MLP that beats the linear baseline by at least 10 points.
+The autograder cell prints a completion code; the speedup test runs only on a GPU, so a CPU run cannot produce the full code.

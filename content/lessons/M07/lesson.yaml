@@ -14,7 +14,7 @@ movements:
 hooks:
   - {to: M09, text: "Points of the plane become vectors: lists of numbers with lengths, angles and dot products, in any number of dimensions."}
   - {to: M06, text: "e to the i theta joins growth and rotation: the exponential of a real number grows, of an imaginary number turns."}
-  - {to: L13, text: "Planar rotations return as rotary position embeddings: each pair of coordinates of a query and a key is turned by an angle proportional to its position."}
+  - {to: L09, text: "Planar rotations return as rotary position embeddings: each pair of coordinates of a query and a key is turned by an angle proportional to its position."}
 reuses:
   - {from: M04, concept: "functions, composition and inverses"}
   - {from: M06, concept: "the exponential and its rules"}

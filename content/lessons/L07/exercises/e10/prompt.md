@@ -1,15 +1,14 @@
-# Break it: symmetric initialization
+# Recompute instead of store
 
-Train a `2 -> 8 -> 3` tanh network on the spiral twice: once from random weights, once with every hidden unit given **identical** incoming and outgoing weights (all entries of `W1` equal to 0.1, all entries of `W2` equal to 0.1, biases zero).
+`gelu` and `gelu_grad` are provided. For the block $y = \operatorname{gelu}(xW_1)W_2$:
 
-- `symmetric_init(sizes, value)`: weights filled with `value`, biases zero.
-- `unit_spread(W1)`: how different the hidden units are, measured as the largest distance between any two columns of `W1`.
-- `train_full_batch(params, X, y, lr, steps)`: plain gradient descent on the full data (copy your `loss_and_grads` with tanh). Return the final loss.
+1. `mlp_forward(x, W1, W2, store=True)` returns `(y, cache)`; the cache is `(x, h, a)` with $h = xW_1$ and $a = \operatorname{gelu}(h)$ when `store=True`, and only `(x,)` when `store=False`.
+2. `mlp_backward(dy, cache, W1, W2)` returns `(dx, dW1, dW2)`, recomputing $h$ and $a$ from $x$ when they were not stored.
 
-The tests show that the symmetric network's hidden units stay exactly identical however long it trains, and that its loss stays far above the randomly initialized network's.
+`cache_floats(cache)` (given) counts the numbers kept between the passes. With hidden width four times the input width, recomputation keeps a ninth of them, for one extra matrix product and GELU.
 
 ## Hints
 
-1. `np.full((a, b), value)`.
-2. Column distance: compare every pair of columns of `W1`, or use `np.max(W1, axis=1) - np.min(W1, axis=1)`.
-3. Use tanh for both runs: with ReLU and these weights the effect is the same, but tanh keeps every gradient nonzero, which makes the point sharper.
+1. Recompute exactly as in the forward pass, so the gradients match to the last bit.
+2. `dW2 = a.T @ dy`, `dh = (dy @ W2.T) * gelu_grad(h)`, `dW1 = x.T @ dh`, `dx = dh @ W1.T`.
+3. This is activation checkpointing, applied at the scale of one block; L14 applies it to whole layers.

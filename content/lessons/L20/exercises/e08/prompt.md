@@ -1,14 +1,13 @@
-# Forgetting
+# The serving stage: memory and step time
 
-Fine-tuning on a new task moves the weights away from what the pretraining taught. A simple guard pulls them back: add $\tfrac{\lambda}{2}\|w - w_\text{pre}\|^2$ to the fine-tuning loss.
+Before serving, size the server (L18).
 
-1. `logistic_loss_grad(w, X, y)`: the mean logistic loss and its gradient.
-2. `finetune(w_pre, X, y, lam, steps=500, lr=0.5)`: gradient descent from `w_pre` on the new task with the pull.
-
-The tests pretrain on task A, fine-tune on a conflicting task B, and measure the loss on both.
+1. `kv_bytes(layers, kv_heads, head_dim, tokens, bytes_per=2)`: the key-value cache for `tokens` tokens.
+2. `max_sequences(memory, weight_bytes, layers, kv_heads, head_dim, ctx, bytes_per=2, reserve=0.1)`: how many full-length sequences fit after the weights and a reserved fraction of memory.
+3. `decode_step_ms(weight_bytes, cache_bytes, bandwidth)`: the memory-bound time of one decode step.
 
 ## Hints
 
-1. The pull adds $\lambda (w - w_\text{pre})$ to the gradient.
-2. $\lambda = 0$ learns B fully and forgets A; a large $\lambda$ remembers A and barely learns B.
-3. The same trade-off is why fine-tuned language models are checked on their base evaluations, not only on the new task.
+1. Two tensors (keys and values) per layer, each `kv_heads * head_dim` numbers per token.
+2. Round the number of sequences down, and never below zero.
+3. The capstone model is tiny: its weights and caches fit many times over, and the step time is set by kernel launches, not bytes.

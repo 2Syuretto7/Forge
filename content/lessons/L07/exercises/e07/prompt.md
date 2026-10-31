@@ -1,14 +1,12 @@
-# Minibatch gradient noise
+# Launch overhead
 
-Section 6 claims a minibatch gradient is an unbiased estimate of the full gradient whose variance falls like $1/B$. Measure it for softmax regression on the spiral (weights only, at a fixed random `W`).
+1. `step_time(kernels, peak, bw, launch_s=10e-6)`: `kernels` is a list of `(flops, bytes)`. They run one after another; each costs the larger of its roofline time (`kernel_time`, given) and the launch overhead, because the GPU cannot start a kernel before the CPU has issued it.
+2. `launch_bound_fraction(kernels, peak, bw, launch_s=10e-6)`: the fraction of kernels whose GPU time is below the launch overhead.
 
-- `per_example_grads(W, X, y)`: shape `(n, d, K)`, the gradient of each example's loss.
-- `minibatch_grad_stats(W, X, y, B, draws, seed)`: draw `draws` minibatches of size `B` with replacement (`rng.integers(0, n, size=(draws, B))`), compute each minibatch-average gradient, and return `(mean_error, total_variance)`: the norm of the difference between the average of those estimates and the full gradient, and the average squared distance of an estimate from the full gradient.
-
-The tests check that `total_variance * B` is roughly constant across batch sizes.
+Then compare one elementwise kernel on $2^{24}$ values with the same work split into 4096 kernels of 4096 values.
 
 ## Hints
 
-1. One example: $x_i^\top(p_i - e_{y_i})$, an outer product of shape `(d, K)`.
-2. Average per-example gradients over the sampled indices: `G[idx].mean(axis=1)`.
-3. Sampling with replacement makes the variance exactly proportional to $1/B$.
+1. Use `max(kernel_time(f, b, peak, bw), launch_s)` per kernel.
+2. On a T4, a 4096-element fp16 kernel moves 24 KB, under a tenth of a microsecond of memory time.
+3. The split version does the same FLOPs and bytes in total.

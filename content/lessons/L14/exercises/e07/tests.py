@@ -1,27 +1,20 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(7)
-E = rng.normal(size=(6, 4)) * 0.5
-b = rng.normal(size=6) * 0.1
-x = np.array([0, 3, 3, 5, 1])
-y = np.array([2, 2, 0, 4, 3])
+rng = np.random.default_rng(4)
+T, d, heads = 6, 16, 8
+x = rng.normal(size=(T, d))
+Wq, Wk, Wv, Wo = (rng.normal(size=(d, d)) / 4 for _ in range(4))
 
 
-def test_grad_tied_embeddings():
-    _, dE, db = sub.tied_bigram_loss(E, b, x, y)
-    num = np.zeros_like(E)
-    for idx in np.ndindex(E.shape):
-        P = E.copy()
-        P[idx] += 1e-6
-        lp = sub.tied_bigram_loss(P, b, x, y)[0]
-        P[idx] -= 2e-6
-        num[idx] = (lp - sub.tied_bigram_loss(P, b, x, y)[0]) / 2e-6
-    assert np.allclose(dE, num, atol=1e-8)
-    nb = np.array([(sub.tied_bigram_loss(E, b + e, x, y)[0] - sub.tied_bigram_loss(E, b - e, x, y)[0]) / 2e-6 for e in np.eye(6) * 1e-6])
-    assert np.allclose(db, nb, atol=1e-8)
+def test_shards_are_blocks():
+    sh = sub.shard_attention(Wq, Wk, Wv, Wo, heads, 4)
+    assert len(sh) == 4 and sh[1][0].shape == (16, 4) and sh[1][3].shape == (4, 16)
+    assert np.array_equal(sh[1][0], Wq[:, 4:8]) and np.array_equal(sh[3][3], Wo[12:16, :])
 
 
-def test_loss_value():
-    loss, _, _ = sub.tied_bigram_loss(np.zeros((5, 3)), np.zeros(5), np.array([0, 1]), np.array([2, 3]))
-    assert np.isclose(loss, np.log(5))
+def test_tp_attention_matches_dense():
+    dense = sub.attention(x, Wq, Wk, Wv, Wo, heads)
+    for tp in [1, 2, 4, 8]:
+        out = sub.tp_attention(x, sub.shard_attention(Wq, Wk, Wv, Wo, heads, tp), heads // tp)
+        assert np.allclose(out, dense)

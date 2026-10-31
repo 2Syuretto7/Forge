@@ -1,12 +1,13 @@
-# Break it: exploding activations
+# Break it: a synchronization every step
 
-Push a batch through a deep stack of ReLU layers (no training) and watch its scale.
+Model a training loop in which the CPU needs `cpu_s` seconds to issue a step's kernels and the GPU needs `gpu_s` seconds to run them.
 
-- `activation_rms(depth, width, std, seed, batch)`: draw `batch` standard-normal inputs of dimension `width` and `depth` weight matrices of shape `(width, width)` with entries $\mathcal N(0, \text{std}^2)$, all from one `np.random.default_rng(seed)` (inputs first). Apply $h \leftarrow \operatorname{ReLU}(hW)$ for each layer. Return the list of RMS values $\sqrt{\text{mean}(h^2)}$ after each layer.
-- `predicted_growth(width, std)`: Section 7's per-layer factor $\text{std}\sqrt{\text{width}/2}$.
+1. `pipelined_time(steps, cpu_s, gpu_s)`: without synchronization the CPU issues step $i + 1$ while the GPU runs step $i$; the first step costs both, and each later step the larger of the two.
+2. `synced_time(steps, cpu_s, gpu_s)`: with a `.item()` at the end of every step, nothing overlaps.
+3. `sync_slowdown(steps, cpu_s, gpu_s)`: the ratio of the two.
 
 ## Hints
 
-1. `rms = np.sqrt(np.mean(h ** 2))`.
-2. With `std = 1` and `width = 256` the RMS grows by about 11 per layer.
-3. With He's `std = sqrt(2 / width)` it stays near its starting value.
+1. `cpu_s + gpu_s + (steps - 1) * max(cpu_s, gpu_s)`.
+2. The slowdown approaches $(c + g)/\max(c, g)$ for many steps: at most 2, when the two are equal.
+3. Logging every 100 steps makes the synchronization cost negligible.

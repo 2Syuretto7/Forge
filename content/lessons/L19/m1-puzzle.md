@@ -1,32 +1,29 @@
-# Puzzle: reading a loss curve
+# Puzzle: is the new model better?
 
-The widget replays six real training runs of the same small model, identical until something goes wrong. The first shows a run where steps 700 to 709 trained on corrupted data.
-
-:::widget{name=LossSpikeExplorer run=bad_data compare=healthy}
-:::
+A new model scores 71.0% on a 500-item benchmark; the old one scored 69.5%. The release notes call it an improvement.
 
 ::::predict{id=p1 kind=choice answer=b}
-Select the learning-rate bug: for 60 steps from step 700, the learning rate was 20 times too high, then the schedule continued correctly. By the end of the run, compared with the healthy run, its validation loss is:
+What does the 1.5-point gap show?
 
-- The same: once the rate is back to normal, training recovers.
-- Clearly worse, even 400 steps after the bug was over.
-- Better, because the higher rate explored more.
-- Undefined, because the run diverged.
+- That the new model is better: 1.5 points on 500 items is 7 more correct answers.
+- Little by itself: each score has a standard error of about 2 points, so the gap is within noise unless a paired, item-by-item comparison shows the models rarely disagree.
+- That the old model is better, since benchmark gains usually come from contamination.
+- Nothing at all: accuracy cannot be compared across models.
 
 :::reveal
-The logged runs end at 1.64 (healthy) and 2.16 nats (learning-rate bug): sixty bad steps cost more than the whole rest of the run could recover. The corrupted data cost much less (1.65), because each bad step's update was limited by clipping. A spike is not always a blip; restoring a checkpoint from before it is often the only fix.
+Each accuracy has standard error $\sqrt{0.7 \cdot 0.3 / 500} \approx 0.0205$; for two independent scores the difference has standard error about 0.029, so 1.5 points is half a standard error. Because both models face the same items, a paired comparison removes the variation they share and can be much sharper (exercise 2); the same item-level data also exposes contamination, if the new model does suspiciously well on items found on the web (L12). Without that analysis, the claim is not supported.
 :::
 ::::
 
-::::predict{id=p2 kind=choice answer=c}
-Switch to the two high-learning-rate runs and the lower panel to the largest attention logit. What does the layer norm on queries and keys change?
+The second half of the lesson looks inside models. A model with $d$ dimensions in its residual stream may represent many more than $d$ features, as directions that overlap a little. The widget plants sparse features in a small space and trains a sparse autoencoder to find them again.
 
-- Nothing: the two runs are identical.
-- It makes the loss spike more often.
-- It keeps the attention logits around 20 instead of hundreds, and the run ends at a lower loss.
-- It lowers the learning rate.
+:::widget{name=FeatureDictionary features=4 latents=8}
+:::
+
+::::predict{id=p2 kind=numeric answer=0.1 tol=0.01}
+Two random directions in 100 dimensions have a squared cosine of $1/100$ on average. What is the typical size of their cosine (the root mean square)?
 
 :::reveal
-Without it, attention logits grow to several hundred, the softmax collapses onto single positions, and training slows (final validation 2.04). With QK-layernorm the logits stay below 20 and the run reaches 1.88. Section 3 of the derivation shows why normalized queries and keys bound the logits.
+$\sqrt{1/100} = 0.1$: random directions in high dimensions are nearly orthogonal. In a residual stream of a few thousand dimensions the typical overlap is about 0.02, so a model can pack far more directions than dimensions with little interference between features that are rarely active together. This is superposition, and it is why single neurons are often hard to interpret.
 :::
 ::::

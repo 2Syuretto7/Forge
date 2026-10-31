@@ -1,15 +1,12 @@
-# Recall bridge: the SVD, the transformer and a pretrained model
+# Recall bridge: the whole path
 
-From M14: the SVD writes any matrix as a sum of rank-one pieces ordered by size, and keeping the largest $r$ gives the best rank-$r$ approximation. From L13: a transformer block is a handful of weight matrices around attention. From L19: pretraining leaves you with a model that continues text well and follows no instructions at all. This lesson adapts that model to a task cheaply and without wrecking what it already knows. Reviews due from M14, L13 and L19 appear above.
+This lesson adds no new theory. It asks you to use everything at once: clean data (L12), size a model to a budget (L11), pretrain it so the run survives failures (L15), fine-tune it on tasks (L16), improve it with a verifiable reward (L17), measure it honestly (L19) and serve it (L18). The theory half is a design document in which you defend every choice; the practice half runs the pipeline end to end on one T4. Reviews due from all five frontier lessons appear above.
 
-::::derivation{id=d0 title="Warm-up"}
+::::derivation{id=d0 title="Warm-up: the budget"}
 :::step
-A matrix with singular values $3, 1, 0.5$ loses, at rank 1, a relative Frobenius error of $\sqrt{(1 + 0.25)/(9 + 1 + 0.25)} \approx$ [[0.349|tol=0.001]].
+A T4 sustains about 2.4 TFLOP/s in float32 on a small model (30% of its 8.1 peak). In ten minutes that is about [[1.44e15|tol=1e13]] floating-point operations.
 :::
 :::step
-A $4096 \times 4096$ weight matrix has [[16777216]] entries.
-:::
-:::step
-Two factors of rank 8 replacing an update of it, $8 \times 4096$ and $4096 \times 8$, have [[65536]] entries between them.
+At $6N$ operations per token, a model of 10.7 million parameters processes about [[2.24e7|tol=2e5]] tokens with that budget.
 :::
 ::::

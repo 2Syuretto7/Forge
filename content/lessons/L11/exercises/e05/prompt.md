@@ -1,13 +1,12 @@
-# Fusing a bias and an activation
+# Fitting the parametric law
 
-`gelu(x)` (tanh approximation) is provided.
+Gradient descent on Hoffmann's objective crawls along a long, flat valley. A better route uses the structure of the law: with the exponents fixed, $L = E + A N^{-\alpha} + B D^{-\beta}$ is **linear** in $(E, A, B)$, so they follow from a least-squares solve; only the two exponents need a search. `law` is provided.
 
-1. `gelu_grad(x)`: its derivative.
-2. `bias_gelu_forward(x, b)` returns `(gelu(x + b), cache)` for `x` of shape `(N, d)` and bias `b` of shape `(d,)`; `bias_gelu_backward(dy, cache)` returns `(dx, db)`.
-3. `traffic(n, bytes_per=2, fused=True)`: bytes moved for $n$ elements, ignoring the small bias vector. Unfused, one kernel reads `x` and writes `z = x + b`, and a second reads `z` and writes `y`: $4n$ values. Fused, one kernel reads `x` and writes `y`: $2n$ values.
+1. `fit_for_exponents(alpha, beta, N, D, L)`: divide each run's equation $E + A N_i^{-\alpha} + B D_i^{-\beta} = L_i$ by $L_i$ (so every run counts by its relative error), solve by least squares, and return $E$, $A$, $B$ and the sum of squared relative errors.
+2. `fit_parametric(N, D, L)`: try every $\alpha, \beta \in \{0.05, 0.07, \dots, 0.95\}$, then a grid ten times finer (step 0.002) within 0.02 of the best pair. Return a dictionary with keys `E, A, B, alpha, beta`.
 
 ## Hints
 
-1. With $u = c(x + 0.044715x^3)$ and $t = \tanh u$: $\operatorname{gelu}'(x) = \tfrac12(1 + t) + \tfrac12 x (1 - t^2)\, c\,(1 + 3 \cdot 0.044715 x^2)$.
-2. Cache $z = x + b$; the bias gradient sums over the batch.
-3. The fused kernel moves half the bytes, so the memory-bound pair runs about twice as fast.
+1. The design matrix has columns $1, N^{-\alpha}, D^{-\beta}$, each row divided by $L_i$; the target is a vector of ones.
+2. `np.linalg.lstsq(X, target, rcond=None)[0]` solves it.
+3. `np.arange(0.05, 0.951, 0.02)` gives the coarse grid.

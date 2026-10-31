@@ -1,15 +1,12 @@
-# Running statistics for evaluation
+# Training a BPE vocabulary
 
-Complete `BatchNorm.forward(x)`. In training mode (`self.training = True`) normalize with the batch statistics, as in exercise 1, and update the running averages with momentum $m$:
+Your byte helpers are provided.
 
-$$
-\text{running\_mean} \leftarrow (1 - m)\,\text{running\_mean} + m\,\mu_B, \qquad \text{running\_var} \leftarrow (1 - m)\,\text{running\_var} + m\,\sigma^2_B \tfrac{N}{N - 1}.
-$$
-
-In evaluation mode, normalize with the running statistics and do not update them. This matches PyTorch's `BatchNorm1d`, which normalizes with the biased batch variance but stores the unbiased one.
+1. `train_bpe(text, vocab_size)`: start from the bytes of `text`; for each new id $256, 257, \dots$ up to `vocab_size - 1`, count pairs, pick the most frequent (ties go to the pair seen first), stop early if no pair occurs at least twice, merge it into the new id, and record the merge. Return `{(a, b): new_id}` in the order learned.
+2. `vocab_bytes(merges)`: the byte string of every id, built from the 256 single bytes by concatenating the two parts of each merge.
 
 ## Hints
 
-1. `x.var(axis=0)` is the biased variance; multiply by `n / (n - 1)` for the running estimate.
-2. Compute `mu, var` in each branch, then share the final line `gamma * (x - mu) / sqrt(var + eps) + beta`.
-3. In evaluation mode each example's output depends only on itself.
+1. `max(counts, key=counts.get)` returns the first key with the largest count.
+2. Merges must be learned on the sequence produced by the previous merges.
+3. Later merges can combine earlier ones: the byte string of a merged id is the concatenation of its parts' byte strings.

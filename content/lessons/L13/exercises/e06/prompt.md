@@ -1,12 +1,12 @@
-# Positions: equivariance and sinusoidal encodings
+# A dynamic loss scaler
 
-1. `sinusoidal(n, d, base=10000.0)`: the `(n, d)` table with $\text{PE}_{p, 2i} = \sin(p / \text{base}^{2i/d})$ and $\text{PE}_{p, 2i+1} = \cos(p / \text{base}^{2i/d})$.
-2. `is_permutation_equivariant(f, X, perm)`: whether `f(X[perm])` equals `f(X)[perm]` to within `1e-9`.
+Complete `DynamicLossScaler.update(found_inf)`, the rule PyTorch's `GradScaler` follows after each step:
 
-Then check: attention without a mask is permutation-equivariant; adding sinusoidal encodings to the input before attention breaks it; and the causal mask also breaks it (it depends on order).
+- if the gradients contained an infinity or NaN, multiply the scale by `backoff`, reset the count of good steps, and return `False` (skip the update);
+- otherwise count the good step, and when the count reaches `interval`, multiply the scale by `growth` and reset the count; return `True`.
 
 ## Hints
 
-1. Build the angles as an outer product of positions `(n, 1)` and frequencies `(1, d/2)`.
-2. Fill even and odd columns with slices `0::2` and `1::2`.
-3. `np.allclose(a, b, atol=1e-9)`.
+1. The skipped step does not count as good.
+2. Growth happens on the step that completes the interval.
+3. With the defaults, an overflow every few thousand steps keeps the scale near the largest safe value.

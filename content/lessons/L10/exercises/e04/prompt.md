@@ -1,12 +1,12 @@
-# RMSNorm, forward and backward
+# Pre-tokenization
 
-Implement RMSNorm for `x` of shape `(N, d)`: $y = \gamma \odot x / r$ with $r = \sqrt{\tfrac1d \sum_j x_j^2 + \epsilon}$ per row, and no shift.
+`PATTERN` is a simplified version of GPT-2's splitting rule: contractions, words and numbers with an optional leading space, runs of punctuation with an optional leading space, and whitespace.
 
-1. `rmsnorm_forward(x, gamma, eps=1e-6)` returns `(y, cache)`.
-2. `rmsnorm_backward(dy, cache)` returns `(dx, dgamma)`, with $\partial L/\partial x_j = g_j / r - x_j \sum_k g_k x_k / (d r^3)$ where $g = \gamma \odot \partial L/\partial y$.
+1. `pretokenize(text)`: the list of chunks `PATTERN.findall(text)`, which concatenate back to `text`.
+2. `train_bpe_chunks(text, vocab_size)`: BPE in which pairs are counted only inside chunks, so no merge crosses a chunk boundary. Count each distinct chunk once with its frequency, which also makes training much faster.
 
 ## Hints
 
-1. Keep `r` with shape `(N, 1)` so it broadcasts over the features.
-2. `dgamma = (dy * x / r).sum(axis=0)`.
-3. Derive the input gradient yourself first: $r$ depends on every $x_k$ through $\partial r/\partial x_k = x_k/(d r)$.
+1. Build `freq = {chunk: count}` and `words = {chunk: list of byte ids}`.
+2. Each round, add `freq[chunk]` for every adjacent pair inside each chunk's ids.
+3. Apply the chosen merge to every chunk's ids.

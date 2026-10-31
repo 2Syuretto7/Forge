@@ -1,13 +1,10 @@
-def score_bytes(batch, heads, n_ctx, bytes_per=2):
-    """Memory of one layer's attention weights P (batch x heads x n_ctx x n_ctx)."""
-    return batch * heads * n_ctx * n_ctx * bytes_per
+def amdahl_speedup(fractions, speedups):
+    """Overall speedup when each part of the run (fractions of the original time, summing to 1) is
+    sped up by its own factor."""
+    return 1.0 / sum(f / s for f, s in zip(fractions, speedups))
 
 
-def scores_intensity(n_ctx, d_head, bytes_per=2):
-    """S = Q K^T for one head: 2 n^2 d FLOPs; reads Q and K (n x d each), writes S (n x n)."""
-    return 2 * n_ctx * n_ctx * d_head / (bytes_per * (2 * n_ctx * d_head + n_ctx * n_ctx))
-
-
-def max_ctx_for_memory(budget_bytes, batch, heads, bytes_per=2):
-    """Largest n_ctx whose attention weights for one layer fit in the budget."""
-    return int((budget_bytes / (batch * heads * bytes_per)) ** 0.5)
+def t4_part_speedups():
+    """On a T4, matrix products move from 8.1 fp32 TFLOP/s to 65 fp16 tensor-core TFLOP/s; memory-bound
+    operations move half the bytes. Return (matmul speedup bound, memory-bound speedup)."""
+    return 65 / 8.1, 2.0

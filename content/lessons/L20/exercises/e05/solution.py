@@ -1,20 +1,15 @@
 import numpy as np
 
 
-def best_rank_r(M, r):
-    """The rank-r matrix closest to M in Frobenius norm: the truncated SVD (Eckart-Young)."""
-    U, S, Vt = np.linalg.svd(M, full_matrices=False)
-    return (U[:, :r] * S[:r]) @ Vt[:r]
-
-
-def relative_error(M, r):
-    """|M - best_rank_r(M, r)|_F / |M|_F, from the singular values alone."""
-    S = np.linalg.svd(M, compute_uv=False)
-    return float(np.sqrt(np.sum(S[r:] ** 2) / np.sum(S ** 2)))
-
-
-def rank_for(M, tol):
-    """The smallest rank whose relative error is at most tol."""
-    for r in range(min(M.shape) + 1):
-        if relative_error(M, r) <= tol:
-            return r
+def masked_cross_entropy(logits, targets, mask):
+    """Mean cross-entropy over the positions where mask is 1 (the response), for logits (T, V),
+    integer targets (T,) and mask (T,). Return (loss, dlogits)."""
+    z = logits - logits.max(axis=1, keepdims=True)
+    p = np.exp(z)
+    p /= p.sum(axis=1, keepdims=True)
+    n = mask.sum()
+    rows = np.arange(len(targets))
+    loss = -(np.log(p[rows, targets]) * mask).sum() / n
+    g = p.copy()
+    g[rows, targets] -= 1
+    return float(loss), g * mask[:, None] / n

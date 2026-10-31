@@ -1,13 +1,12 @@
-# Break it: an fp16 softmax
+# Break it: a leaked test set
 
-1. `naive_softmax(x)`: exponentiate, sum and divide, entirely in the input's precision, without subtracting the maximum.
-2. `stable_softmax(x)`: subtract the row maximum, exponentiate and sum in float32, and return the result in the input's precision.
-3. `overflow_threshold(dtype=np.float16)`: the largest $x$ with finite $e^x$ in that precision.
+`make_docs(n, seed)` generates documents from one random word chain, so documents share statistics but not text. Train an $n$-gram language model on training documents, and evaluate it on held-out documents, once clean and once with the evaluation documents leaked into training.
 
-Then feed both a row of fp16 attention scores containing a 12.
+1. `train_counts(docs, n)`: pad each document with $n - 1$ `"<s>"` tokens, and count every context (the previous $n - 1$ words) and every (context, next word). Return the two dictionaries.
+2. `avg_logloss(model, docs, n, vocab_size, k=0.1)`: the mean of $-\ln p(w \mid c)$ over every word of `docs`, with $p(w \mid c) = \bigl(\text{count}(c, w) + k\bigr) / \bigl(\text{count}(c) + k V\bigr)$.
 
 ## Hints
 
-1. `np.finfo(np.float16).max` is 65504.
-2. Pass `dtype=x.dtype` to the sum in the naive version so it really accumulates in fp16.
-3. The stable version never exponentiates anything larger than 0.
+1. Keys are tuples: the context `tuple(w[i - n + 1:i])` and the $n$-gram `context + (w[i],)`.
+2. Add-$k$ smoothing keeps unseen words possible, so the loss stays finite.
+3. A model with long contexts memorizes the exact sequences it saw: on leaked documents its loss collapses, which says nothing about new text. The tests also check what this does to model selection: the chain generating the documents is first order, so the bigram model is the right one, yet with the leak a 4-gram model looks far better.

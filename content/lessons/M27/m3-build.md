@@ -10,7 +10,7 @@ Eight exercises: the basic quantities, mutual information, the equivalence of ma
 :::exercise{ref=e02}
 :::
 
-Cross-entropy is entropy plus KL. If training stalls at a loss of $2.1$ nats on data whose entropy is $1.8$ nats, the model is $0.3$ nats from perfect: only that part is reducible, and the remaining $1.8$ nats is the irreducible uncertainty of the data. Scaling-law fits in L15 include exactly this irreducible term.
+Cross-entropy is entropy plus KL. If training stalls at a loss of $2.1$ nats on data whose entropy is $1.8$ nats, the model is $0.3$ nats from perfect: only that part is reducible, and the remaining $1.8$ nats is the irreducible uncertainty of the data. Scaling-law fits in L11 include exactly this irreducible term.
 
 :::exercise{ref=e04}
 :::

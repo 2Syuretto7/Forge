@@ -1,11 +1,11 @@
-# Explain it plainly: backpropagation
+# Explain it plainly: memory-bound and compute-bound
 
-Explain backpropagation to someone who understands the chain rule for single-variable functions but has never seen a neural network trained.
+Explain to a programmer who has just moved a training loop from CPU to GPU why some operations got a hundred times faster and others barely changed.
 
 - Write 150 to 400 words.
-- Use a concrete two-layer example with shapes or numbers.
-- Explain what is saved during the forward pass and why.
-- Explain why the computation goes backward.
+- Use a concrete comparison between a matrix product and an elementwise operation.
+- Explain arithmetic intensity and what decides whether a kernel is memory-bound.
+- Mention one practical fix for a memory-bound or launch-bound workload.
 
-:::feynman{id=f1 prompt="Explain how backpropagation computes the gradient of the loss with respect to every weight of a two-layer neural network, and why it runs backward from the loss." key_points="The network is a chain of layers, each a simple function with a known local derivative|The forward pass computes and saves every layer's inputs and outputs|Starting from the loss, each layer turns the gradient at its output into gradients for its input and its weights using the saved values|A linear layer's weight gradient is its input transposed times the output gradient, and an activation multiplies the gradient by its local slope|Going backward reuses each intermediate gradient for all the weights below it, so the whole gradient costs about two extra forward passes"}
+:::feynman{id=f1 prompt="Explain why a matrix multiplication runs close to a GPU's peak FLOP rate while an elementwise operation runs far below it, using arithmetic intensity and the roofline model, and give one practical fix for memory-bound or launch-bound code." key_points="A kernel is limited by whichever is slower, computing its FLOPs or moving its bytes|Arithmetic intensity is FLOPs per byte moved; a matmul's grows with matrix size while an elementwise operation's stays below one|Kernels below the ridge point, peak FLOPs divided by bandwidth, are memory-bound and gain nothing from more compute|Small kernels can be dominated by launch overhead and synchronization rather than by either limit|A concrete fix such as fusion, larger batches, lower precision or avoiding per-step synchronization"}
 :::

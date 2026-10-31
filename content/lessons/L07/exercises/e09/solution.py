@@ -1,26 +1,24 @@
-import numpy as np
+def summarize(events):
+    """events: dicts with "name", "start" and "dur" (microseconds) for kernels on one GPU stream.
+    Return {name: (count, total_us)} sorted by total time, largest first."""
+    out = {}
+    for e in events:
+        c, t = out.get(e["name"], (0, 0.0))
+        out[e["name"]] = (c + 1, t + e["dur"])
+    return dict(sorted(out.items(), key=lambda kv: -kv[1][1]))
 
 
-def count_pieces(w, b, a, lo=-3.0, hi=3.0, n=20001):
-    x = np.linspace(lo, hi, n)
-    f = np.maximum(0, np.outer(x, w) + b) @ a
-    s = np.diff(f) / np.diff(x)
-    changes = np.abs(np.diff(s)) > 1e-6
-    # a kink between grid points makes one intermediate slope; count runs of equal slope,
-    # merging a single transitional segment into the next piece
-    pieces = 1
-    i = 0
-    while i < len(changes):
-        if changes[i]:
-            pieces += 1
-            if i + 1 < len(changes) and changes[i + 1]:
-                i += 1
-        i += 1
-    return pieces
+def gpu_idle_fraction(events):
+    """Fraction of the span from the first kernel's start to the last kernel's end with no kernel
+    running (kernels on one stream do not overlap)."""
+    ev = sorted(events, key=lambda e: e["start"])
+    start, end = ev[0]["start"], max(e["start"] + e["dur"] for e in ev)
+    busy = sum(e["dur"] for e in ev)
+    return 1.0 - busy / (end - start)
 
 
-def kink_locations(w, b, lo=-3.0, hi=3.0):
-    w = np.asarray(w, dtype=float)
-    b = np.asarray(b, dtype=float)
-    k = -b[w != 0] / w[w != 0]
-    return np.sort(k[(k > lo) & (k < hi)])
+def top_fraction(events, k=1):
+    """Share of all kernel time taken by the k most expensive kernel names."""
+    s = summarize(events)
+    total = sum(t for _, t in s.values())
+    return sum(t for _, t in list(s.values())[:k]) / total

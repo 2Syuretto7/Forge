@@ -1,30 +1,23 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(12)
-Z = rng.normal(size=(200, 3))
-X = np.column_stack([np.ones(200), Z])
-y = (Z @ np.array([1.5, -1.0, 0.5]) + rng.logistic(size=200) > 0).astype(float)
+
+def test_closed_form():
+    assert abs(sub.uncorrected_factor(1) - 0.1 / np.sqrt(0.001)) < 1e-12
+    f = sub.uncorrected_factor(np.array([1, 100]))
+    assert f.shape == (2,) and 3.2 < f[1] < 3.3
 
 
-def test_converges_fast():
-    w, norms = sub.newton(X, y, 1e-3, 10)
-    assert len(norms) == 10
-    assert min(norms) < 1e-10, norms
+def test_peak():
+    t, f = sub.peak()
+    assert t == 12 and abs(f - 6.5685) < 1e-3
+    t2, f2 = sub.peak(0.9, 0.99)
+    ts = np.arange(1, 10001)
+    ref = (1 - 0.9 ** ts) / np.sqrt(1 - 0.99 ** ts)
+    assert t2 == int(ts[np.argmax(ref)]) and abs(f2 - ref.max()) < 1e-12
 
 
-def test_quadratic_convergence():
-    _, norms = sub.newton(X, y, 1e-3, 10)
-    tail = [g for g in norms if 1e-12 < g < 1e-2]
-    assert len(tail) >= 2
-    for a, b in zip(tail, tail[1:]):
-        assert b < 50 * a * a + 1e-14, (a, b)
-
-
-def test_matches_gradient_descent():
-    w, _ = sub.newton(X, y, 1e-3, 10)
-    v = np.zeros(4)
-    for _ in range(20000):
-        s = 0.5 * (1 + np.tanh(0.5 * (X @ v)))
-        v -= 1.0 * (X.T @ (s - y) / 200 + 1e-3 * v)
-    assert np.allclose(w, v, atol=1e-5)
+def test_measured_matches_closed_form():
+    for t in [1, 5, 12, 100]:
+        assert abs(sub.measured_factor(t) - sub.uncorrected_factor(t)) < 1e-9 * sub.uncorrected_factor(t)
+    assert abs(sub.measured_factor(7, g=-3.0) - sub.uncorrected_factor(7)) < 1e-9

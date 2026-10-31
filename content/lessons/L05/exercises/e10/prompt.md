@@ -1,13 +1,16 @@
-# Break it: unscaled features
+# A training loop with an optimizer and a schedule
 
-Measure Section 5's prediction: badly scaled features make gradient descent slow, standardization fixes it.
+Your optimizers from exercise 8 and the L03 network are provided. Implement `train(opt, X, y, steps, batch=50, schedule=None, seed=0, sizes=(64, 64, 32, 10))`:
 
-- `hessian_condition(X)`: the condition number of $\tfrac2n X^\top X$.
-- `steps_to_converge(X, y, tol, max_steps)`: run gradient descent on $\tfrac1n\|Xw - y\|^2$ from zero with learning rate $0.9 \times 2/\lambda_{\max}$ and return the number of steps until $\|w - w^\star\| \le \text{tol}\cdot\|w^\star\|$, where $w^\star$ is the least-squares solution. Return `max_steps` if it never gets there.
-- `standardize(X)`: subtract column means and divide by column standard deviations.
+- initialize with `init(list(sizes), seed)` and create `rng = np.random.default_rng(seed)`;
+- each epoch draws `perm = rng.permutation(n)` and visits it in consecutive full batches of size `batch` (drop the remainder), starting a new epoch when one is exhausted, until `steps` steps have run;
+- step `t` (counted from 1) calls `opt.step(params, grads, lr)` with `lr = schedule(t)` if a schedule is given, otherwise `None`;
+- return `(params, losses)` with the minibatch loss of every step.
+
+The tests also check that plain SGD at rate 0.3 for 600 steps reaches at least 88 percent test accuracy.
 
 ## Hints
 
-1. $w^\star$ from `np.linalg.lstsq`.
-2. Check the stopping condition before each step.
-3. Fit the standardized problem with an intercept-free model: standardization removes the need for one when `y` is also centered, which the test does.
+1. A `while t < steps` loop around a `for i in range(0, n - batch + 1, batch)` loop, breaking out when `t` reaches `steps`.
+2. `idx = perm[i:i + batch]`, then `loss_and_grads(params, X[idx], y[idx])`.
+3. Following this order exactly makes your runs reproducible against the tests.

@@ -1,16 +1,17 @@
 import numpy as np
 
 
-def ridge_loss(w, X, y, lam):
-    r = X @ w - y
-    return float(np.mean(r ** 2) + lam * w @ w)
+def rmsnorm_forward(x, gamma, eps=1e-6):
+    """Divide each row by its root mean square (no centering), then scale. Return (y, cache)."""
+    r = np.sqrt((x * x).mean(axis=1, keepdims=True) + eps)
+    return gamma * x / r, (x, r, gamma)
 
 
-def ridge_grad(w, X, y, lam):
-    n = X.shape[0]
-    return 2.0 / n * X.T @ (X @ w - y) + 2.0 * lam * w
-
-
-def ridge_closed_form(X, y, lam):
-    n, p = X.shape
-    return np.linalg.solve(X.T @ X + n * lam * np.eye(p), X.T @ y)
+def rmsnorm_backward(dy, cache):
+    """Return (dx, dgamma)."""
+    x, r, gamma = cache
+    d = x.shape[1]
+    dgamma = (dy * x / r).sum(axis=0)
+    gdy = dy * gamma
+    dx = gdy / r - x * (gdy * x).sum(axis=1, keepdims=True) / (d * r ** 3)
+    return dx, dgamma

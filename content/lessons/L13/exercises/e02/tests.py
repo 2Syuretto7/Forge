@@ -1,28 +1,20 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(2)
-Q, K, V = rng.normal(size=(5, 4)), rng.normal(size=(5, 4)), rng.normal(size=(5, 3))
+
+def test_fp16_and_bf16():
+    h = sub.format_properties(5, 10)
+    assert h == {"max": 65504.0, "min_normal": 2.0 ** -14, "min_subnormal": 2.0 ** -24, "eps": 2.0 ** -10}
+    b = sub.format_properties(8, 7)
+    assert b["min_normal"] == 2.0 ** -126 and b["eps"] == 2.0 ** -7 and abs(b["max"] - 3.3895313892515355e38) < 1e30
 
 
-def test_mask():
-    m = sub.causal_mask(3)
-    assert m.dtype == bool and m.tolist() == [[False, True, True], [False, False, True], [False, False, False]]
+def test_against_numpy_finfo():
+    for dt, (e, m) in ((np.float16, (5, 10)), (np.float32, (8, 23)), (np.float64, (11, 52))):
+        p = sub.format_properties(e, m)
+        fi = np.finfo(dt)
+        assert p["max"] == float(fi.max) and p["eps"] == float(fi.eps) and p["min_normal"] == float(fi.tiny)
 
 
-def test_against_loops():
-    O, P = sub.attention(Q, K, V)
-    for i in range(5):
-        s = np.array([Q[i] @ K[j] / 2.0 for j in range(i + 1)])
-        w = np.exp(s - s.max())
-        w /= w.sum()
-        assert np.allclose(P[i, : i + 1], w) and np.allclose(P[i, i + 1:], 0)
-        assert np.allclose(O[i], w @ V[: i + 1])
-
-
-def test_options():
-    O, P = sub.attention(Q, K, V, causal=False, scale=False)
-    S = Q @ K.T
-    E = np.exp(S - S.max(axis=1, keepdims=True))
-    assert np.allclose(P, E / E.sum(axis=1, keepdims=True))
-    assert np.allclose(O, P @ V)
+def test_digits():
+    assert 3.3 < sub.decimal_digits(10) < 3.4 and 2.4 < sub.decimal_digits(7) < 2.5

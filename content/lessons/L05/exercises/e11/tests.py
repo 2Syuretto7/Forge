@@ -1,25 +1,40 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(11)
-X = rng.normal(size=(80, 2))
-X = X[np.abs(X @ np.array([1.0, 1.0])) > 0.3]
-y = (X @ np.array([1.0, 1.0]) > 0).astype(float)
+X, y = sub.make_digits(2000, 0)
 
 
-def test_norm_grows_without_bound_on_separable_data():
-    norms = sub.train_norms(X, y, lr=1.0, steps=20000, l2=0.0, every=2000)
-    assert len(norms) == 10
-    assert all(b > a for a, b in zip(norms, norms[1:])), "the norm should increase at every checkpoint"
-    assert norms[-1] > norms[4] + 0.5
+class _Nan:
+    def step(self, params, grads, lr=None):
+        for k in params:
+            params[k][...] = np.nan
 
 
-def test_l2_levels_off():
-    norms = sub.train_norms(X, y, lr=1.0, steps=20000, l2=0.01, every=2000)
-    assert abs(norms[-1] - norms[-2]) < 1e-6
+class _Blowup:
+    def step(self, params, grads, lr=None):
+        params["b3"][0] = 1e4
 
 
-def test_training_predictions_become_extreme():
-    w = np.array([20.0, 20.0])
-    lo, hi = sub.train_confidence(X, y, w)
-    assert lo > 0.99 and hi > 0.999999
+def test_sgd_sweep():
+    lrs = [1e-3, 1e-1, 1.0, 10 ** 0.5]
+    losses = sub.sweep(lambda lr: sub.SGD(lr), lrs, X, y)
+    assert len(losses) == 4 and losses[0] > 2.0
+    assert 0.3 <= sub.best_lr(lrs, losses) <= 1.5
+    assert losses[-1] > 2.0
+    assert min(losses) < 0.2
+
+
+def test_adam_sweep():
+    lrs = [1e-4, 1e-2, 10 ** -0.5]
+    losses = sub.sweep(lambda lr: sub.Adam(lr), lrs, X, y)
+    assert 3e-3 <= sub.best_lr(lrs, losses) <= 3e-2
+    assert losses[0] > 1.5 and losses[-1] > 1.0
+
+
+def test_failed_runs_are_inf():
+    losses = sub.sweep(lambda lr: _Nan() if lr == 1 else _Blowup(), [1, 2], X, y, steps=3)
+    assert losses == [float("inf"), float("inf")]
+
+
+def test_best_lr():
+    assert sub.best_lr([0.1, 0.2, 0.3], [1.0, 0.5, float("inf")]) == 0.2

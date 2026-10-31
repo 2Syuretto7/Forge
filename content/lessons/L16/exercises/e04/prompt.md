@@ -1,12 +1,11 @@
-# Deduplicating with LSH
+# Merging and counting
 
-You have one MinHash signature per document (an array of `bands * rows` integers).
-
-1. `lsh_candidates(signatures, bands, rows)`: put each band of each signature in a bucket keyed by (band index, tuple of the band's values), and return the sorted list of pairs $(i, j)$, $i < j$, that share at least one bucket.
-2. `dedup_keep(signatures, bands, rows, min_similarity)`: confirm each candidate pair by its signature agreement rate, join confirmed pairs into clusters with union-find, and return the sorted indices to keep, the smallest index of every cluster.
+1. `merge(W0, A, B, alpha)`: the single matrix $W_0 + \frac{\alpha}{r} B A$ that behaves exactly like the LoRA layer; merged, the adapter costs nothing at inference.
+2. `lora_params(d_in, d_out, r)`: the trainable parameters of a rank-$r$ adapter, $r(d_\text{in} + d_\text{out})$.
+3. `trainable_fraction(n_layer, d, r, per_layer=("q", "v"))`: the fraction of a transformer's $12\,n_\text{layer} d^2$ block parameters trained by rank-$r$ adapters on the listed $d \times d$ projections of every layer.
 
 ## Hints
 
-1. A dictionary from bucket key to the list of document indices builds the buckets in one pass.
-2. Candidates are cheap but approximate: confirming them with the full signature removes most false positives.
-3. Union-find: each index points to a parent; `find` follows parents to the root, and joining two clusters points one root at the other (point the larger root at the smaller to keep the smallest index as the root).
+1. Merging is exact: $x W^\top = x W_0^\top + \frac{\alpha}{r} x A^\top B^\top$.
+2. Several adapters can share one base model and be swapped per request, unmerged.
+3. The fraction does not depend on the number of layers.

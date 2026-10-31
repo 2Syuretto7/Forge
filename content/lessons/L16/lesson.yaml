@@ -1,36 +1,38 @@
 id: L16
-hours: 8
-capstone: "A pipeline that deduplicates, filters and decontaminates a noisy crawl, and the held-out loss it buys at equal compute"
-teaser: "Find duplicates without comparing every pair, filter junk, mix domains, catch leaked benchmarks and build a data loader that resumes exactly."
+hours: 9
+capstone: "A LoRA fine-tune of a pretrained character model on instruction tasks that reaches a target accuracy on unseen inputs while its base loss stays within a stated margin, compared with full fine-tuning"
+teaser: "Teach a pretrained model new tasks: mask the prompt, train low-rank adapters, distill from a teacher, and measure what the model forgets."
 movements:
   - {file: m0-recall.md,     mode: theory,   minutes: 20}
   - {file: m1-puzzle.md,     mode: theory,   minutes: 35}
-  - {file: m2-derivation.md, mode: theory,   minutes: 150}
-  - {file: m3-build.md,      mode: practice, minutes: 115}
-  - {file: m4-scale.md,      mode: practice, minutes: 50}
-  - {file: m5-break.md,      mode: both,     minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 165}
+  - {file: m3-build.md,      mode: practice, minutes: 130}
+  - {file: m4-scale.md,      mode: practice, minutes: 55}
+  - {file: m5-break.md,      mode: both,     minutes: 45}
   - {file: m6-feynman.md,    mode: theory,   minutes: 25}
-  - {file: m7-capstone.md,   mode: practice, minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 65}
 hooks:
-  - {to: L15, text: "Cleaner data moves the whole scaling curve down."}
-  - {to: L19, text: "The pretraining run reads its data through a resumable pipeline like this one."}
+  - {to: L17, text: "Reinforcement learning starts from the fine-tuned model."}
+  - {to: L18, text: "A distilled student makes a fast draft model for speculative decoding."}
+  - {to: L20, text: "The final capstone fine-tunes the model it pretrained."}
 reuses:
-  - {from: L14, concept: "tokenizing a corpus into training windows"}
-  - {from: L06, concept: "held-out data and leakage"}
+  - {from: M14, concept: "the SVD and the best low-rank approximation"}
+  - {from: L09, concept: "the weight matrices of a transformer block"}
+  - {from: L15, concept: "a pretrained model and its base evaluation"}
 annotations:
-  - {target: L14, movement: m2-derivation, anchor: "3. From text to training windows", text: "L16 builds the pipeline that feeds these windows at scale: deduplication, filtering, mixtures and resumable loading."}
-  - {target: L06, movement: m2-derivation, anchor: "6. Estimating risk honestly", text: "L16 meets test-set leakage at web scale: benchmark text inside the crawl, found by n-gram overlap."}
+  - {target: M14, movement: m2-derivation, anchor: "Low-rank approximation: Eckart-Young", text: "L16 uses this theorem to explain why LoRA's low-rank updates are enough to fine-tune large models."}
+  - {target: L15, movement: m2-derivation, anchor: "6. Evaluation you can trust", text: "L16 reruns this evaluation after fine-tuning to measure how much the model forgot."}
 concepts:
-  - q: "Why does MinHash estimate Jaccard similarity?"
-    a: "For a random hash, the minimum over the union of two sets is equally likely to be any element, and the two minima agree exactly when it lies in the intersection, which has probability |A and B| / |A or B|."
-  - q: "What does banding a MinHash signature achieve?"
-    a: "Two documents become candidates if any band of r rows matches, with probability 1 - (1 - s^r)^b: an S-curve, so only likely near-duplicates are compared."
-  - q: "What is train-test contamination, and how is it detected?"
-    a: "Evaluation text present in the training data; it is found by n-gram overlap, such as shared 13-word sequences, and removed or reported separately."
-  - q: "How is a data loader made exactly resumable?"
-    a: "Derive every shuffle from the seed and epoch so the state is a position, and save any stateful part, such as a shuffle buffer and its generator, in the checkpoint."
-  - q: "How many epochs does a domain get under mixture weights?"
-    a: "A domain sampled with weight p in a run of T tokens is repeated p T / size times."
-  - q: "What is the risk of filtering with a quality classifier?"
-    a: "It learns what its reference text looks like, so it can remove good text in other styles or dialects and narrow the training distribution."
-katas: [e02, e03, e09]
+  - q: "Why is the prompt masked out of the fine-tuning loss?"
+    a: "The model's job is the response; training on prompt tokens spends the gradient on reproducing inputs and teaches the model to generate prompts."
+  - q: "What does LoRA train?"
+    a: "A low-rank update (alpha / r) B A added to each frozen weight, with B starting at zero; it trains r (d_in + d_out) parameters per matrix and can be merged into the weight afterwards."
+  - q: "Why is a low-rank update usually enough for fine-tuning?"
+    a: "Fine-tuning updates have quickly decaying singular values, so by Eckart-Young a truncated SVD of low rank captures most of the update."
+  - q: "What is catastrophic forgetting, and how is it limited?"
+    a: "The loss on the pretraining distribution rises as fine-tuning moves the weights; small learning rates, replaying pretraining data, a penalty toward the pretrained weights and training fewer parameters limit it."
+  - q: "Why does distillation use a temperature, and why the T squared factor?"
+    a: "Softening both distributions exposes the teacher's small probabilities on wrong answers; the gradient of the softened KL scales as 1/T, so T squared keeps its size independent of T."
+  - q: "How do you pack several examples into one sequence correctly?"
+    a: "Use an attention mask that only lets positions attend within their own example, and restart the position ids at each example."
+katas: [e01, e03, e07]

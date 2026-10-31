@@ -1,20 +1,22 @@
-import numpy as np
 import sub
 
-rng = np.random.default_rng(6)
+prose = ("It was the best of times, and it was the worst of times; the people of that age had "
+         "little to do with the ones who came before, but they were happy enough with what they had. ") * 3
+spam = "buy cheap watches best price watches online discount watches free shipping " * 8
+table = "\n".join(f"{i} | {i * 3} | {i * 7} | #{i}" for i in range(40))
+bullets = "\n".join(f"- item number {i} of the list and more" for i in range(60))
 
 
-def test_matches_reference():
-    Q, K, V = rng.normal(size=(10, 8)), rng.normal(size=(10, 8)), rng.normal(size=(10, 5))
-    O, L = sub.flash_attention(Q, K, V, Br=4, Bc=3)
-    assert np.allclose(O, sub.reference_attention(Q, K, V))
-    S = Q @ K.T / np.sqrt(8)
-    assert np.allclose(L, np.log(np.exp(S).sum(axis=1)))
+def test_signals():
+    s = sub.quality_signals("The cat... #tag\n- one\nand two...")
+    assert s["n_words"] == 7 and s["stop_words"] == 2
+    assert abs(s["symbol_ratio"] - 2 / 7) < 1e-12
+    assert abs(s["bullet_lines"] - 1 / 3) < 1e-12 and abs(s["ellipsis_lines"] - 1 / 3) < 1e-12
 
 
-def test_block_sizes_do_not_matter():
-    Q, K, V = (rng.normal(size=(12, 4)) * 3 for _ in range(3))
-    a, _ = sub.flash_attention(Q, K, V, 1, 1)
-    b, _ = sub.flash_attention(Q, K, V, 12, 12)
-    c, _ = sub.flash_attention(Q, K, V, 5, 7)
-    assert np.allclose(a, b) and np.allclose(b, c)
+def test_rules():
+    assert sub.passes(prose)
+    assert not sub.passes(spam)
+    assert not sub.passes(table)
+    assert not sub.passes(bullets)
+    assert not sub.passes("too short, and with the words")

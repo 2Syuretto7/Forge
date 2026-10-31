@@ -1,12 +1,12 @@
-# Packing examples
+# The evaluation stage
 
-Instruction data is short and uneven. Rather than padding every example to the longest, pack several into one sequence, and keep them from seeing each other.
+The evaluation stage reports every number with an interval over items (L19).
 
-1. `packed_attention_mask(lengths)`: position $i$ may attend to $j$ only if $j \le i$ and both belong to the same example; return a boolean $T \times T$ array.
-2. `packed_positions(lengths)`: position ids restarting at 0 for each example.
+1. `pass_at_k(n, c, k)`: from $n$ sampled answers per problem, $c$ of them correct, the unbiased estimate of the chance that at least one of $k$ samples is correct, $1 - \binom{n-c}{k}/\binom{n}{k}$.
+2. `mean_ci(scores, n_boot=2000, seed=0, level=0.95)`: the mean of per-item scores and a percentile bootstrap interval over items.
 
 ## Hints
 
-1. Give every position its example's index with `np.repeat`, then compare the indices pairwise.
-2. Combine with the causal mask `np.tril`.
-3. Without the mask, the second example in a pack would condition on the first, which never happens at inference.
+1. $\binom{n-c}{k}/\binom{n}{k} = \prod_{i=n-c+1}^{n} (1 - k/i)$, which avoids huge binomial coefficients.
+2. If fewer than $k$ answers are wrong, every set of $k$ contains a correct one.
+3. Average pass@k over problems, then bootstrap over problems.

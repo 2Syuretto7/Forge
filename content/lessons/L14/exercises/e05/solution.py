@@ -1,22 +1,25 @@
 import numpy as np
 
 
-def train_val_split(ids, frac=0.9):
-    """The first frac of the tokens for training, the rest for validation (never shuffled across)."""
-    n = int(frac * len(ids))
-    return ids[:n], ids[n:]
+def adam_update(w, g, m, v, t, lr, b1=0.9, b2=0.999, eps=1e-8):
+    """One Adam step (with bias correction) on arrays; return (w, m, v)."""
+    m = b1 * m + (1 - b1) * g
+    v = b2 * v + (1 - b2) * g * g
+    w = w - lr * (m / (1 - b1 ** t)) / (np.sqrt(v / (1 - b2 ** t)) + eps)
+    return w, m, v
 
 
-def get_batch(ids, ctx, batch, rng):
-    """batch random windows: x[b] = ids[s:s + ctx] and y[b] = ids[s + 1:s + ctx + 1], with starts
-    drawn by rng.integers(0, len(ids) - ctx, size=batch)."""
-    ids = np.asarray(ids)
-    starts = rng.integers(0, len(ids) - ctx, size=batch)
-    x = np.stack([ids[s:s + ctx] for s in starts])
-    y = np.stack([ids[s + 1:s + ctx + 1] for s in starts])
-    return x, y
-
-
-def tokens_per_epoch(n_tokens, ctx, batch):
-    """Training steps per pass over the data, if every window position is used once: n / (ctx * batch)."""
-    return n_tokens / (ctx * batch)
+def zero1_step(w, rank_grads, states, t, lr):
+    """ZeRO stage 1 over P = len(rank_grads) ranks. Average the gradients, then rank r updates only
+    its shard np.array_split(range(len(w)), P)[r] of the weights, using its own (m, v) shard in
+    states[r]; the updated shards are gathered into the full weights. Return (w, states)."""
+    P = len(rank_grads)
+    g = sum(rank_grads) / P
+    parts = np.array_split(np.arange(len(w)), P)
+    new_w = np.empty_like(w)
+    new_states = []
+    for r, idx in enumerate(parts):
+        m, v = states[r]
+        new_w[idx], m, v = adam_update(w[idx], g[idx], m, v, t, lr)
+        new_states.append((m, v))
+    return new_w, new_states

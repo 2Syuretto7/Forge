@@ -1,47 +1,42 @@
 import numpy as np
+import math
 
 
-def symmetric_init(sizes, value=0.1):
-    p = {}
-    for i, (a, b) in enumerate(zip(sizes, sizes[1:]), start=1):
-        p[f"W{i}"] = np.full((a, b), float(value))
-        p[f"b{i}"] = np.zeros(b)
-    return p
+C = math.sqrt(2.0 / math.pi)
 
 
-def unit_spread(W1):
-    return float(np.max(np.max(W1, axis=1) - np.min(W1, axis=1)))
+def gelu(x):
+    """The tanh approximation used by GPT-2: 0.5 x (1 + tanh(c (x + 0.044715 x^3)))."""
+    return 0.5 * x * (1.0 + np.tanh(C * (x + 0.044715 * x ** 3)))
 
 
-def _loss_grads(p, X, y):
-    L = len(p) // 2
-    h, cache = X, []
-    for i in range(1, L + 1):
-        z = h @ p[f"W{i}"] + p[f"b{i}"]
-        cache.append((h, z))
-        h = np.tanh(z) if i < L else z
-    B = X.shape[0]
-    Zs = h - h.max(axis=1, keepdims=True)
-    logp = Zs - np.log(np.exp(Zs).sum(axis=1, keepdims=True))
-    loss = -np.mean(logp[np.arange(B), y])
-    G = np.exp(logp)
-    G[np.arange(B), y] -= 1
-    G /= B
-    g = {}
-    for i in range(L, 0, -1):
-        hin, z = cache[i - 1]
-        if i < L:
-            G = G * (1 - np.tanh(z) ** 2)
-        g[f"W{i}"] = hin.T @ G
-        g[f"b{i}"] = G.sum(axis=0)
-        G = G @ p[f"W{i}"].T
-    return float(loss), g
+def gelu_grad(x):
+    u = C * (x + 0.044715 * x ** 3)
+    t = np.tanh(u)
+    return 0.5 * (1.0 + t) + 0.5 * x * (1.0 - t * t) * C * (1.0 + 3 * 0.044715 * x * x)
 
 
-def train_full_batch(params, X, y, lr=0.5, steps=2000):
-    loss = None
-    for _ in range(steps):
-        loss, g = _loss_grads(params, X, y)
-        for k in params:
-            params[k] -= lr * g[k]
-    return _loss_grads(params, X, y)[0]
+def mlp_forward(x, W1, W2, store=True):
+    """y = gelu(x W1) W2. With store=True keep (x, h, a) for backward; with store=False keep only x
+    and recompute the rest in backward. Return (y, cache)."""
+    h = x @ W1
+    a = gelu(h)
+    y = a @ W2
+    return y, (x, h, a) if store else (x,)
+
+
+def mlp_backward(dy, cache, W1, W2):
+    """Return (dx, dW1, dW2), recomputing h and a if they were not stored."""
+    if len(cache) == 1:
+        x = cache[0]
+        h = x @ W1
+        a = gelu(h)
+    else:
+        x, h, a = cache
+    dW2 = a.T @ dy
+    dh = (dy @ W2.T) * gelu_grad(h)
+    return dh @ W1.T, x.T @ dh, dW2
+
+
+def cache_floats(cache):
+    return sum(c.size for c in cache)

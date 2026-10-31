@@ -1,14 +1,13 @@
-# Cross-entropy two ways
+# FlashAttention, backward
 
-Implement the mean softmax cross-entropy of `logits` (a Tensor of shape `(B, C)`) against integer labels `y`:
-
-1. `cross_entropy(logits, y)`: built only from engine operations (subtract the row maximum as a constant, `exp`, `sum`, `log`, a one-hot mask, `mean`), so the engine derives its gradient automatically.
-2. `cross_entropy_fused(logits, y)`: a single operation that computes the loss in NumPy and whose backward rule is the closed form from L05, $(P - Y_{\text{onehot}})/B$, times the incoming gradient.
-
-The tests check that both agree in value and gradient, and that the fused version creates a single node.
+The forward pass is provided. Implement `flash_backward(dO, Q, K, V, O, L, Bc=4)`: loop over key blocks, recompute each block of probabilities from the stored log-sum-exp, $P = e^{cQK_j^\top - L}$, and accumulate
+$$
+\text{d}V_j = P^\top \text{d}O, \quad \text{d}P = \text{d}O\, V_j^\top, \quad \text{d}S = c\, P \odot (\text{d}P - D), \quad \text{d}Q \mathrel{+}= \text{d}S\, K_j, \quad \text{d}K_j = \text{d}S^\top Q,
+$$
+with $D_i = \sum_k \text{d}O_{ik} O_{ik}$. Return `(dQ, dK, dV)`.
 
 ## Hints
 
-1. The row maximum must be wrapped as a new `Tensor` with no parents, so it is a constant to the engine; the loss does not depend on it mathematically.
-2. Pick the correct-class logit with `(z * onehot).sum(axis=1, keepdims=True)` where `onehot = np.eye(C)[y]`.
-3. For the fused version, compute the log-probabilities stably with log-sum-exp, and in the backward rule rebuild `P` from them.
+1. $D$ replaces L09's $\operatorname{rowsum}(\text{d}P \odot P)$: the two are equal because $O = PV$.
+2. `P = np.exp(Q @ K_j.T * c - L[:, None])` gives the exact probabilities without renormalizing.
+3. Each key block's `dK` and `dV` are complete after its iteration; `dQ` accumulates over all blocks.

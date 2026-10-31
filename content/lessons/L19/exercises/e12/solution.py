@@ -1,19 +1,27 @@
-import math
+import numpy as np
 
 
-def expected_lr(step, peak, warmup, total, floor=0.1):
-    """The schedule of exercise 5: linear warmup, then cosine decay to floor * peak."""
-    if step <= warmup:
-        return peak * step / warmup
-    progress = (step - warmup) / max(1, total - warmup)
-    return peak * (floor + (1 - floor) * 0.5 * (1 + math.cos(math.pi * min(1.0, progress))))
+def train_probe(A, y, steps=300, lr=1.0, l2=1e-3):
+    """A logistic-regression probe (the solution of exercise 4)."""
+    w, b = np.zeros(A.shape[1]), 0.0
+    for _ in range(steps):
+        p = 1 / (1 + np.exp(-(A @ w + b)))
+        g = (p - y) / len(y)
+        w -= lr * (A.T @ g + l2 * w)
+        b -= lr * g.sum()
+    return w, b
 
 
-def audit_lr(logged, peak, warmup, total, rtol=1e-6):
-    """logged is a list of (step, lr) pairs from a run's log. Return the first step whose logged
-    rate differs from the schedule by more than rtol (relative), or None."""
-    for step, lr in logged:
-        want = expected_lr(step, peak, warmup, total)
-        if abs(lr - want) > rtol * abs(want):
-            return step
-    return None
+def probe_accuracy(w, b, A, y):
+    return float(np.mean(((A @ w + b) > 0) == (y == 1)))
+
+
+def random_feature_probe(n_train, n_test, d, seed=0):
+    """Labels that are pure noise and features that are pure noise: train a probe on n_train rows of
+    d random features with random labels, and return (train accuracy, test accuracy on n_test new
+    rows)."""
+    rng = np.random.default_rng(seed)
+    A, y = rng.normal(size=(n_train, d)), rng.integers(0, 2, n_train).astype(float)
+    At, yt = rng.normal(size=(n_test, d)), rng.integers(0, 2, n_test).astype(float)
+    w, b = train_probe(A, y, steps=2000, l2=0.0)
+    return probe_accuracy(w, b, A, y), probe_accuracy(w, b, At, yt)

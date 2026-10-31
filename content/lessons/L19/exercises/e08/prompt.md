@@ -1,11 +1,11 @@
-# Finding the bad examples
+# Finding planted features
 
-A loss spike often comes from a few corrupted examples in one batch. Their per-example losses stand out, but a mean and standard deviation computed over the batch are dragged up by the outliers themselves.
+Plant 12 sparse features in 8 dimensions, more features than dimensions, and see whether a sparse autoencoder finds them. `sae_loss` (exercise 7), `make_activations` and `recovered` are provided.
 
-Implement `outlier_examples(per_example_loss, k=10.0)`: the indices whose loss exceeds the median by more than $k$ **median absolute deviations**.
+Implement `train_sae(X, m, l1, steps=1000, lr=0.01, seed=0, batch=256)`: Adam on minibatches; decoder rows initialized as random unit vectors, the encoder as a copy of them, $b_e = 0$ and $b_d$ at the data mean; after every step, rescale the decoder rows to unit length.
 
 ## Hints
 
-1. MAD is the median of $|x_i - \text{median}(x)|$; both medians ignore a few extreme values.
-2. Guard against a MAD of zero with a tiny floor.
-3. Log the indices (document ids) of flagged examples, so the data can be inspected and removed upstream.
+1. Without the rescaling, the L1 penalty could be dodged by shrinking $z$ and growing the decoder.
+2. Draw the minibatch indices and the initialization from one generator.
+3. Too small an L1 weight gives a dense code that reconstructs well and recovers little; sparsity is what makes the latents line up with features.

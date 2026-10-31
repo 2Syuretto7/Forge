@@ -1,38 +1,38 @@
 id: L19
-hours: 11
-capstone: "A full pretraining run of a 10.7-million-parameter GPT with exact checkpoints, an injected data corruption detected and rolled back automatically, an evaluation harness with error bars, and a run report"
-teaser: "Write the training script of a real run: exact checkpoints, logging, an evaluation harness, and the detection and recovery of loss spikes."
+hours: 10
+capstone: "Train a small attention-only model, locate the induction circuit by attention scores and activation patching, and validate it with ablations against random baselines and a prediction on new inputs"
+teaser: "Measure a model honestly and look inside it: confidence intervals over items, linear probes and their controls, superposition, sparse autoencoders, and activation patching to find circuits."
 movements:
-  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m0-recall.md,     mode: theory,   minutes: 20}
   - {file: m1-puzzle.md,     mode: theory,   minutes: 35}
-  - {file: m2-derivation.md, mode: theory,   minutes: 205}
-  - {file: m3-build.md,      mode: practice, minutes: 160}
+  - {file: m2-derivation.md, mode: theory,   minutes: 190}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
   - {file: m4-scale.md,      mode: practice, minutes: 60}
-  - {file: m5-break.md,      mode: both,     minutes: 50}
+  - {file: m5-break.md,      mode: both,     minutes: 45}
   - {file: m6-feynman.md,    mode: theory,   minutes: 25}
-  - {file: m7-capstone.md,   mode: practice, minutes: 100}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
 hooks:
-  - {to: L20, text: "The pretrained model is the starting point for fine-tuning."}
-  - {to: L24, text: "The final capstone runs this training script end to end."}
+  - {to: L20, text: "The final capstone evaluates its own model with intervals over items."}
 reuses:
-  - {from: L09, concept: "learning-rate schedules and warmup"}
-  - {from: L15, concept: "sizing a run from a scaling fit"}
-  - {from: L16, concept: "a resumable data pipeline"}
-  - {from: L18, concept: "memory and data parallelism"}
+  - {from: M25, concept: "the bootstrap"}
+  - {from: L09, concept: "attention heads and the residual stream"}
+  - {from: L17, concept: "a model shaped by rewards"}
 annotations:
-  - {target: L09, movement: m2-derivation, anchor: "5. Schedules", text: "L19 shows what a broken schedule does to a real run, and how to catch it in the logs."}
-  - {target: L16, movement: m2-derivation, anchor: "8. Pipelines that can stop and resume", text: "L19 saves the data position with the model and checks that a resumed run is bitwise identical."}
+  - {target: M25, movement: m2-derivation, anchor: "7. The bootstrap", text: "L19 resamples benchmark items to put confidence intervals on evaluations and to compare two models item by item."}
+  - {target: L09, movement: m2-derivation, anchor: "4. Multiple heads", text: "L19 finds two heads in different layers that compose into an induction circuit, and proves it by patching."}
 concepts:
-  - q: "What must a checkpoint contain for an exact resume?"
-    a: "The model and optimizer states (including Adam's step), the gradient scaler, the step and the data position, the random-number states that dropout and shuffling use, and the configuration."
-  - q: "What is the z-loss?"
-    a: "A small penalty on the square of log Z, the log-sum-exp of the output logits, which keeps the logits from drifting to large values where low-precision arithmetic fails; PaLM used a weight of 1e-4."
-  - q: "Why can Adam take a huge step after a quiet period?"
-    a: "When a parameter's gradients have been near zero, its second-moment estimate decays, so a sudden gradient is divided by a tiny square root and the update can be several times larger than usual; a lower beta2 shortens that memory."
-  - q: "How do large runs recover from a loss spike?"
-    a: "Restart from a checkpoint before the spike and skip the data batches around it, possibly with a lower learning rate."
-  - q: "How often should a run checkpoint?"
-    a: "About every sqrt(2 C M), where C is the time to write a checkpoint and M the mean time between failures (Young and Daly), balancing checkpoint cost against lost work."
-  - q: "Why does QK-layernorm prevent attention logit growth?"
-    a: "Normalized queries and keys have bounded norms, so their scaled dot products are bounded by about the square root of the head dimension times the gains."
-katas: [e01, e04, e06]
+  - q: "Why does a benchmark score need a confidence interval?"
+    a: "The items are a sample from the tasks the benchmark stands for, so the score is an average with a standard error of about sqrt(p(1 - p)/n) over items."
+  - q: "Why compare two models item by item?"
+    a: "Models find the same items hard, so their per-item scores are positively correlated and the variance of the paired difference is smaller than the sum of the separate variances."
+  - q: "What does a linear probe show?"
+    a: "That a property can be read linearly from the activations on held-out inputs; not that the model uses it, which needs a control task or random baseline and an intervention."
+  - q: "What is superposition?"
+    a: "Representing more features than dimensions as nearly orthogonal directions, which works when features are sparse, at the cost of small interference between them."
+  - q: "What does a sparse autoencoder optimize?"
+    a: "Reconstruction error plus an L1 penalty on its latent activations, with unit-norm decoder rows, so that each input is explained by a few feature directions."
+  - q: "What does activation patching measure?"
+    a: "The fraction of the output difference between a clean and a corrupted input that is restored when one component's activation in the corrupted run is replaced by its clean value."
+  - q: "How does an induction head work?"
+    a: "A previous-token head writes the identity of the preceding token into each position; the induction head's query for the current token matches that key at the position after its earlier occurrence and copies the token there."
+katas: [e01, e04, e07]

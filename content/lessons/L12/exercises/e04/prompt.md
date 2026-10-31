@@ -1,11 +1,12 @@
-# What fusion saves
+# Deduplicating with LSH
 
-1. `softmax_traffic(rows, cols, bytes_per=2, fused=True)`: bytes moved by a row softmax, counting 6 array passes when unfused (as in the derivation) and 2 when fused.
-2. `predicted_speedup(rows, cols, bytes_per=2)`: the ratio, which is what a memory-bound kernel gains.
-3. `fits_on_chip(cols, bytes_per=4, budget=64 * 1024)`: whether one row, held in fp32, fits a program's on-chip budget. Rows longer than that need the online softmax instead of a single block.
+You have one MinHash signature per document (an array of `bands * rows` integers).
+
+1. `lsh_candidates(signatures, bands, rows)`: put each band of each signature in a bucket keyed by (band index, tuple of the band's values), and return the sorted list of pairs $(i, j)$, $i < j$, that share at least one bucket.
+2. `dedup_keep(signatures, bands, rows, min_similarity)`: confirm each candidate pair by its signature agreement rate, join confirmed pairs into clusters with union-find, and return the sorted indices to keep, the smallest index of every cluster.
 
 ## Hints
 
-1. Each array pass is `rows * cols * bytes_per` bytes.
-2. The ratio does not depend on the shape.
-3. 64 KB holds 16,384 fp32 values.
+1. A dictionary from bucket key to the list of document indices builds the buckets in one pass.
+2. Candidates are cheap but approximate: confirming them with the full signature removes most false positives.
+3. Union-find: each index points to a parent; `find` follows parents to the root, and joining two clusters points one root at the other (point the larger root at the smaller to keep the smallest index as the root).

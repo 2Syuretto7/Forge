@@ -1,12 +1,14 @@
-# Layer norm, forward and backward
+# Encoding and decoding
 
-Implement layer norm for `x` of shape `(N, d)`: the same computation as batch norm, but each **row** is normalized over its features, and `gamma`, `beta` have shape `(d,)`.
+Training is provided. Implement:
 
-1. `layernorm_forward(x, gamma, beta, eps=1e-5)` returns `(y, cache)`.
-2. `layernorm_backward(dy, cache)` returns `(dx, dgamma, dbeta)`.
+1. `encode(text, merges)`: take the bytes of `text`, then repeatedly find, among the adjacent pairs present, the one learned earliest (the smallest new id), and merge it; stop when no present pair has been learned.
+2. `decode(ids, merges)`: concatenate the byte strings of the ids and decode as UTF-8 (replacing invalid sequences).
+
+Encoding the training text must give the same ids as the training loop produced, and decoding must invert encoding for any string, including characters never seen in training.
 
 ## Hints
 
-1. Use `axis=1, keepdims=True` for the statistics.
-2. `dgamma` and `dbeta` still sum over the batch (axis 0): every row uses the same `gamma` and `beta`.
-3. The input gradient is the batch-norm formula with `d` in place of `N` and sums over axis 1.
+1. `min(pairs, key=lambda p: merges.get(p, float("inf")))`.
+2. If the best pair has rank infinity, no learned merge applies.
+3. `vocab_bytes(merges)` (provided) gives every id's bytes.

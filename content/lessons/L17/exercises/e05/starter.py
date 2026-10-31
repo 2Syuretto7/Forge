@@ -1,13 +1,7 @@
 import numpy as np
 
 
-def underflow_fraction(grads, scale=1.0):
-    """Fraction of the nonzero float32 gradients that become exactly 0 when (grads * scale) is cast to
-    float16."""
-    raise NotImplementedError
-
-
-def scaled_loss_and_grad(w, X, y, scale):
-    """Loss scaling: return (scale * L, scale * dL/dw) for the least-squares loss
-    L = mean((X w - y)^2) / 2. The optimizer divides by scale before using the gradient."""
+def ppo_objective(logp, logp_old, adv, eps):
+    """The mean over samples of min(rho A, clip(rho, 1 - eps, 1 + eps) A) with rho = exp(logp -
+    logp_old), and its gradient with respect to logp (zero where the clipped term is the smaller)."""
     raise NotImplementedError

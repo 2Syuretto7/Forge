@@ -137,14 +137,14 @@ Formulas like $s/\sqrt n$ and $1/\sqrt{I}$ exist for simple estimators. For a me
 
 Each resample leaves out about $e^{-1} \approx 37$ percent of the points. The bootstrap inherits every assumption of resampling single points: independence, and a sample large enough to stand in for the population. Small samples, statistics that depend on extremes, and dependent data break it, as Movement 5 shows.
 
-:::edge{to=L23 text="Benchmark scores are means over items; the bootstrap puts intervals on them and on model differences."}
+:::edge{to=L19 text="Benchmark scores are means over items; the bootstrap puts intervals on them and on model differences."}
 :::
 
 ## 8. Confidence and credible intervals
 
 A 95 percent **confidence interval** is a procedure: over repeated samples, it contains the fixed true $\theta$ 95 percent of the time. Any single interval either contains it or not. A 95 percent **credible interval** is a statement about one posterior: given these data and this prior, $\theta$ lies in it with probability $0.95$. They answer different questions, and with much data and a mild prior they nearly coincide. With little data they can differ, and the textbook Wald interval $\hat p \pm 1.96\sqrt{\hat p(1 - \hat p)/n}$ can fail badly: after 0 successes in 20 trials it is the single point 0. Asking how often an interval covers, as M24's capstone did, is the way to judge any of them.
 
-:::edge{to=L05 text="ridge regression and logistic regression, as MAP and MLE."}
+:::edge{to=L01 text="ridge regression and logistic regression, as MAP and MLE."}
 :::
 
 :::edge{to=M27 text="maximizing likelihood is minimizing cross-entropy."}

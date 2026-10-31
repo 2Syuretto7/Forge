@@ -1,14 +1,28 @@
-def pipelined_time(steps, cpu_s, gpu_s):
-    """The CPU issues work for step i + 1 while the GPU runs step i: after the first step, each step
-    costs the slower of the two."""
-    return cpu_s + gpu_s + (steps - 1) * max(cpu_s, gpu_s)
+import numpy as np
 
 
-def synced_time(steps, cpu_s, gpu_s):
-    """A .item() (or print of a GPU value) at the end of every step makes the CPU wait for the GPU,
-    so nothing overlaps."""
-    return steps * (cpu_s + gpu_s)
+def sweep_loss(N, lr):
+    """A model of a learning-rate sweep: the best loss for size N is 1.7 + 30 N^-0.25, reached at
+    lr*(N) = 3e-3 (N / 1e6)^-0.5; away from lr* the loss grows with the squared log ratio."""
+    best_lr = 3e-3 * (N / 1e6) ** -0.5
+    return 1.7 + 30 * N ** -0.25 + 0.08 * np.log(lr / best_lr) ** 2
 
 
-def sync_slowdown(steps, cpu_s, gpu_s):
-    return synced_time(steps, cpu_s, gpu_s) / pipelined_time(steps, cpu_s, gpu_s)
+LRS = 3e-3 * 2.0 ** np.arange(-6, 3)
+SIZES = np.array([1e6, 3e6, 1e7, 3e7, 1e8])
+
+
+def tuned_losses(sizes, lrs):
+    """For each size, the best loss over the learning rates in the sweep, and that rate."""
+    grid = np.array([[sweep_loss(N, lr) for lr in lrs] for N in sizes])
+    return grid.min(axis=1), np.asarray(lrs)[grid.argmin(axis=1)]
+
+
+def fixed_lr_losses(sizes, lr):
+    """The loss of each size trained at one learning rate."""
+    return np.array([sweep_loss(N, lr) for N in sizes])
+
+
+def fitted_exponent(sizes, losses, E):
+    """The exponent a in L - E = k N^-a, by a log-log line."""
+    return -np.polyfit(np.log(sizes), np.log(np.asarray(losses) - E), 1)[0]

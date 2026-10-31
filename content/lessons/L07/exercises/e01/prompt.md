@@ -1,14 +1,15 @@
-# The linear layer, forward and backward
+# Counting FLOPs and bytes
 
-Implement a fully connected layer $Y = XW + b$ for a batch `X` of shape `(B, n_in)`, weights `W` `(n_in, n_out)` and bias `b` `(n_out,)`.
+Return `(flops, bytes)` for each operation, counting the minimum traffic: every input read once and every output written once, at `bytes_per` bytes per number.
 
-- `linear_forward(X, W, b)` returns `(Y, cache)`, where `cache` holds whatever the backward pass needs.
-- `linear_backward(dY, cache)` returns `(dX, dW, db)`.
+1. `matmul_cost(m, n, k, bytes_per=2)`: $C = AB$ with $A$ of shape $(m, k)$ and $B$ of shape $(k, n)$; a multiply-add counts as 2 FLOPs.
+2. `elementwise_cost(n_elems, flops_per_elem, n_inputs, bytes_per=2)`: reads `n_inputs` arrays and writes one.
+3. `softmax_cost(rows, cols, bytes_per=2)`: 5 FLOPs per element; the input is read once and the output written once.
 
-The tests check every gradient against central differences of the scalar $L = \sum Y \odot G$ for a random $G$, whose gradient with respect to $Y$ is exactly $G$.
+`intensity(cost)` (given) divides the two.
 
 ## Hints
 
-1. Cache `(X, W)`.
-2. `dX = dY @ W.T`, `dW = X.T @ dY`, `db = dY.sum(axis=0)`.
-3. Check shapes first: each gradient has the shape of the thing it differentiates.
+1. The matmul reads $mk + kn$ values and writes $mn$.
+2. Each output value of $C$ is a dot product of length $k$: $k$ multiplies and $k$ adds.
+3. Check: a square fp16 matmul has intensity $n/3$.

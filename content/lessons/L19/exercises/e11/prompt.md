@@ -1,12 +1,11 @@
-# Break it: a resume that changes the data order
+# Break it: too few items
 
-`batch_ids(seed, epoch, n, batch_size)` gives an epoch's batches as tuples of example ids. `buggy_resume` shows a common mistake: after a restart in the middle of an epoch it starts that epoch over, so the run sees the epoch's first batches twice and the rest of the data at different steps than the original run.
+Implement `compare_models(acc_a, acc_b, n_items, seed=0, n_boot=2000)`: simulate two models with true accuracies `acc_a` and `acc_b` answering `n_items` items independently, and return the paired bootstrap interval of their accuracy difference.
 
-1. `stream(seed, epoch, batch_index, n, batch_size, count)`: the correct continuation, `count` batches from `batch_index` of `epoch` onward.
-2. `first_divergence(reference, resumed)`: the first position where two batch sequences differ, or `None`.
+With 20 items a ten-point gap is indistinguishable from noise; with 2,000 it is clear.
 
 ## Hints
 
-1. Slice the first epoch's batches from `batch_index`; later epochs start at 0.
-2. To test a resume, record the batch ids of an uninterrupted run and compare.
-3. Nothing crashes with the buggy resume and the loss looks fine: only a comparison like this one reveals it.
+1. Draw both models' answers from one generator, model A first.
+2. Use the paired bootstrap of exercise 2.
+3. Before trusting a comparison, check the interval of the difference excludes zero.

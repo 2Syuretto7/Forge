@@ -1,12 +1,11 @@
-# How a residual stream grows
+# Training windows
 
-1. `residual_rms(depth, alpha, branch="linear", width=256, batch=256, seed=0)`: start from unit-normal `h` of shape `(batch, width)` drawn from `np.random.default_rng(seed)`, apply `depth` layers $h \leftarrow h + \alpha F(h)$ with fresh weights from the same generator, and return the root mean square of `h` before the first layer and after each one. The branch is $F(h) = hW$ with $W \sim \mathcal N(0, 1/\text{width})$ for `"linear"`, or $\operatorname{relu}(hW)$ with He-initialized $W$ for `"relu"`.
-2. `predicted_growth(depth, alpha)`: $(1 + \alpha^2)^{\text{depth}/2}$.
-
-Compare the two branches with the prediction. The linear branch follows it; the ReLU branch, whose outputs are all positive, grows much faster.
+1. `train_val_split(ids, frac=0.9)`: the first `frac` of the tokens for training, the rest for validation.
+2. `get_batch(ids, ctx, batch, rng)`: draw `batch` start positions with `rng.integers(0, len(ids) - ctx, size=batch)` and return `x` (each row `ids[s:s + ctx]`) and `y` (the same windows shifted by one), as arrays of shape `(batch, ctx)`.
+3. `tokens_per_epoch(n_tokens, ctx, batch)`: the number of steps needed to see `n_tokens` token positions once.
 
 ## Hints
 
-1. Draw `h` first, then one weight matrix per layer, in order.
-2. `branch == "linear"`: `h = h + alpha * (h @ W)`.
-3. The ratio `rms[-1] / rms[0]` is what the prediction describes.
+1. Convert `ids` to an array once.
+2. `y[b, t]` is the token that follows `x[b, t]`.
+3. Splitting by position, not at random, keeps validation text unseen.

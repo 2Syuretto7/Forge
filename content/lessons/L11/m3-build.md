@@ -1,8 +1,6 @@
-# Build: models of GPU cost
+# Build: counting, fitting and allocating
 
-These exercises turn the derivation into small tools you can apply to any kernel. They run in the browser; the measurements come in the Colab notebook.
-
-## Counting and the roofline
+## Counting
 
 :::exercise{ref=e01}
 :::
@@ -10,7 +8,7 @@ These exercises turn the derivation into small tools you can apply to any kernel
 :::exercise{ref=e02}
 :::
 
-## Tiling and occupancy
+## Fitting
 
 :::exercise{ref=e03}
 :::
@@ -18,26 +16,26 @@ These exercises turn the derivation into small tools you can apply to any kernel
 :::exercise{ref=e04}
 :::
 
-::::predict{id=p3 kind=choice answer=b}
-A kernel uses blocks of 256 threads and 128 registers per thread on a T4 SM (65536 registers, at most 32 warps). What is its occupancy?
-
-- 100 percent.
-- 50 percent.
-- 25 percent.
-- 12.5 percent.
-
-:::reveal
-Each block needs $256 \cdot 128 = 32768$ registers, so only two blocks fit: 16 warps of the possible 32, an occupancy of 50 percent. Heavy register use is the most common occupancy limiter, and it is often worth it: registers are where tiled kernels keep their reused values.
-:::
-::::
-
-## Fusion and the backward pass
-
 :::exercise{ref=e05}
 :::
 
+## Allocating
+
 :::exercise{ref=e06}
 :::
+
+::::predict{id=p4 kind=choice answer=a}
+An IsoFLOP profile trains models of several sizes with the same compute. As the model grows along the profile, the loss:
+
+- First falls, then rises: small models lack capacity, large ones see too few tokens.
+- Always falls: larger models are always better.
+- Always rises: smaller models train on more tokens.
+- Stays the same, since the compute is the same.
+
+:::reveal
+At fixed $C$, a larger $N$ means a smaller $D = C/6N$. The parameter term $A N^{-\alpha}$ falls and the data term $B D^{-\beta}$ rises, so their sum has a minimum: the U shape whose bottom is that budget's optimal size. Exercise 7 finds the bottom with a parabola in $\log N$.
+:::
+::::
 
 :::exercise{ref=e07}
 :::

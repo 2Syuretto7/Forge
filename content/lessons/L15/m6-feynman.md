@@ -1,11 +1,11 @@
-# Explain it plainly: spending a compute budget
+# Explain it plainly: keeping a long training run healthy
 
-Explain to an engineering manager how to decide the model size and the amount of training data for a fixed compute budget.
+Explain to an engineer joining a pretraining team what can go wrong during a long run and how the team detects and recovers from it.
 
 - Write 150 to 400 words.
-- Use the relation between compute, parameters and tokens.
-- Explain why both should grow with the budget, and roughly how fast.
-- Mention one way such a plan can mislead, and how to check it.
+- Name at least two causes of loss spikes.
+- Explain what a checkpoint must contain for an exact resume, and how a spike is recovered from.
+- Mention one bug that makes a resumed run silently different.
 
-:::feynman{id=f1 prompt="Explain how to choose the model size and the number of training tokens for a fixed compute budget, using scaling laws, and describe one way such predictions can mislead." key_points="Training compute is about 6 times parameters times tokens, so a budget trades model size against data|The loss falls as a power law in parameters and in tokens toward an irreducible floor|At the optimum the marginal benefits balance, so parameters and tokens both grow with the budget, roughly as its square root, about 20 tokens per parameter|Fits are made on small runs and extrapolated, so they should be checked on a held-out larger run and reported with uncertainty|Fitting too narrow a range, ignoring the floor or not retuning the learning rate per size biases the predictions"}
+:::feynman{id=f1 prompt="Explain what can go wrong during a long pretraining run and how it is detected and recovered from, including causes of loss spikes, what a checkpoint must contain, and one silent resume bug." key_points="Loss spikes come from learning rates that are too high, bad data batches, and numerical problems such as attention or output logits growing without bound|The loss and the gradient norm are logged every step and compared with a trailing window to detect spikes|A checkpoint must contain the model, the optimizer state including its step count, the data position and the random-number states, saved atomically|Recovery restores a checkpoint from before the spike and skips the data around it|A resume that changes the data order or restarts the learning-rate schedule keeps training silently and must be caught by comparing with an uninterrupted run or auditing the logs"}
 :::

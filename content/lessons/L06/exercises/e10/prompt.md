@@ -1,13 +1,14 @@
-# Break it: feature selection outside the cross-validation loop
+# Batch dependence and batch noise
 
-Build the leak of Movement 5 from pure noise: `X` is `(50, 1000)` noise, labels are random 0/1.
+Your batch norm and layer norm forward passes are provided.
 
-- `top_k_features(X, y, k)`: indices of the `k` columns with the largest absolute correlation with `y`.
-- `centroid_classifier(Xtr, ytr, Xte)`: predict the class whose training mean is nearer (Euclidean) to each test row.
-- `cv_accuracy(X, y, k, folds, seed, leaky)`: 5-fold style CV with `np.random.default_rng(seed).permutation` folds. If `leaky`, select features once on all the data before splitting; otherwise select inside each training fold. Return the mean validation accuracy.
+1. `batch_dependence(norm, x, batch_a, batch_b)`: put example `x` (a vector) on top of `batch_a`, normalize with `norm` (`"batch"` for training-mode batch norm, `"layer"` for layer norm, with $\gamma = 1$, $\beta = 0$), keep the output row for `x`; repeat with `batch_b`; return the largest absolute difference between the two rows.
+2. `batch_mean_noise(B, trials=2000, seed=0)`: the standard deviation, over `trials` draws, of the mean of `B` unit-normal values, drawn as one `(trials, B)` array from `np.random.default_rng(seed)`.
+
+The first shows that batch norm makes one example's output depend on its neighbours; the second, how noisy batch statistics are for small batches.
 
 ## Hints
 
-1. Correlation: center columns and `y`, then `(Xc * yc[:, None]).sum(0) / (norms)`.
-2. `np.argsort(-np.abs(corr))[:k]`.
-3. The only difference between the two modes is which rows the selection sees.
+1. `np.vstack([x[None, :], others])` puts `x` in row 0.
+2. Layer norm's output for `x` cannot depend on the other rows at all.
+3. The noise should fall like $1/\sqrt B$.

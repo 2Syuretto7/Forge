@@ -1,6 +1,6 @@
-# Build: formats, sums and scales in NumPy
+# Build: from REINFORCE to DPO
 
-## Rounding to a format
+## Policy gradients
 
 :::exercise{ref=e01}
 :::
@@ -11,20 +11,10 @@
 :::exercise{ref=e03}
 :::
 
-## Accumulation
-
 :::exercise{ref=e04}
 :::
 
-::::predict{id=p3 kind=numeric answer=32 tol=0.5}
-You add 0.01 to an fp16 running sum, starting from 0, ten thousand times. Where does the sum stop?
-
-:::reveal
-At 32. Between 16 and 32 the spacing is $2^{-6} \approx 0.0156$, so each 0.01 rounds up to one full step and the sum grows too fast; at 32 the spacing becomes $2^{-5} = 0.03125$, more than twice the addend, and every addition rounds back. The true sum is 100. Exercise 4 measures it and repairs it two ways.
-:::
-::::
-
-## Loss scaling
+## PPO and its penalty
 
 :::exercise{ref=e05}
 :::
@@ -32,10 +22,12 @@ At 32. Between 16 and 32 the spacing is $2^{-6} \approx 0.0156$, so each 0.01 ro
 :::exercise{ref=e06}
 :::
 
-## Rounding that keeps small updates
+## Learning from preferences
 
-:::exercise{ref=e07}
+The widget compares distributions, as in M27: set one to the reference policy and the other to a tilted one, and read off their KL.
+
+:::widget{name=EntropyBars k=4 p="4,3,2,1" q="1,1,1,1"}
 :::
 
-:::exercise{ref=e08}
+:::exercise{ref=e07}
 :::

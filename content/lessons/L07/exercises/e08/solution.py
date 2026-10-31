@@ -1,24 +1,14 @@
-import numpy as np
+def transfer_time(nbytes, bw, latency_s=10e-6):
+    """Time to copy nbytes across PCIe at bandwidth bw (bytes/s) with a fixed per-copy latency."""
+    return latency_s + nbytes / bw
 
 
-def hinge_network(knots, values):
-    knots = np.asarray(knots, dtype=float)
-    values = np.asarray(values, dtype=float)
-    slopes = np.diff(values) / np.diff(knots)
-    w = np.ones(len(slopes))
-    b = -knots[:-1]
-    a = np.concatenate([[slopes[0]], np.diff(slopes)])
-    return w, b, a, float(values[0])
+def effective_bandwidth(nbytes, bw, latency_s=10e-6):
+    return nbytes / transfer_time(nbytes, bw, latency_s)
 
 
-def evaluate(params, x):
-    w, b, a, c = params
-    x = np.asarray(x, dtype=float)
-    return c + np.maximum(0, np.outer(x, w) + b) @ a
-
-
-def max_error(f, n_pieces):
-    knots = np.linspace(-1, 1, n_pieces + 1)
-    p = hinge_network(knots, f(knots))
-    grid = np.linspace(-1, 1, 2001)
-    return float(np.max(np.abs(evaluate(p, grid) - f(grid))))
+def input_pipeline_time(batch_bytes, compute_s, bw, overlap):
+    """Per-step time when every batch is copied to the GPU first. Without overlap, copy then compute;
+    with overlap (pinned memory, non_blocking copies of the next batch), the slower of the two."""
+    t = transfer_time(batch_bytes, bw)
+    return max(t, compute_s) if overlap else t + compute_s

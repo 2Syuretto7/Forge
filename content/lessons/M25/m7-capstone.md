@@ -7,9 +7,9 @@ Variant A of a web page converts $k_A$ of $n_A$ visitors and variant B converts 
 
 ## When you finish
 
-You can fit models, put error bars on them with or without formulas, and say what a prior buys. L05 and L06 build regression and classification on these foundations; M27 recasts maximum likelihood as cross-entropy; M31 bounds estimation error without the central limit theorem's approximation.
+You can fit models, put error bars on them with or without formulas, and say what a prior buys. L01 and L02 build regression and classification on these foundations; M27 recasts maximum likelihood as cross-entropy; M31 bounds estimation error without the central limit theorem's approximation.
 
-:::edge{to=L06 text="bias and variance of estimators become the bias-variance decomposition."}
+:::edge{to=L02 text="bias and variance of estimators become the bias-variance decomposition."}
 :::
 
 :::edge{to=M31 text="concentration and generalization theory."}

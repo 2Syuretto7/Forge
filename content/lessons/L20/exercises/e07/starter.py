@@ -1,11 +1,13 @@
 import numpy as np
 
 
-def softmax(z, T=1.0):
+def dpo_loss(lp_c, lp_r, ref_c, ref_r, beta):
+    """DPO on n preference pairs: sequence log-probabilities of the chosen and rejected responses
+    under the policy (lp_c, lp_r) and the reference (ref_c, ref_r). The loss is the mean of
+    -log sigmoid(beta ((lp_c - ref_c) - (lp_r - ref_r))). Return (loss, d_lp_c, d_lp_r)."""
     raise NotImplementedError
 
 
-def distill_loss(student, teacher, labels, T, alpha):
-    """alpha T^2 KL(softmax(teacher / T) || softmax(student / T)) + (1 - alpha) CE(student, labels),
-    each averaged over rows. Return (loss, gradient with respect to the student logits)."""
+def implied_reward(lp, ref, beta):
+    """The reward DPO's policy implies for a response: beta times its log-ratio to the reference."""
     raise NotImplementedError

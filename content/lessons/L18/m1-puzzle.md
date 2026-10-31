@@ -1,32 +1,29 @@
-# Puzzle: eight GPUs, one model
+# Puzzle: why is generation slow?
 
-You have eight GPUs with 80 GB each and a 7-billion-parameter model that needs 112 GB of model states.
+A 7-billion-parameter model on an A100 can do over 300 trillion 16-bit operations per second, and generating one token takes about 14 billion of them.
 
-::::predict{id=p1 kind=choice answer=c}
-Plain data parallelism copies the whole model to every GPU and averages gradients. Does it fit?
+::::predict{id=p1 kind=choice answer=b}
+How many tokens per second can one sequence generate?
 
-- Yes: eight GPUs have 640 GB between them.
-- Yes, if the batch is small enough.
-- No: every GPU still holds all 112 GB of model states.
-- No, because gradients cannot be averaged across GPUs.
+- About 20,000: 300 trillion divided by 14 billion.
+- About 150: every token reads all 13.5 GB of weights from memory, at about 2 TB/s.
+- About 1, because attention is quadratic.
+- It depends only on the length of the prompt.
 
 :::reveal
-Data parallelism splits the **batch**, not the model: every GPU keeps a full copy of weights, gradients and optimizer states. To use the pooled memory you must shard the model states (ZeRO), split the layers' matrices (tensor parallelism) or split the layers themselves (pipeline parallelism). The widget below adds up the memory per GPU for any combination.
+Generating a token touches every weight once but does only two operations per weight: an arithmetic intensity of about 1 FLOP per byte, far below the A100's ridge point of about 150 (L07). The bandwidth sets the speed, about 150 tokens per second, using under 1% of the arithmetic. Serving many sequences at once reuses each weight read for every sequence in the batch, which is where all of inference's tricks begin.
 :::
 ::::
 
-:::widget{name=ParallelismPlanner model=b6_7 dp=3}
+The widget adds the cache of keys and values that every sequence keeps, and shows how it limits how many sequences fit.
+
+:::widget{name=KVCacheMeter model=llama7}
 :::
 
-::::predict{id=p2 kind=choice answer=b}
-Averaging 1 GB of gradients across 8 GPUs with a ring all-reduce, how much does each GPU send?
-
-- 8 GB: one copy to every other GPU.
-- 1.75 GB.
-- 0.125 GB: its eighth of the data.
-- 1 GB.
+::::predict{id=p2 kind=numeric answer=2 tol=0.05}
+Llama 2 7B stores 0.5 MiB of keys and values per token. How many GiB does the cache of one 4,096-token sequence take?
 
 :::reveal
-A ring all-reduce is a reduce-scatter followed by an all-gather. Each moves $(P-1)/P$ of the data through every GPU, so each sends $2 \cdot 7/8 = 1.75$ GB, and that amount barely changes as you add GPUs. The cost of averaging gradients is set by the model size and the link bandwidth, not by the number of GPUs.
+$4096 \times 0.5$ MiB $= 2$ GiB. Thirty such sequences take 60 GiB, more than the model itself. Grouped-query attention, which shares each key-value head among several query heads, divides this by the group size: Mistral 7B and Llama 2 70B use 8 key-value heads.
 :::
 ::::

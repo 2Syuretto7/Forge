@@ -1,11 +1,11 @@
-# Capstone: a 30-layer network that trains
+# Capstone: a GPT with its own tokenizer
 
-The L07 digits, your layer norm and Adam are provided. Build a residual MLP with **at least 30 hidden layers**, writing every gradient yourself, and train it on `make_digits(2000, 0)`.
+Open the Colab notebook with a **T4 GPU** runtime and work through it:
 
-1. `init_model(depth, width, seed=0)` returns a dictionary of parameters, with one `(width, width)` weight matrix per hidden layer.
-2. `loss_and_grads(params, X, y)` returns the mean softmax cross-entropy and a gradient for every parameter; it must work for any depth and width that `init_model` produces.
-3. `train(seed=0)` builds a model with `DEPTH` hidden layers and trains it, returning `(params, losses)`. Keep it under about 2 seconds of CPU time (250 Adam steps at width 48 are enough).
-4. `evaluate(params, X, y)` returns accuracy.
-5. `REPORT`: at least 80 words explaining each stabilizing choice (residual connections, normalization and where it sits, initialization, learning rate and schedule) with your test accuracy.
+1. Write `train_bpe` (byte-level, merges within the chunks of the provided pattern, counting each distinct chunk once) and the encoder of one chunk.
+2. Write `estimate_loss`: mean validation cross-entropy over windows drawn with a fixed seed, in evaluation mode.
+3. Train the provided four-layer GPT with tied embeddings on your tokens; the notebook reports the validation loss in nats per token and in bits per character.
+4. Write `filter_logits` for top-k and top-p sampling.
+5. Write a report of at least 80 words with your tokenizer's statistics, the validation loss in bits per character, and how samples change with temperature.
 
-The tests require at least 30 hidden layers, a gradient check, per-layer gradients at initialization within a factor of 30 of each other, a training loss that falls steadily, and at least 85 percent test accuracy on `make_digits(1000, 1)`.
+The autograder checks that the tokenizer round-trips arbitrary text and compresses, the sampling filters, that training lowers the validation loss, a validation loss below **2.3 bits per character**, and the report.

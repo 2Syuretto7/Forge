@@ -12,9 +12,9 @@ movements:
   - {file: m6-feynman.md,    mode: theory,   minutes: 35}
   - {file: m7-capstone.md,   mode: practice, minutes: 60}
 hooks:
-  - {to: L06, text: "Cross-entropy on held-out data is how you will measure generalization of probabilistic models."}
-  - {to: L14, text: "A language model's training loss is exactly the cross-entropy derived here, and its perplexity the exponential of it."}
-  - {to: L21, text: "KL divergence to a reference model is the penalty that keeps RLHF from drifting."}
+  - {to: L02, text: "Cross-entropy on held-out data is how you will measure generalization of probabilistic models."}
+  - {to: L10, text: "A language model's training loss is exactly the cross-entropy derived here, and its perplexity the exponential of it."}
+  - {to: L17, text: "KL divergence to a reference model is the penalty that keeps RLHF from drifting."}
   - {to: M30, text: "The maximum-entropy distribution under moment constraints comes out of Lagrange duality as an exponential family."}
   - {to: M36, text: "Entropy bonuses and KL penalties shape policy-gradient updates, and the score function is the gradient of a log-probability."}
 reuses:

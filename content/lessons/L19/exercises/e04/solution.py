@@ -1,20 +1,24 @@
 import numpy as np
 
 
-def detect_spikes(losses, window, k):
-    """1-based steps whose loss exceeds the mean of the previous `window` losses by more than k of
-    their standard deviations (a non-finite loss always counts). Steps before a full window are
-    never flagged."""
-    out = []
-    for i in range(window, len(losses)):
-        prev = np.asarray(losses[i - window:i], dtype=float)
-        if not np.isfinite(losses[i]) or losses[i] > prev.mean() + k * prev.std():
-            out.append(i + 1)
-    return out
+def probe_loss(w, b, A, y, l2=1e-3):
+    """A linear probe on activations A (n, d) for binary labels y: mean logistic loss of
+    sigmoid(A w + b) plus l2 / 2 |w|^2. Return (loss, dw, db)."""
+    z = A @ w + b
+    p = 1 / (1 + np.exp(-z))
+    loss = np.mean(np.logaddexp(0, z) - y * z) + 0.5 * l2 * w @ w
+    g = (p - y) / len(y)
+    return float(loss), A.T @ g + l2 * w, float(g.sum())
 
 
-def rollback_point(flagged_step, checkpoint_every):
-    """The loss at step s is measured before update s, so update s - 1 may already be damaged:
-    return the last checkpoint step saved before it (checkpoints are saved after steps
-    checkpoint_every, 2 checkpoint_every, ...; step 0 is the initialization)."""
-    return (flagged_step - 2) // checkpoint_every * checkpoint_every
+def train_probe(A, y, steps=500, lr=1.0, l2=1e-3):
+    w, b = np.zeros(A.shape[1]), 0.0
+    for _ in range(steps):
+        _, dw, db = probe_loss(w, b, A, y, l2)
+        w -= lr * dw
+        b -= lr * db
+    return w, b
+
+
+def probe_accuracy(w, b, A, y):
+    return float(np.mean(((A @ w + b) > 0) == (y == 1)))

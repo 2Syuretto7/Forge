@@ -1,21 +1,22 @@
 import numpy as np
 
 
-def sigmoid(a):
-    a = np.asarray(a, dtype=float)
-    out = np.empty_like(a)
-    pos = a >= 0
-    out[pos] = 1.0 / (1.0 + np.exp(-a[pos]))
-    e = np.exp(a[~pos])
-    out[~pos] = e / (1.0 + e)
+def ema(xs, beta, debias=False):
+    """m_t = beta m_{t-1} + (1 - beta) x_t from m_0 = 0, for t = 1..len(xs).
+    With debias=True, divide m_t by 1 - beta**t."""
+    out = np.zeros(len(xs))
+    m = 0.0
+    for t, x in enumerate(xs, start=1):
+        m = beta * m + (1.0 - beta) * x
+        out[t - 1] = m / (1.0 - beta ** t) if debias else m
     return out
 
 
-def logistic_loss(w, b, X, y):
-    a = X @ w + b
-    return float(np.mean(np.maximum(a, 0) - a * y + np.log1p(np.exp(-np.abs(a)))))
+def momentum_gain(beta, omega):
+    """Steady-state amplitude of v_t = beta v_{t-1} + g_t for the input g_t = cos(omega t)."""
+    return 1.0 / abs(1.0 - beta * np.exp(-1j * omega))
 
 
-def logistic_grad(w, b, X, y):
-    err = sigmoid(X @ w + b) - y
-    return X.T @ err / X.shape[0], float(np.mean(err))
+def ema_gain(beta, omega):
+    """The same for the EMA, which is the momentum sum scaled by 1 - beta."""
+    return (1.0 - beta) * momentum_gain(beta, omega)

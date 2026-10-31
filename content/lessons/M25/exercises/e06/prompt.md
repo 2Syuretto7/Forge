@@ -11,7 +11,7 @@ $$
 - `grad_nll(z, counts)`: derive it; you should find $N\pi - c$.
 - `mle_probs(counts)`: the closed-form MLE, $c / N$.
 
-This is the same gradient that drives every classifier and language model in the course (L05, L07, L14).
+This is the same gradient that drives every classifier and language model in the course (L01, L03, L10).
 
 ## Hints
 

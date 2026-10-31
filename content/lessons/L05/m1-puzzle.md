@@ -1,41 +1,31 @@
-# Puzzle: the same data, two losses, two answers
+# Puzzle: the faster you go, the slower you get
 
-You have house sizes and prices, and you want to predict price from size. One colleague minimizes squared error. Another minimizes absolute error. A third fits a line by eye. A fourth points out that a few houses are mansions whose prices are wildly off the trend.
+Take the narrow valley $f(x, y) = \tfrac12 (x^2 + 100 y^2)$ and run gradient descent from $(1, 1)$. A small learning rate crawls along $x$. You raise it, and progress along $x$ speeds up, until suddenly the iterates explode.
 
-::::predict{id=p1 kind=choice answer=b}
-Which loss should you use, and why?
-
-- Squared error, because it is the standard.
-- It depends on what you believe about the noise: squared error is maximum likelihood for Gaussian noise, absolute error for Laplace (heavy-tailed) noise.
-- Absolute error, because it is more robust and therefore always better.
-- It makes no difference; all reasonable losses give the same line.
+::::predict{id=p1 kind=numeric answer=0.02 tol=0.002}
+What is the largest learning rate for which gradient descent on this valley does not diverge?
 
 :::reveal
-A loss is a statement about noise. If residuals are Gaussian, minimizing squared error is maximum likelihood and gives the most efficient estimate. If the noise has heavy tails (a few mansions), squared error lets those points drag the line, and absolute error (maximum likelihood under Laplace noise) is the better model. The losses give different lines whenever the data contain outliers.
+The gradient is $(x, 100 y)$, so one step multiplies $x$ by $1 - \eta$ and $y$ by $1 - 100\eta$. The $y$ coordinate stays bounded only if $|1 - 100\eta| < 1$, that is $\eta < 2/100 = 0.02$. The steep direction sets the speed limit, and at that limit the shallow direction shrinks by only 2 percent per step: more than 100 steps per factor of 10.
 :::
 ::::
 
-Classification raises the same question in sharper form. You want to predict whether an email is spam from a few word counts. You could regress the label (0 or 1) with squared error, but predictions would wander outside $[0, 1]$ and outliers far from the boundary would pull it around. The right model says each label is a coin flip whose probability depends on the features, and fits that probability by maximum likelihood. That is **logistic regression**.
+That is the whole problem of optimization in one picture: the step size must suit the steepest direction, so it is too small for the flattest one. A real network's loss has millions of directions whose curvatures span many orders of magnitude.
 
-::::predict{id=p2 kind=choice answer=c}
-You train logistic regression by gradient descent on two classes that a straight line separates perfectly, with no regularization. What happens to the weights as training continues?
+::::predict{id=p2 kind=choice answer=b}
+Momentum adds a fraction $\beta$ of the previous step to each new step. What does it do in this valley?
 
-- They converge to the maximum-margin separator.
-- They converge to some finite separating vector and stop.
-- Their norm keeps growing without bound.
-- They oscillate.
+- It multiplies every step by $1/(1 - \beta)$, which is the same as a larger learning rate.
+- It cancels the back-and-forth steps across the narrow direction and accumulates speed along the long direction.
+- Nothing useful: the zig-zag gets worse because old steps point the wrong way.
+- It makes the iteration diverge for any learning rate.
 
 :::reveal
-Any separating direction can be scaled up to push every predicted probability closer to the right label, so the loss keeps decreasing and has no finite minimizer. The norm grows forever (logarithmically in the number of steps). Remarkably, the direction converges to the maximum-margin separator, but the weights themselves do not converge. An L2 penalty restores a finite optimum. Try it in the widget: turn on "Separable classes" and watch the weight norm.
+Across the valley the gradient flips sign every step, so successive contributions cancel in the running sum; along the valley it keeps the same sign, so contributions add up to $1/(1 - \beta)$ times one step. Momentum is a low-pass filter on the gradient sequence, and the derivation makes this exact. A larger learning rate cannot do the same thing, because it amplifies both directions.
 :::
 ::::
 
-:::widget{name=DecisionBoundary separable=true lr=1}
+:::widget{name=LossLandscape surface=quadratic kappa=50 loglr=-1.8 beta=0.9}
 :::
 
-## Questions to carry into the derivation
-
-1. Which noise model turns maximum likelihood into least squares, and which into logistic regression?
-2. What are the gradients, and why do they have the same form for both models?
-3. What does L2 regularization mean, and what does it fix?
-4. How do you know whether predicted probabilities can be trusted?
+In the widget, raise the learning rate until plain SGD starts to zig-zag and then diverge, and compare the momentum and Adam trajectories at the same setting. Then switch to the Rosenbrock valley, whose curvature changes along the way.

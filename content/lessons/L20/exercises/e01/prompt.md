@@ -1,11 +1,13 @@
-# The SFT loss, masked
+# Size the run from the budget
 
-Supervised fine-tuning trains on (prompt, response) pairs, but only the response is the model's job: the loss counts response tokens and ignores the prompt.
+The capstone has one T4 for about an hour of pretraining. Turn that into a plan (L11).
 
-Implement `masked_ce(logits, targets, mask)`: the mean cross-entropy over the positions where `mask` is 1, and its gradient with respect to the logits, which must be zero at masked-out positions.
+1. `compute_budget(peak_flops, utilization, hours)`: the operations available.
+2. `chinchilla_split(C, tokens_per_param=20)`: $N$ and $D$ with $C = 6ND$ and $D = 20N$.
+3. `epochs(D, corpus_tokens)`: how many passes over the corpus that takes.
 
 ## Hints
 
-1. Divide by the number of counted positions, not by the sequence length.
-2. The gradient at a counted position is $(\operatorname{softmax}(z) - \text{onehot}(y))/n$.
-3. Compute the log-softmax stably by subtracting each row's maximum.
+1. $C = 6 \cdot 20 N^2$, so $N = \sqrt{C/120}$.
+2. A T4 peaks at about 65 TFLOP/s in 16-bit; small models in eager PyTorch reach well under half of that.
+3. If the compute-optimal plan needs hundreds of epochs, the run is limited by data, not compute: choose a smaller model and repeat the data only a few times.

@@ -1,219 +1,52 @@
 import numpy as np
 
 
-def unbroadcast(g, shape):
-    """Sum g over the axes that broadcasting added or stretched, to get `shape`."""
-    while g.ndim > len(shape):
-        g = g.sum(axis=0)
-    for i, s in enumerate(shape):
-        if s == 1 and g.shape[i] != 1:
-            g = g.sum(axis=i, keepdims=True)
-    return g
+def reference_attention(Q, K, V):
+    S = Q @ K.T / np.sqrt(Q.shape[1])
+    P = np.exp(S - S.max(axis=1, keepdims=True))
+    P /= P.sum(axis=1, keepdims=True)
+    return P @ V
 
 
-def as_tensor(x):
-    return x if isinstance(x, Tensor) else Tensor(x)
+def flash_attention(Q, K, V, Br=4, Bc=4):
+    """Tiled attention: for each block of Br queries, loop over blocks of Bc keys and values with an
+    online softmax, never forming the full score matrix. Return (O, L) with L the log-sum-exp of each
+    row of scores (kept for the backward pass)."""
+    n, d = Q.shape
+    c = 1.0 / np.sqrt(d)
+    O = np.zeros((n, V.shape[1]))
+    L = np.zeros(n)
+    for i in range(0, n, Br):
+        q = Q[i:i + Br]
+        m = np.full(len(q), -np.inf)
+        l = np.zeros(len(q))
+        acc = np.zeros((len(q), V.shape[1]))
+        for j in range(0, n, Bc):
+            s = q @ K[j:j + Bc].T * c
+            m_new = np.maximum(m, s.max(axis=1))
+            p = np.exp(s - m_new[:, None])
+            alpha = np.exp(m - m_new)
+            l = l * alpha + p.sum(axis=1)
+            acc = acc * alpha[:, None] + p @ V[j:j + Bc]
+            m = m_new
+        O[i:i + Br] = acc / l[:, None]
+        L[i:i + Br] = m + np.log(l)
+    return O, L
 
 
-class Tensor:
-    def __init__(self, data, parents=(), op=""):
-        self.data = np.array(data, dtype=float)
-        self.grad = None
-        self._parents = parents
-        self._backward = None
-        self.op = op
-
-    @property
-    def shape(self):
-        return self.data.shape
-
-    def __repr__(self):
-        return f"Tensor(shape={self.data.shape}, op={self.op!r})"
-
-    def _accumulate(self, g):
-        self.grad = g.copy() if self.grad is None else self.grad + g
-
-    def __add__(self, other):
-        other = as_tensor(other)
-        out = Tensor(self.data + other.data, (self, other), "add")
-
-        def _backward():
-            self._accumulate(unbroadcast(out.grad, self.shape))
-            other._accumulate(unbroadcast(out.grad, other.shape))
-        out._backward = _backward
-        return out
-
-    __radd__ = __add__
-
-    def __mul__(self, other):
-        other = as_tensor(other)
-        out = Tensor(self.data * other.data, (self, other), "mul")
-
-        def _backward():
-            self._accumulate(unbroadcast(out.grad * other.data, self.shape))
-            other._accumulate(unbroadcast(out.grad * self.data, other.shape))
-        out._backward = _backward
-        return out
-
-    __rmul__ = __mul__
-
-    def sum(self, axis=None, keepdims=False):
-        out = Tensor(self.data.sum(axis=axis, keepdims=keepdims), (self,), "sum")
-
-        def _backward():
-            g = out.grad
-            if axis is not None and not keepdims:
-                g = np.expand_dims(g, axis)
-            self._accumulate(np.broadcast_to(g, self.shape).copy())
-        out._backward = _backward
-        return out
-
-    def backward(self):
-        order, seen, stack = [], set(), [(self, False)]
-        while stack:
-            node, done = stack.pop()
-            if done:
-                order.append(node)
-                continue
-            if id(node) in seen:
-                continue
-            seen.add(id(node))
-            stack.append((node, True))
-            for p in node._parents:
-                if id(p) not in seen:
-                    stack.append((p, False))
-        for node in order:
-            if node._parents:
-                node.grad = None  # intermediate gradients do not persist between passes
-        self.grad = np.ones_like(self.data)
-        for node in reversed(order):
-            if node._backward is not None and node.grad is not None:
-                node._backward()
-
-
-def _matmul(self, other):
-    other = as_tensor(other)
-    out = Tensor(self.data @ other.data, (self, other), "matmul")
-
-    def _backward():
-        self._accumulate(out.grad @ other.data.T)
-        other._accumulate(self.data.T @ out.grad)
-    out._backward = _backward
-    return out
-
-
-def _transpose(self):
-    out = Tensor(self.data.T, (self,), "transpose")
-
-    def _backward():
-        self._accumulate(out.grad.T)
-    out._backward = _backward
-    return out
-
-
-def _reshape(self, *shape):
-    out = Tensor(self.data.reshape(*shape), (self,), "reshape")
-
-    def _backward():
-        self._accumulate(out.grad.reshape(self.shape))
-    out._backward = _backward
-    return out
-
-
-Tensor.__matmul__ = _matmul
-Tensor.T = property(_transpose)
-Tensor.reshape = _reshape
-
-
-def _unary(self, value, local, op):
-    out = Tensor(value, (self,), op)
-
-    def _backward():
-        self._accumulate(out.grad * local())
-    out._backward = _backward
-    return out
-
-
-def _exp(self):
-    v = np.exp(self.data)
-    return _unary(self, v, lambda: v, "exp")
-
-
-def _log(self):
-    return _unary(self, np.log(self.data), lambda: 1.0 / self.data, "log")
-
-
-def _relu(self):
-    return _unary(self, np.maximum(self.data, 0), lambda: (self.data > 0).astype(float), "relu")
-
-
-def _tanh(self):
-    v = np.tanh(self.data)
-    return _unary(self, v, lambda: 1.0 - v ** 2, "tanh")
-
-
-def _pow(self, p):
-    return _unary(self, self.data ** p, lambda: p * self.data ** (p - 1), "pow")
-
-
-def _neg(self):
-    return self * -1.0
-
-
-def _sub(self, other):
-    return self + (-as_tensor(other))
-
-
-def _rsub(self, other):
-    return as_tensor(other) + (-self)
-
-
-def _div(self, other):
-    return self * as_tensor(other) ** -1.0
-
-
-def _rdiv(self, other):
-    return as_tensor(other) * self ** -1.0
-
-
-def _mean(self, axis=None, keepdims=False):
-    n = self.data.size if axis is None else self.data.shape[axis]
-    return self.sum(axis=axis, keepdims=keepdims) * (1.0 / n)
-
-
-Tensor.exp = _exp
-Tensor.log = _log
-Tensor.relu = _relu
-Tensor.tanh = _tanh
-Tensor.__pow__ = _pow
-Tensor.__neg__ = _neg
-Tensor.__sub__ = _sub
-Tensor.__rsub__ = _rsub
-Tensor.__truediv__ = _div
-Tensor.__rtruediv__ = _rdiv
-Tensor.mean = _mean
-
-
-def cross_entropy(logits, y):
-    """Mean softmax cross-entropy built from primitive operations."""
-    m = Tensor(logits.data.max(axis=1, keepdims=True))  # constant: the loss does not depend on it
-    z = logits - m
-    lse = z.exp().sum(axis=1, keepdims=True).log()
-    onehot = np.eye(logits.shape[1])[y]
-    picked = (z * onehot).sum(axis=1, keepdims=True)
-    return (lse - picked).mean()
-
-
-def cross_entropy_fused(logits, y):
-    """The same loss as one operation with the backward rule (P - onehot) / B."""
-    Z = logits.data - logits.data.max(axis=1, keepdims=True)
-    logp = Z - np.log(np.exp(Z).sum(axis=1, keepdims=True))
-    B = Z.shape[0]
-    out = Tensor(-np.mean(logp[np.arange(B), y]), (logits,), "cross_entropy")
-
-    def _backward():
-        P = np.exp(logp)
-        P[np.arange(B), y] -= 1.0
-        logits._accumulate(out.grad * P / B)
-    out._backward = _backward
-    return out
+def flash_backward(dO, Q, K, V, O, L, Bc=4):
+    """Backward pass that recomputes each block of probabilities from the stored log-sum-exp L:
+    P_ij = exp(S_ij - L_i), with D_i = rowsum(dO_i * O_i). Return (dQ, dK, dV)."""
+    n, d = Q.shape
+    c = 1.0 / np.sqrt(d)
+    Dvec = (dO * O).sum(axis=1)
+    dQ, dK, dV = np.zeros_like(Q), np.zeros_like(K), np.zeros_like(V)
+    for j in range(0, n, Bc):
+        Kj, Vj = K[j:j + Bc], V[j:j + Bc]
+        P = np.exp(Q @ Kj.T * c - L[:, None])
+        dV[j:j + Bc] = P.T @ dO
+        dP = dO @ Vj.T
+        dS = P * (dP - Dvec[:, None]) * c
+        dQ += dS @ Kj
+        dK[j:j + Bc] = dS.T @ Q
+    return dQ, dK, dV

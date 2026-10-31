@@ -1,18 +1,13 @@
-import numpy as np
+import math
 
 
-def layer_norm(x, eps=1e-5):
-    """Normalize each row of x to zero mean and unit variance (no gain or bias). Return
-    (y, cache)."""
+def items_needed(p, half_width, z=1.96):
+    """Items needed for a confidence interval of +- half_width around an accuracy near p:
+    n = z^2 p (1 - p) / half_width^2, rounded up."""
     raise NotImplementedError
 
 
-def layer_norm_backward(dy, cache):
-    """The gradient with respect to x, given dL/dy."""
-    raise NotImplementedError
-
-
-def max_attention_logit(q, k, qk_norm):
-    """The largest |q_i . k_j| / sqrt(d) over all pairs, with q and k (rows) layer-normalized first
-    if qk_norm."""
+def detectable_difference(p, n, z=1.96):
+    """Roughly the smallest accuracy difference between two independent evaluations of n items
+    each that a 95% test can detect: z sqrt(2 p (1 - p) / n)."""
     raise NotImplementedError

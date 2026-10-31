@@ -1,12 +1,15 @@
-# Temperature and entropy
+# Activation checkpointing
 
-1. `tempered_xent(logits, y, T)`: the mean cross-entropy of $\operatorname{softmax}(z/T)$ against labels `y`, and its gradient with respect to the logits $z$.
-2. `entropy_at(logits, T)`: the entropy in nats of $\operatorname{softmax}(z/T)$ for one vector of logits.
+Backpropagation needs every layer's activations, so memory grows with depth. Checkpointing keeps only some of them and recomputes the rest during backward.
 
-Temperature divides the logits, so by the chain rule it divides the gradient too. The same tempered softmax appears in distillation, where a teacher's soft predictions at high temperature train a student.
+The network is $h_{i+1} = \tanh(h_i W_i)$.
+
+1. `forward(x, Ws)`: all activations $h_0, \dots, h_L$.
+2. `backward(hs, Ws, dout)`: the gradients of every $W_i$ given $\partial L/\partial h_L$.
+3. `checkpointed_grads(x, Ws, dout, k)`: keep only $h_0, h_k, h_{2k}, \dots$ in the forward pass; in backward, for each segment from last to first, recompute its activations from its checkpoint and backpropagate through it. Return the gradients and the peak number of stored activations (checkpoints plus one recomputed segment).
 
 ## Hints
 
-1. $\partial L/\partial z = (\operatorname{softmax}(z/T) - \text{onehot}(y)) / (nT)$.
-2. Guard the logarithm of zero probabilities when computing the entropy.
-3. The entropy increases with $T$, from 0 (greedy) toward $\ln V$ (uniform).
+1. With $z = h_i W_i$ and $h_{i+1} = \tanh z$: $\partial z = \partial h_{i+1} \odot (1 - h_{i+1}^2)$, $\partial W_i = h_i^\top \partial z$, $\partial h_i = \partial z\, W_i^\top$.
+2. Memory is about $L/k + k$ activations, smallest at $k \approx \sqrt{L}$; the price is one extra forward pass.
+3. The gradients must be identical to the uncheckpointed ones: recomputation is exact.

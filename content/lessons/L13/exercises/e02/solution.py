@@ -1,29 +1,19 @@
 import numpy as np
 
 
-def softmax_rows(S):
-    """Softmax of every row, stable for large entries; -inf entries get weight 0."""
-    m = S.max(axis=-1, keepdims=True)
-    E = np.exp(S - m)
-    return E / E.sum(axis=-1, keepdims=True)
+def format_properties(exp_bits, man_bits):
+    """Largest finite value, smallest normal, smallest subnormal and machine epsilon (the gap
+    between 1 and the next representable number)."""
+    bias = 2 ** (exp_bits - 1) - 1
+    emax = 2 ** exp_bits - 2 - bias
+    return {
+        "max": (2 - 2.0 ** -man_bits) * 2.0 ** emax,
+        "min_normal": 2.0 ** (1 - bias),
+        "min_subnormal": 2.0 ** (1 - bias - man_bits),
+        "eps": 2.0 ** -man_bits,
+    }
 
 
-def softmax_backward(P, dP):
-    """Given P = softmax_rows(S) and dL/dP, return dL/dS."""
-    return P * (dP - (dP * P).sum(axis=-1, keepdims=True))
-
-
-def causal_mask(n):
-    """Boolean (n, n) array, True where query i may not see key j (j > i)."""
-    return np.triu(np.ones((n, n), dtype=bool), k=1)
-
-
-def attention(Q, K, V, causal=True, scale=True):
-    """Single-head attention for Q, K of shape (n, d) and V of shape (n, dv). Return (O, P)."""
-    S = Q @ K.T
-    if scale:
-        S = S / np.sqrt(Q.shape[-1])
-    if causal:
-        S = np.where(causal_mask(Q.shape[0]), -np.inf, S)
-    P = softmax_rows(S)
-    return P @ V, P
+def decimal_digits(man_bits):
+    """Roughly how many significant decimal digits the format keeps: (man_bits + 1) log10 2."""
+    return (man_bits + 1) * np.log10(2)

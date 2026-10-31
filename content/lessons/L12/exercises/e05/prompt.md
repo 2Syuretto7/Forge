@@ -1,15 +1,14 @@
-# One-pass statistics and a fused layer-norm backward
+# Exact duplicates and boilerplate
 
-A fused layer-norm kernel computes each row's mean and variance in one pass over the row.
+Before near-duplicates, the cheap wins: identical documents and lines repeated across many pages (navigation menus, cookie notices, licence footers).
 
-1. `naive_moments(x)`: mean and variance as $\mathbb E[x^2] - \mathbb E[x]^2$, accumulating in the array's own dtype.
-2. `welford(x)`: mean and variance with Welford's update, also in the array's dtype.
-3. `layernorm_backward_recompute(dy, x, gamma, eps=1e-5)`: the layer-norm backward pass of L10, recomputing the mean and $1/\sigma$ from `x` instead of storing them, as a fused backward kernel does. Return `(dx, dgamma, dbeta)`.
-
-The tests feed float32 values near $10^4$ with unit spread: the naive variance cancels to garbage, Welford's does not.
+1. `normalize(doc)`: lowercase and collapse whitespace.
+2. `exact_dedup(docs)`: the indices of the first occurrence of each document, comparing SHA-1 digests of the normalized text.
+3. `boilerplate_lines(docs, min_docs)`: the set of stripped, non-empty lines that occur in at least `min_docs` different documents (count each line once per document).
+4. `strip_lines(doc, lines)`: the document without the lines whose stripped text is in `lines`.
 
 ## Hints
 
-1. Use `x.dtype.type(...)` for constants so the arithmetic stays in float32.
-2. Welford: `d = v - mean; mean += d / i; m2 += d * (v - mean)`; the variance is `m2 / n`.
-3. The backward formula: with `g = dy * gamma`, `dx = r / d * (d * g - g.sum(1) - xh * (g * xh).sum(1))` (keepdims).
+1. `hashlib.sha1(s.encode("utf-8")).hexdigest()` gives a fixed-size key; storing digests instead of documents keeps memory small.
+2. Count lines through a per-document set so that a line repeated within one document counts once.
+3. Keep blank lines in `strip_lines`; only remove the listed ones.

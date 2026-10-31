@@ -1,13 +1,13 @@
-# Initialization from variance preservation
+# Rotary position embeddings
 
-1. `xavier(n_in, n_out, rng)`: normal weights of shape `(n_in, n_out)` with variance $2/(n_{\text{in}} + n_{\text{out}})$.
-2. `he(n_in, n_out, rng)`: variance $2/n_{\text{in}}$.
-3. `depth_rms(init, act, depth=30, width=256, batch=128, seed=0)`: draw a batch of unit-normal inputs from `np.random.default_rng(seed)`, push it through `depth` layers $h \leftarrow \phi(hW)$ with fresh weights per layer from the same generator (`init` is `"xavier"`, `"he"` or `"unit"` for standard normal; `act` is `"relu"` or `"tanh"`), and return the root mean square of $h$ after each layer.
-
-Then compare the six combinations. He with ReLU keeps the scale; Xavier with ReLU halves the second moment per layer; standard normal weights explode with ReLU and saturate tanh. Xavier with tanh shrinks slowly, about fivefold over 30 layers, because tanh is slightly contractive.
+Implement `rope(X, positions, base=10000.0)`: for each row $p$ (at position `positions[p]`) and each pair of columns $(2i, 2i + 1)$, rotate the pair by the angle $p\,\theta_i$ with $\theta_i = \text{base}^{-2i/d}$:
+$$
+(x_{2i}, x_{2i+1}) \mapsto (x_{2i}\cos\phi - x_{2i+1}\sin\phi,\; x_{2i}\sin\phi + x_{2i+1}\cos\phi).
+$$
+The tests check that the result preserves norms, and that the score between a rotated query and a rotated key depends only on the difference of their positions.
 
 ## Hints
 
-1. `rng.normal(size=(n_in, n_out)) * np.sqrt(variance)`.
-2. Use `np.tanh` or `np.maximum(z, 0)` for the activation.
-3. RMS is `np.sqrt(np.mean(h * h))`.
+1. Angles: `positions[:, None] * theta[None, :]`, shape `(n, d/2)`.
+2. Take `x0 = X[:, 0::2]` and `x1 = X[:, 1::2]`, and write the two results back into the same columns.
+3. Position 0 leaves a row unchanged.

@@ -1,26 +1,25 @@
 import numpy as np
 
 
-def naive_sum(values, dtype):
-    """Add the values one by one, keeping the running sum in dtype."""
-    s = dtype(0)
-    for v in values:
-        s = dtype(s + dtype(v))
-    return s
+def gae(rewards, values, gamma, lam):
+    """Generalized advantage estimates for one episode. values has one more entry than rewards (the
+    value after the last step, 0 at the end of an episode). delta_t = r_t + gamma V_{t+1} - V_t and
+    A_t = delta_t + gamma lam A_{t+1}."""
+    T = len(rewards)
+    adv = np.zeros(T)
+    run = 0.0
+    for t in reversed(range(T)):
+        delta = rewards[t] + gamma * values[t + 1] - values[t]
+        run = delta + gamma * lam * run
+        adv[t] = run
+    return adv
 
 
-def kahan_sum(values, dtype):
-    """Compensated summation in dtype: carry the rounding error of each addition into the next."""
-    s = dtype(0)
-    c = dtype(0)
-    for v in values:
-        y = dtype(dtype(v) - c)
-        t = dtype(s + y)
-        c = dtype(dtype(t - s) - y)
-        s = t
-    return s
-
-
-def wide_accumulator_sum(values, dtype):
-    """Store the inputs in dtype but accumulate in float32, as tensor cores do."""
-    return np.float32(np.sum(np.asarray(values, dtype=dtype).astype(np.float32)))
+def returns(rewards, gamma):
+    """Discounted returns G_t = r_t + gamma G_{t+1}."""
+    out = np.zeros(len(rewards))
+    run = 0.0
+    for t in reversed(range(len(rewards))):
+        run = rewards[t] + gamma * run
+        out[t] = run
+    return out

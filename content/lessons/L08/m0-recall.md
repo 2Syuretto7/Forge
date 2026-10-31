@@ -1,15 +1,15 @@
-# Recall bridge: reverse mode and hand-written backward passes
+# Recall bridge: rooflines, layer norm and attention
 
-From M19: reverse mode runs a chain of vector-Jacobian products backward from a scalar, and needs the values computed in the forward pass. From L07: for an MLP you wrote every VJP by hand, layer by layer, and checked each one with finite differences. This lesson automates that work for any composition of tensor operations. Reviews due from M19 and L07 appear above.
+From L07: a kernel is limited by the slower of its FLOPs and its bytes, and tiling and fusion cut the bytes. From L06: layer norm normalizes each row with its own mean and variance. From L09: attention computes $\operatorname{softmax}(QK^\top/\sqrt d)\,V$, and its $N \times N$ score matrix is the expensive part. This lesson writes those operations as GPU kernels. Reviews due from those lessons appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step
-For $y = x_1 x_2$, the VJP with upstream gradient $g$ sends $g\,x_2$ to $x_1$ and [[g*x1]] to $x_2$.
+Unfused, a row softmax reads and writes its data several times; a fused one reads it [[1]] time and writes it once.
 :::
 :::step
-For $y = \log x$, the VJP sends $g/x$ to $x$. At $x = 4$, $g = 2$ that is [[0.5]].
+The scores of one attention head over $N = 1024$ positions form a matrix with [[1048576]] entries.
 :::
 :::step
-If $x$ feeds two operations whose VJPs send it $0.3$ and $-0.1$, its total gradient is [[0.2]].
+The softmax of $(0, \ln 3)$ is $(0.25, 0.75)$. Shifting both scores by 100 gives the weight [[0.75]] to the second entry.
 :::
 ::::

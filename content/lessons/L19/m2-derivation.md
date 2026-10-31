@@ -1,101 +1,90 @@
-# Derivation: why runs break, and how to recover
+# Derivation: measuring a model and reading its activations
 
-## 1. The anatomy of a run
+## 1. An evaluation is an estimate
 
-A training run is a loop around five things: a **configuration** fixed at the start, a **data stream** read from a position, the **model and optimizer**, a **schedule** that maps the step to a learning rate, and **checkpoints** that let it stop and restart. Around the loop sit **logging** (every step: loss, gradient norm before clipping, learning rate, throughput; every few hundred steps: validation loss), and an **evaluation harness**. Everything this lesson does is about making those parts trustworthy.
+A benchmark is a sample of items from the space of tasks it stands for, and an accuracy is an average over that sample. With per-item scores $c_i \in \{0, 1\}$ and accuracy $\hat p$, the standard error is $\sqrt{\hat p(1 - \hat p)/n}$; for scores that are not 0/1 (partial credit, log-probabilities), the percentile bootstrap of M25 gives an interval by resampling items. Items, not tokens or random seeds, are the unit to resample: they are what the benchmark sampled.
 
-## 2. Where loss spikes come from
+Comparing two models on the same items, the per-item difference $c^A_i - c^B_i$ has variance
+$$
+\operatorname{Var}(c^A - c^B) = \operatorname{Var}(c^A) + \operatorname{Var}(c^B) - 2 \operatorname{Cov}(c^A, c^B),
+$$
+and models find the same items hard, so the covariance is positive and a **paired** comparison is sharper than two separate intervals.
 
-**The learning rate.** On a quadratic with curvature $\lambda$, gradient descent is stable only for $\eta < 2/\lambda$ (L09). Neural networks sharpen during training: the largest curvature rises until it reaches about $2/\eta$, where training hovers at the "edge of stability" (Cohen et al., 2021). Warmup lets the network reach flatter regions before the full rate; a rate that is too high, or a schedule bug, pushes it over the edge.
-
-**The data.** A batch unlike the rest (binary junk, a corrupted shard, a document repeated thousands of times) produces a large gradient, and the update moves the model toward predicting junk.
-
-**Adam's memory.** Adam divides by $\sqrt{\hat v}$, a running average of squared gradients. If a parameter's gradients have been near zero, $v$ decays toward zero, and a sudden gradient $g$ then gives $m = (1 - \beta_1) g$ and $v = (1 - \beta_2) g^2$: an update of size $(1 - \beta_1)/\sqrt{1 - \beta_2}$ times the learning rate, against about 1 in steady state.
-
-::::derivation{id=d1 title="Adam after a quiet period"}
+::::derivation{id=d1 title="The gain from pairing"}
 :::step
-With $\beta_1 = 0.9$ and $\beta_2 = 0.999$, the first update after a long quiet period is $0.1/\sqrt{0.001} \approx$ [[3.162|tol=0.002]] times the learning rate.
+Both models score 70%, so each per-item variance is $0.7 \cdot 0.3 = 0.21$. If the correlation between their item scores is 0.6, the paired variance per item is $0.42 - 2 \cdot 0.6 \cdot 0.21 =$ [[0.168|tol=0.001]].
 :::
 :::step
-With $\beta_2 = 0.95$, the shorter memory gives [[0.447|tol=0.002]]: one reason large runs use $\beta_2 = 0.95$.
+That is 0.4 of the unpaired variance, so the interval on the difference is narrower by a factor of $\sqrt{0.4} \approx$ [[0.63|tol=0.01]].
+:::
+:::step
+For a 95% interval of $\pm 2$ points around an accuracy near 50%, $n = 1.96^2 \cdot 0.25 / 0.02^2 \approx$ [[2401|tol=1]] items are needed.
 :::
 ::::
 
-:::edge{from=L09 text="learning rates, warmup and stability"}
+:::edge{from=M25 text="the bootstrap"}
 :::
 
-**Numerics.** The softmax is unchanged when a constant is added to every logit, so output logits can drift to large values with nothing to stop them, until 16-bit arithmetic overflows (L17). Attention logits $q \cdot k/\sqrt{d}$ can grow too: the softmax collapses onto one position, its gradient vanishes, and training stalls or diverges (Dehghani et al., 2023; Wortsman et al., 2023).
+Sampling noise is only the first threat. **Contamination**: test items that appeared in the training data (L12) inflate scores exactly where they leaked; check with n-gram overlap and by comparing scores on items published before and after the training cutoff. **Prompt sensitivity**: formatting, few-shot examples and answer extraction can move scores by several points, so fix them and report them. **Seeds**: training randomness adds variance between checkpoints that the item interval does not cover; train several seeds when the claim is about a method. And a model trained against a reward (L17) can learn the grader's quirks, so evaluate with a held-out grader where possible.
 
-## 3. Defenses in the model and the optimizer
+:::edge{from=L17 text="a model shaped by rewards"}
+:::
 
-**Gradient clipping.** Rescale all gradients by $\min(1, c/\|g\|)$, so no step moves the model more than a step with norm $c$ would. The gradient norm before clipping is the most sensitive alarm in the log: it usually jumps before the loss does.
+## 2. Linear probes
 
-**The z-loss.** PaLM added $10^{-4} (\log Z)^2$ to the loss, with $\log Z = \operatorname{logsumexp}(z)$. Its gradient with respect to the logits is $2 \cdot 10^{-4} \log Z \cdot p$, which pulls $\log Z$ toward zero without changing the predicted distribution's shape.
+Does a model's hidden state $a \in \mathbb{R}^d$ encode a property $y$, such as the part of speech of the current token or whether a statement is true? A **linear probe** fits logistic regression $\sigma(w^\top a + b)$ on activations from one set of inputs and is scored on others. High held-out accuracy shows the property is **linearly decodable** from the activations; it does not show the model uses it, or that the probe found the model's own representation rather than something correlated with it.
 
-**QK-layernorm.** Normalize each head's queries and keys with a layer norm before their product. A normalized vector of dimension $d_h$ has norm $\sqrt{d_h}$, so by Cauchy-Schwarz
-$$
-\frac{|q \cdot k|}{\sqrt{d_h}} \le \frac{\sqrt{d_h}\,\sqrt{d_h}}{\sqrt{d_h}} = \sqrt{d_h},
-$$
-up to the learned gains.
+Two controls separate what the representation contains from what the probe can learn. A probe on **random features** of the same dimension, or on an untrained model's activations, sets the baseline; a **control task** (Hewitt and Liang, 2019) assigns each word type a random but consistent label, and **selectivity** is the probe's accuracy on the real task minus that on the control. A probe flexible enough to learn the control task tells you about the probe, not the model. Keep probes linear and regularized, and confirm claims about use with interventions (section 5).
 
-::::derivation{id=d2 title="Bounded logits"}
+## 3. Superposition
+
+A model with $d$ dimensions could give each feature its own orthogonal direction, which allows only $d$ features. Real models seem to represent far more by giving features directions that are only nearly orthogonal (Elhage et al., 2022). For random unit vectors, $\mathbb{E}[\cos^2] = 1/d$, and the number of directions with all pairwise overlaps below a fixed $\varepsilon$ grows exponentially with $d$.
+
+The cost is **interference**: reading feature $i$ with its direction $v_i$ picks up $\sum_{j \ne i} (v_i^\top v_j) x_j$ from the other active features. If features are **sparse**, each active with small probability, few are active at once and the interference is small; the toy models of Elhage et al. show a phase change from one-feature-per-dimension to superposition as sparsity grows. A consequence is that individual neurons are often **polysemantic**, responding to several unrelated features, so the natural unit of analysis is a direction, not a neuron.
+
+::::derivation{id=d2 title="Overlap in a residual stream"}
 :::step
-With heads of dimension 64, the logits of normalized queries and keys are at most $\sqrt{64} =$ [[8]] (before gains).
+In a residual stream of 512 dimensions, two random directions have a typical cosine of $\sqrt{1/512} \approx$ [[0.044|tol=0.001]].
 :::
 ::::
 
-## 4. Checkpoints and exact resume
+## 4. Sparse autoencoders
 
-A checkpoint is everything the next step depends on:
-
-- the model's parameters and buffers;
-- the optimizer state: Adam's $m$, $v$ **and step count** (the bias correction uses it);
-- the gradient scaler of mixed precision (L17);
-- the step, from which the learning rate is computed, and the **data position**;
-- the random-number states that dropout and any shuffling draw from;
-- the configuration, and the metrics log so far.
-
-Write it to a temporary file and rename it into place, so a crash while saving never leaves a corrupt checkpoint. Test exact resume directly: $n$ steps straight must give the same weights as $k$ steps, save, load into a fresh process, and $n - k$ more.
-
-**How often?** If writing a checkpoint takes $C$ seconds and failures arrive on average every $M$ seconds, checkpointing every $T$ seconds costs a fraction $C/T$ of the time in writing and loses on average $T/2$ per failure, a fraction $T/(2M)$. Minimizing $C/T + T/2M$ gives the Young/Daly interval
+If activations are sparse combinations of many feature directions, we can try to recover the directions. A **sparse autoencoder** (SAE) with $m > d$ latents encodes and decodes
 $$
-T^* = \sqrt{2 C M}.
+z = \operatorname{ReLU}\bigl((x - b_d) W_e^\top + b_e\bigr), \qquad \hat x = z W_d + b_d,
 $$
+and minimizes $\|x - \hat x\|^2 + \lambda \|z\|_1$ averaged over activations. The reconstruction term asks the latents to explain $x$; the L1 term asks that few be active at once. The decoder rows are kept at unit norm, since otherwise the penalty could be avoided by shrinking $z$ and growing $W_d$. Each decoder row is a candidate feature direction, interpreted by the inputs that activate its latent most strongly (Bricken et al., 2023; Cunningham et al., 2023; Templeton et al., 2024).
 
-::::derivation{id=d3 title="The checkpoint interval"}
+Three numbers describe an SAE: the reconstruction error, the average number of active latents $L_0$, and the fraction of the model's loss recovered when its activations are replaced by the reconstruction. They trade off through $\lambda$: too little sparsity gives dense latents that mix features; too much loses information. Latents that never activate (**dead latents**) are common, and training resamples them toward badly reconstructed inputs. An SAE's features are a hypothesis about the model; whether the model uses them is tested by intervening on them.
+
+## 5. Activation patching and circuits
+
+Correlation is not mechanism: to show that a component carries the information behind a behaviour, change it and watch the output. **Activation patching** runs the model on a **clean** input and a **corrupted** one that differs in the relevant detail, picks a metric $m$ (such as the logit difference between the right and wrong answers), and reruns the corrupted input with one component's activation replaced by its clean value. The restored fraction
+$$
+\frac{m(\text{patched}) - m(\text{corrupt})}{m(\text{clean}) - m(\text{corrupt})}
+$$
+measures how much of the behaviour flows through that component. Patching clean into corrupted asks whether the component is **sufficient** to restore the behaviour; patching corrupted into clean asks whether it is **necessary**. **Ablation** removes a component instead, by zeroing it or, better, replacing it with its mean or with its value on another input, since zero may be far outside the activations the model ever sees.
+
+::::derivation{id=d3 title="Reading a patching result"}
 :::step
-With $C = 60$ s and one failure a day ($M = 86400$ s), $T^* = \sqrt{2 \cdot 60 \cdot 86400} \approx$ [[3220|tol=2]] seconds, about 54 minutes.
-:::
-:::step
-The total overhead $C/T^* + T^*/2M$ is then about [[0.0373|tol=0.0005]] of the run.
+The logit difference is 3.2 on the clean input and $-0.8$ on the corrupted one. Patching one head gives 2.0, a restored fraction of [[0.7|tol=0.001]].
 :::
 ::::
 
-:::edge{from=L16 text="a data pipeline that resumes exactly"}
+Patching every component costs one forward pass each. **Attribution patching** uses the first-order expansion $m(a_\text{clean}) - m(a_\text{corrupt}) \approx (a_\text{clean} - a_\text{corrupt})^\top \nabla_a m(a_\text{corrupt})$ to estimate all effects from one backward pass, accurate when the activations differ little; use it to rank candidates, then patch the top ones exactly.
+
+A **circuit** is a set of components and the paths between them that implements a behaviour. The best understood is the **induction head** (Olsson et al., 2022): on a sequence $\ldots [A][B] \ldots [A]$, it predicts $[B]$. It needs two heads in different layers. A **previous-token head** in layer 1 writes into each position the identity of the token before it; the induction head in layer 2 then uses a query for the current token $[A]$ against keys that carry "the previous token was $[A]$", attends to the position of $[B]$ and copies it. The second head's keys are built from the first head's output, a composition through the residual stream. Induction heads form abruptly during training, and they let a model continue any pattern it has seen earlier in its context.
+
+:::widget{name=AttentionHeatmap pattern=previous d=16}
 :::
 
-## 5. Detecting and recovering from spikes
-
-Compare each step's loss, before trusting its update, with the mean and standard deviation of a trailing window, and flag it when it exceeds the mean by $k$ standard deviations; watch the gradient norm the same way. When a spike is flagged, the robust recovery is the one used to train PaLM: restart from a checkpoint before the spike and skip the data batches around it, which removes the bad data whether or not you know which batch it was. If spikes recur at the same place without bad data, lower the learning rate or add one of the defenses above.
-
-The loss at step $s$ is computed before update $s$, so update $s - 1$ may already be damaged: restore the last checkpoint saved before it. Generating each batch from its data position makes skipping trivial: move the position.
-
-## 6. Evaluation you can trust
-
-The validation loss is a mean over examples, so report it with an interval: bootstrap the per-window losses (M25). Compare two checkpoints on the **same** windows with a paired difference, which is far more precise than comparing their separate intervals. Evaluate on fixed windows with fixed seeds, in evaluation mode, at regular steps, and never on training data.
-
-:::edge{from=L15 text="the scaling fit that sized the run"}
+:::edge{from=L09 text="attention heads"}
 :::
 
-:::edge{from=L18 text="memory and data parallelism for the run"}
-:::
+## 6. Making a claim
 
-## 7. The run report
+An interpretability claim names a mechanism and passes tests: the components found restore most of the behaviour when patched in (**sufficiency**), the behaviour drops when they are ablated (**necessity**), random components of the same size do neither, and the claim predicts something new, such as behaviour on a hand-made input. Report the effect sizes against these baselines, and the inputs where the account fails.
 
-A run is finished when its report is written: the configuration, the hardware and throughput, the loss curves, every incident (what was flagged, what was rolled back, what was skipped), the final evaluation with intervals, and what to change next time. The report is how the next run avoids the same failures.
-
-:::edge{to=L20 text="Fine-tune the model you pretrained."}
-:::
-
-:::edge{to=L24 text="The final capstone runs this script end to end."}
+:::edge{to=L20 text="The final capstone evaluates its own model with intervals."}
 :::

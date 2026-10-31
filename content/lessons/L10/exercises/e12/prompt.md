@@ -1,14 +1,15 @@
-# Break it: post-norm without warmup
+# Break it: temperature extremes
 
-The stack, Adam and your `train` are provided.
+A bigram table `P` (rows are next-token distributions) stands in for a trained model.
 
-1. `dead_fraction(p, X, depth, mode)`: for each hidden layer, the fraction of its ReLU units whose pre-activation is not positive for any row of `X`.
-2. `warmup_experiment(lr=1e-2, warmup=150, depth=20, width=32, steps=300, seed=0)`: train the post-norm stack without warmup and with it. For each run return `(loss, dead_top)`: the mean of the last 30 minibatch losses, and the mean dead fraction over the top third of the layers on `make_digits(500, 1)`. Return `{"none": ..., "warmup": ...}`.
+1. `generate(P, start, n, T, rng)`: sample `n` tokens after `start` at temperature `T`, using $p_T \propto P^{1/T}$ (dividing the log-probabilities by `T`).
+2. `distinct_ratio(seq, n=3)`: distinct `n`-grams divided by all `n`-grams in `seq`.
+3. `model_nll(seq, P)`: the mean negative log-likelihood of `seq` under the untempered `P`.
 
-Each run takes under a second natively and a few seconds in the browser.
+Low temperature loops (few distinct trigrams); high temperature produces sequences the model itself finds unlikely (high negative log-likelihood).
 
 ## Hints
 
-1. Recompute the forward pass of `mode` layer by layer, recording `(z > 0).sum(axis=0) == 0` per unit.
-2. The top third is `dead[2 * depth // 3:]`.
-3. Same seed for both runs, so warmup is the only difference.
+1. Subtract the maximum of the tempered log-probabilities before exponentiating.
+2. Use `tuple(seq[i:i + n])` as the n-gram key.
+3. Compare temperatures 0.1, 1 and 5 on the same table and seed.

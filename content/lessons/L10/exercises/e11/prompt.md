@@ -1,14 +1,15 @@
-# Break it: batch norm with a batch of one
+# Break it: strings that trip tokenizers
 
-Your batch norm and layer norm, forward and backward, are provided.
+Training, encoding and decoding are provided.
 
-1. `batch_of_one(x, gamma, beta)`: run training-mode batch norm on a batch containing only the row `x`, and its backward pass with an upstream gradient of ones. Return `(y, dx)` for that row.
-2. `layernorm_of_one(x, gamma, beta)`: the same row through layer norm, with an upstream gradient that weights the features $1, 2, \dots, d$. Return `(y, dx)`.
+1. `roundtrips(text, merges)`: whether `decode(encode(text))` gives back `text` exactly.
+2. `normalization_forms(text)`: the NFC (composed) and NFD (decomposed) Unicode forms of `text`, using `unicodedata.normalize`.
+3. `token_counts(texts, merges)`: the number of tokens of each text.
 
-Batch norm returns $\beta$ and a zero gradient whatever `x` is; layer norm still works.
+The tests show that "café" can be written two ways that look identical but are different bytes and different tokens, and that a leading space changes how a word is tokenized.
 
 ## Hints
 
-1. `x[None, :]` turns the vector into a batch of one.
-2. Return the first (only) row of each result.
-3. An upstream gradient of ones would give layer norm a zero gradient too, for a different reason (it is a constant shift of the row), which is why the test weights the features.
+1. `unicodedata.normalize("NFD", "é")` is "e" followed by a combining accent.
+2. Byte-level BPE always round-trips; normalization is a choice you make before tokenizing.
+3. Compare `token_counts(["the", " the"])` after training on text where " the" is common.

@@ -1,15 +1,13 @@
-# Break it: temperature extremes
+# Break it: averaging gradients wrongly
 
-A bigram table `P` (rows are next-token distributions) stands in for a trained model.
+Each rank holds the **sum** of its examples' gradients and how many examples it had (the last batch of an epoch is often smaller).
 
-1. `generate(P, start, n, T, rng)`: sample `n` tokens after `start` at temperature `T`, using $p_T \propto P^{1/T}$ (dividing the log-probabilities by `T`).
-2. `distinct_ratio(seq, n=3)`: distinct `n`-grams divided by all `n`-grams in `seq`.
-3. `model_nll(seq, P)`: the mean negative log-likelihood of `seq` under the untempered `P`.
-
-Low temperature loops (few distinct trigrams); high temperature produces sequences the model itself finds unlikely (high negative log-likelihood).
+1. `correct_average(grad_sums, counts)`: the full-batch mean gradient.
+2. `mean_of_means(grad_sums, counts)`: the common bug of averaging the ranks' means.
+3. `sum_of_means(grad_sums, counts)`: the bug of all-reducing with a sum and not dividing by the number of ranks.
 
 ## Hints
 
-1. Subtract the maximum of the tempered log-probabilities before exponentiating.
-2. Use `tuple(seq[i:i + n])` as the n-gram key.
-3. Compare temperatures 0.1, 1 and 5 on the same table and seed.
+1. The correct mean divides the total gradient by the total count.
+2. The mean of means is right only when every rank has the same count; otherwise examples on small ranks weigh more.
+3. Summing without dividing multiplies the gradient, and so the learning rate, by the number of ranks: a run that worked on 8 GPUs diverges on 64.

@@ -1,33 +1,24 @@
-import copy
 import numpy as np
 
-TRUE_W = np.array([1.0, -2.0, 0.5])
+# A hand-built two-layer network computing "does token A come before token B?" from one-hot inputs.
+W1 = np.zeros((4, 6))
+W1[0, 0] = 1.0   # unit 0: A at position 0
+W1[1, 3] = 1.0   # unit 1: B at position 1
+W1[2, 1] = 1.0   # unit 2: a distractor
+W1[3, 4] = 0.5   # unit 3: another distractor
+w2 = np.array([1.0, 1.0, 0.1, 0.1])
 
 
-def batch(rng, n=16):
-    """A regression batch drawn from the trainer's generator."""
-    X = rng.normal(size=(n, 3))
-    return X, X @ TRUE_W + 0.1 * rng.normal(size=n)
+def hidden(x):
+    return np.maximum(W1 @ x, 0)
 
 
-def loss_grad(w, X, y):
-    r = X @ w - y
-    return 0.5 * np.mean(r ** 2), X.T @ r / len(y)
+def output(h):
+    return w2 @ h - 1.5  # positive exactly when units 0 and 1 are both on
 
 
-def poisoned_batch(rng, step, bad_steps):
-    """The batch for a step; during bad_steps the targets are garbage."""
-    X, y = batch(rng)
-    if step in bad_steps:
-        y = 1000.0 * np.ones_like(y)
-    return X, y
-
-
-def run(steps, bad_steps, lr=0.1, every=20, window=10, k=6.0, skip_ahead=10, recover=True, seed=0):
-    """SGD on the regression stream; step t's batch comes from np.random.default_rng([seed, t]),
-    so any step's data can be regenerated or skipped. Save w every `every` steps. If recover, check
-    each step's loss before updating: when it exceeds the mean of the previous `window` kept losses
-    by k standard deviations, restore the checkpoint rollback_point gives, skip every step from
-    there up to skip_ahead steps past the flagged one (the run never knows which batches were bad),
-    and continue. Return (final w, list of flagged steps)."""
+def patch_effects(x_clean, x_corrupt):
+    """Activation patching: run the corrupted input, but replace one hidden unit's value with its
+    value on the clean input; the effect of that unit is how much of the clean-minus-corrupted
+    output difference this restores. Return the fraction restored for each unit."""
     raise NotImplementedError

@@ -1,18 +1,25 @@
+import numpy as np
 import sub
 
-P, BW = 65e12, 320e9
+E, A, B, al, be = 1.69, 406.4, 410.7, 0.34, 0.28
 
 
-def test_one_big_kernel_is_not_launch_bound():
-    n = 1 << 24
-    t = sub.step_time([(n, 6 * n)], P, BW)
-    assert abs(t - 6 * n / BW) < 1e-12
-    assert sub.launch_bound_fraction([(n, 6 * n)], P, BW) == 0.0
+def law(N, D):
+    return E + A * N ** -al + B * D ** -be
 
 
-def test_many_small_kernels_are():
-    small = [(4096, 6 * 4096)] * 4096
-    t = sub.step_time(small, P, BW)
-    assert abs(t - 4096 * 10e-6) < 1e-12
-    assert sub.launch_bound_fraction(small, P, BW) == 1.0
-    assert t > 100 * sub.step_time([(1 << 24, 6 << 24)], P, BW)
+def test_vertex_of_an_exact_parabola():
+    N = np.exp(np.linspace(10, 20, 7))
+    L = 3 + 0.02 * (np.log(N) - 14.5) ** 2
+    n, l = sub.isoflop_minimum(N, L)
+    assert abs(np.log(n) - 14.5) < 1e-9 and abs(l - 3) < 1e-9
+
+
+def test_recovers_the_allocation_exponent():
+    C = np.logspace(18, 21, 7)
+    best = []
+    for c in C:
+        guess = (c / 6) ** 0.45
+        N = guess * np.logspace(-1, 1, 9)
+        best.append(sub.isoflop_minimum(N, law(N, c / (6 * N)))[0])
+    assert abs(sub.allocation_exponent(C, np.array(best)) - be / (al + be)) < 0.01

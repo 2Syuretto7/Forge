@@ -1,25 +1,25 @@
 import numpy as np
 import sub
 
-rng = np.random.default_rng(12)
-X = rng.normal(size=(40, 8)) * np.array([3, 2, 1, 1, 0.5, 0.3, 0.1, 0.05])
+RESULT = sub.warmup_experiment()
 
 
-def test_two_formulas_agree():
-    for lam in [0.0, 0.1, 1.0, 10.0]:
-        assert abs(sub.df_svd(X, lam) - sub.df_trace(X, lam)) < 1e-8
+def test_dead_fraction_detects_dead_units():
+    X, _ = sub.make_digits(50, 1)
+    p = sub.init_stack(3, 8)
+    assert sub.dead_fraction(p, X, 3, "post") == [0.0, 0.0, 0.0]
+    # In the plain stack, layer 1 sees ReLU outputs, which are never negative, so a column of
+    # W1 with only negative entries can never fire.
+    p["W1"][:, :2] = -1.0
+    d = sub.dead_fraction(p, X, 3, "plain")
+    assert len(d) == 3 and d[1] >= 0.25
 
 
-def test_limits_and_monotonicity():
-    assert abs(sub.df_svd(X, 0.0) - 8) < 1e-10
-    vals = [sub.df_svd(X, lam) for lam in [0.01, 0.1, 1, 10, 100, 1e4]]
-    assert all(a > b for a, b in zip(vals, vals[1:]))
-    assert vals[-1] < 0.1
+def test_warmup_rescues_post_norm():
+    none, warm = RESULT["none"], RESULT["warmup"]
+    assert none[0] > 1.1, RESULT
+    assert warm[0] < none[0] - 0.1, RESULT
 
 
-def test_grad_df_lambda_matches_finite_differences():
-    for lam in [0.05, 1.0, 20.0]:
-        h = 1e-6 * max(1.0, lam)
-        num = (sub.df_svd(X, lam + h) - sub.df_svd(X, lam - h)) / (2 * h)
-        g = sub.ddf_dlam(X, lam)
-        assert abs(g - num) / (abs(g) + abs(num)) < 1e-5
+def test_more_dead_units_without_warmup():
+    assert RESULT["none"][1] >= RESULT["warmup"][1], RESULT

@@ -1,13 +1,19 @@
-import numpy as np
+def normalize(text):
+    return " ".join(text.lower().split())
 
 
-def fit_unigram(tokens, mask, vocab):
-    """Next-token frequencies estimated from the tokens whose mask is 1, with add-one smoothing."""
-    counts = np.bincount(np.asarray(tokens)[np.asarray(mask) == 1], minlength=vocab) + 1.0
-    return counts / counts.sum()
+def leaked_items(eval_prompts, train_prompts):
+    """Indices of evaluation prompts that appear, after normalization, among the training prompts."""
+    seen = {normalize(t) for t in train_prompts}
+    return [i for i, p in enumerate(eval_prompts) if normalize(p) in seen]
 
 
-def response_ce(p, tokens, mask):
-    """Mean -log p(token) over the tokens whose mask is 1."""
-    t = np.asarray(tokens)[np.asarray(mask) == 1]
-    return float(-np.mean(np.log(p[t])))
+def honest_accuracy(correct, leaked):
+    """Accuracy over all items, over the items that did not leak, and over those that did.
+    Return a dict with keys all, clean, leaked (None for an empty group)."""
+    leaked = set(leaked)
+    def acc(ix):
+        return sum(correct[i] for i in ix) / len(ix) if ix else None
+    everything = list(range(len(correct)))
+    return {"all": acc(everything), "clean": acc([i for i in everything if i not in leaked]),
+            "leaked": acc(sorted(leaked))}

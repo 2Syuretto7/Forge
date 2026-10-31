@@ -1,13 +1,14 @@
-# Effective degrees of freedom of ridge
+# Break it: post-norm without warmup
 
-Section 3 measured a ridge model's capacity by $\mathrm{df}(\lambda) = \sum_j s_j^2/(s_j^2 + \lambda)$, where $s_j$ are the singular values of $X$.
+The stack, Adam and your `train` are provided.
 
-- `df_svd(X, lam)`: the formula above.
-- `df_trace(X, lam)`: $\operatorname{tr}\big(X(X^\top X + \lambda I)^{-1}X^\top\big)$ computed directly.
-- `ddf_dlam(X, lam)`: the derivative of $\mathrm{df}$ with respect to $\lambda$, which you derive; the test checks it by finite differences.
+1. `dead_fraction(p, X, depth, mode)`: for each hidden layer, the fraction of its ReLU units whose pre-activation is not positive for any row of `X`.
+2. `warmup_experiment(lr=1e-2, warmup=150, depth=20, width=32, steps=300, seed=0)`: train the post-norm stack without warmup and with it. For each run return `(loss, dead_top)`: the mean of the last 30 minibatch losses, and the mean dead fraction over the top third of the layers on `make_digits(500, 1)`. Return `{"none": ..., "warmup": ...}`.
+
+Each run takes under a second natively and a few seconds in the browser.
 
 ## Hints
 
-1. `s = np.linalg.svd(X, compute_uv=False)`.
-2. The hat matrix is `X @ np.linalg.solve(X.T @ X + lam * I, X.T)`.
-3. Differentiate $s^2/(s^2 + \lambda)$ term by term.
+1. Recompute the forward pass of `mode` layer by layer, recording `(z > 0).sum(axis=0) == 0` per unit.
+2. The top third is `dead[2 * depth // 3:]`.
+3. Same seed for both runs, so warmup is the only difference.

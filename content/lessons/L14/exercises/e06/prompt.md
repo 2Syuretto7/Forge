@@ -1,13 +1,12 @@
-# A bigram baseline, perplexity and bits per character
+# A tensor-parallel MLP
 
-1. `bigram_probs(ids, V, alpha=1.0)`: the add-$\alpha$ smoothed table $P[a, b] = (c_{ab} + \alpha)/(c_a + \alpha V)$, where $c_{ab}$ counts $a$ followed by $b$ in `ids`.
-2. `cross_entropy(ids, P)`: mean of $-\ln P[x_t, x_{t+1}]$ over the sequence.
-3. `perplexity(nats_per_token)` and `bits_per_char(nats_per_token, n_tokens, n_chars)`.
+Megatron-LM splits a transformer's MLP over $t$ GPUs without communicating inside it. The first layer is split by **columns**: rank $r$ computes its own slice of the hidden units, $h_r = \operatorname{ReLU}(x W_{1,r} + b_{1,r})$, and since ReLU is elementwise no exchange is needed. The second layer is split by **rows**: rank $r$ multiplies its hidden slice by its rows $W_{2,r}$, giving a partial output; one all-reduce sums the partial outputs.
 
-Every language model should beat this baseline; the tests check the formulas on a small example.
+1. `tp_mlp_forward(x, W1s, b1s, W2s, b2)`: return $y = \sum_r h_r W_{2,r} + b_2$ and a cache.
+2. `tp_mlp_backward(dy, cache, W1s, W2s)`: per-rank $(\partial W_{1,r}, \partial b_{1,r}, \partial W_{2,r})$, the shared $\partial b_2$, and $\partial x$, which is again a sum over ranks.
 
 ## Hints
 
-1. `np.add.at(C, (a, b), 1)` counts with repeated indices.
-2. Each row of `P` sums to 1.
-3. Total nats is `nats_per_token * n_tokens`; divide by characters, then by $\ln 2$.
+1. The cache needs $x$, each rank's pre-activation $z_r$ and hidden slice $h_r$.
+2. $\partial W_{2,r} = h_r^\top dy$ and $\partial z_r = (dy\, W_{2,r}^\top) \odot [z_r > 0]$.
+3. Forward needs one all-reduce (of $y$), backward one (of $\partial x$): two per MLP per pass, whatever $t$.

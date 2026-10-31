@@ -1,19 +1,26 @@
 import numpy as np
 import sub
 
-
-def test_same_result():
-    X = np.random.default_rng(1).normal(size=(7, 5))
-    assert np.allclose(sub.row_norms_loop(X), np.linalg.norm(X, axis=1))
-    assert np.allclose(sub.row_norms_vector(X), np.linalg.norm(X, axis=1))
+E, K, g = 1.69, 813.68, 0.15355
 
 
-def test_time_per_call():
-    calls = []
-    t = sub.time_per_call(lambda X: calls.append(1), None, min_time=0.005)
-    assert len(calls) >= 3 and (len(calls) + 1) & len(calls) == 0
-    assert 0 < t < 0.005
+def frontier(C):
+    return E + K * (C / 6) ** -g
 
 
-def test_overhead_dominates():
-    assert sub.overhead_ratio() > 10
+def test_floor_fit_recovers_the_frontier():
+    C = np.logspace(18, 21, 8)
+    E_fit, k, gam = sub.fit_floor(C, frontier(C))
+    assert abs(E_fit - E) < 0.02 and abs(gam - g) < 0.01
+
+
+def test_narrow_range_pure_fit_is_optimistic():
+    C = np.logspace(18, 21, 8)
+    pure, floor = sub.extrapolation_errors(C, frontier(C), 1e24, frontier(1e24))
+    assert pure < -0.1 and abs(floor) < 0.01
+
+
+def test_wider_range_helps_the_pure_fit():
+    narrow = sub.extrapolation_errors(np.logspace(18, 19, 8), frontier(np.logspace(18, 19, 8)), 1e24, frontier(1e24))[0]
+    wide = sub.extrapolation_errors(np.logspace(18, 22, 8), frontier(np.logspace(18, 22, 8)), 1e24, frontier(1e24))[0]
+    assert abs(wide) < abs(narrow)

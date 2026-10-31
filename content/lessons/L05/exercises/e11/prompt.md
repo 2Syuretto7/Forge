@@ -1,14 +1,14 @@
-# Break it: separable data and runaway weights
+# Learning-rate sweeps
 
-Train unregularized logistic regression on data a line separates perfectly, and watch the weight norm.
+Before comparing optimizers, find each one's best learning rate. Implement:
 
-- `train_norms(X, y, lr, steps, l2, every)`: gradient descent from zero (no bias term, for simplicity). Every `every` steps record $\|w\|$; return the list.
-- `train_confidence(X, y, w)`: the smallest and largest probability the model assigns to the correct label on the training set, as `(min, max)`.
+1. `sweep(make_opt, lrs, X, y, steps=300, seed=0)`: for each rate, train with `make_opt(lr)` (your `train` from exercise 10 is provided) and record the final training loss on the full data set with `full_loss`; record `inf` for a run whose loss is not finite or exceeds 10.
+2. `best_lr(lrs, losses)`: the rate with the lowest loss.
 
-Expect the unregularized norm to keep growing like $\log t$, and the L2-regularized norm to level off.
+Then sweep SGD over $10^{-3}$ to $10^{0.5}$ and Adam over $10^{-4}$ to $10^{-0.5}$ in half-decade steps, and compare the shapes of the two curves with your sketch.
 
 ## Hints
 
-1. The gradient is `X.T @ (sigmoid(X @ w) - y) / n + l2 * w`.
-2. Use a stable sigmoid such as `0.5 * (1 + tanh(a / 2))`.
-3. Probability of the correct label: $\sigma(a)$ when $y = 1$, $1 - \sigma(a)$ when $y = 0$.
+1. Wrap the training in `with np.errstate(all="ignore"):` so overflowing runs do not flood the output with warnings.
+2. `np.isfinite(v) and v <= 10` decides whether a run survived.
+3. Look at the SGD runs at rates 2 and 3: the loss does not explode, it gets stuck near $\ln 10$. Count the ReLU units of the second layer that never fire.

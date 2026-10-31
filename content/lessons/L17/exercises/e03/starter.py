@@ -1,11 +1,13 @@
 import numpy as np
 
 
-def ulp(x, exp_bits=5, man_bits=10):
-    """Spacing between representable numbers at |x| (subnormal spacing below the normal range)."""
-    raise NotImplementedError
+def softmax(z):
+    e = np.exp(z - np.max(z, axis=-1, keepdims=True))
+    return e / e.sum(axis=-1, keepdims=True)
 
 
-def largest_exact_integer(man_bits):
-    """Every integer up to 2^(man_bits + 1) is exactly representable; the next one is not."""
+def train_bandit(means, steps, lr, seed, batch=16):
+    """REINFORCE on a bandit whose arm a pays means[a] plus N(0, 1) noise. Each step samples `batch`
+    arms from softmax(theta), uses the batch's mean reward as the baseline, and ascends the
+    average of (r - baseline) * (onehot(a) - p). Return the final probabilities."""
     raise NotImplementedError

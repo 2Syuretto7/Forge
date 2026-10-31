@@ -1,12 +1,12 @@
-# Launch overhead
+# IsoFLOP profiles
 
-1. `step_time(kernels, peak, bw, launch_s=10e-6)`: `kernels` is a list of `(flops, bytes)`. They run one after another; each costs the larger of its roofline time (`kernel_time`, given) and the launch overhead, because the GPU cannot start a kernel before the CPU has issued it.
-2. `launch_bound_fraction(kernels, peak, bw, launch_s=10e-6)`: the fraction of kernels whose GPU time is below the launch overhead.
+Hoffmann et al.'s second method trains several model sizes at each of a few fixed compute budgets. Each budget gives a U-shaped curve of loss against model size, whose minimum is that budget's best size.
 
-Then compare one elementwise kernel on $2^{24}$ values with the same work split into 4096 kernels of 4096 values.
+1. `isoflop_minimum(N, L)`: fit a parabola to $L$ against $\log N$ and return the size at its vertex and the loss there.
+2. `allocation_exponent(C, N_opt)`: the exponent $a$ in $N_\text{opt} = k\,C^a$, fitted in log-log coordinates.
 
 ## Hints
 
-1. Use `max(kernel_time(f, b, peak, bw), launch_s)` per kernel.
-2. On a T4, a 4096-element fp16 kernel moves 24 KB, under a tenth of a microsecond of memory time.
-3. The split version does the same FLOPs and bytes in total.
+1. `np.polyfit(np.log(N), L, 2)` returns $(c_2, c_1, c_0)$; the vertex is at $\log N = -c_1 / 2c_2$.
+2. Return $N = e^{x}$, not $x$.
+3. The parabola only approximates the curve near its minimum, so place the sizes around the expected optimum.

@@ -7,7 +7,7 @@ The starter holds `target`, a 20-line function of three variables with arithmeti
 
 ## When you finish
 
-You have built the machinery inside every deep-learning framework. L07 uses it to train networks by backpropagation and L08 extends it to tensors; M26 explains why your gradients are exact while finite differences are not; M27 derives the cross-entropy gradient $p - y$ from information theory.
+You have built the machinery inside every deep-learning framework. L03 uses it to train networks by backpropagation and L04 extends it to tensors; M26 explains why your gradients are exact while finite differences are not; M27 derives the cross-entropy gradient $p - y$ from information theory.
 
-:::edge{to=L07 text="backpropagation through a network, layer by layer."}
+:::edge{to=L03 text="backpropagation through a network, layer by layer."}
 :::

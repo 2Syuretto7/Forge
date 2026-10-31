@@ -1,26 +1,13 @@
-import numpy as np
+import math
 
 
-def layer_norm(x, eps=1e-5):
-    """Normalize each row of x to zero mean and unit variance (no gain or bias). Return
-    (y, cache)."""
-    mu = x.mean(axis=-1, keepdims=True)
-    var = x.var(axis=-1, keepdims=True)
-    inv = 1 / np.sqrt(var + eps)
-    y = (x - mu) * inv
-    return y, (y, inv)
+def items_needed(p, half_width, z=1.96):
+    """Items needed for a confidence interval of +- half_width around an accuracy near p:
+    n = z^2 p (1 - p) / half_width^2, rounded up."""
+    return math.ceil(z * z * p * (1 - p) / half_width ** 2)
 
 
-def layer_norm_backward(dy, cache):
-    """The gradient with respect to x, given dL/dy."""
-    y, inv = cache
-    n = y.shape[-1]
-    return inv * (dy - dy.mean(axis=-1, keepdims=True) - y * (dy * y).mean(axis=-1, keepdims=True))
-
-
-def max_attention_logit(q, k, qk_norm):
-    """The largest |q_i . k_j| / sqrt(d) over all pairs, with q and k (rows) layer-normalized first
-    if qk_norm."""
-    if qk_norm:
-        q, k = layer_norm(q)[0], layer_norm(k)[0]
-    return float(np.abs(q @ k.T).max() / np.sqrt(q.shape[1]))
+def detectable_difference(p, n, z=1.96):
+    """Roughly the smallest accuracy difference between two independent evaluations of n items
+    each that a 95% test can detect: z sqrt(2 p (1 - p) / n)."""
+    return z * math.sqrt(2 * p * (1 - p) / n)

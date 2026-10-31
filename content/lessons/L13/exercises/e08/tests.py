@@ -2,30 +2,19 @@ import numpy as np
 import sub
 
 rng = np.random.default_rng(8)
+X = rng.normal(size=(200, 8))
+w_true = rng.normal(size=8) * 4
+y = X @ w_true + 0.01 * rng.normal(size=200)
 
 
-def test_param_count():
-    for d in (8, 16, 64):
-        p = sub.init_block(d)
-        assert sum(v.size for v in p.values()) == sub.block_param_count(d)
-    assert sub.block_param_count(768) == 12 * 768 * 768 + 10 * 768
+def test_grad_mse():
+    w = rng.normal(size=8)
+    _, g = sub.mse_grad(w, X, y)
+    num = np.array([(sub.mse_grad(w + e, X, y)[0] - sub.mse_grad(w - e, X, y)[0]) / 2e-6 for e in np.eye(8) * 1e-6])
+    assert np.allclose(g, num, rtol=1e-5)
 
 
-def test_block_shapes_and_residual():
-    p = sub.init_block(16, seed=1)
-    X = rng.normal(size=(7, 16))
-    Y = sub.block_forward(X, p, 4)
-    assert Y.shape == X.shape
-    zero = {k: (np.zeros_like(v) if k[0] in "Wb" else v) for k, v in p.items()}
-    assert np.allclose(sub.block_forward(X, zero, 4), X)
-
-
-def test_block_is_causal():
-    p = sub.init_block(16, seed=2)
-    p = {k: v * 20 if k.startswith("W") else v for k, v in p.items()}
-    X = rng.normal(size=(7, 16))
-    Y = sub.block_forward(X, p, 4)
-    X2 = X.copy()
-    X2[4:] += 1.0
-    Y2 = sub.block_forward(X2, p, 4)
-    assert np.allclose(Y[:4], Y2[:4]) and not np.allclose(Y[4:], Y2[4:])
+def test_master_weights_keep_learning():
+    with_master = sub.train(X, y, 1e-3, 3000, master=True)
+    without = sub.train(X, y, 1e-3, 3000, master=False)
+    assert with_master < without / 5, (with_master, without)

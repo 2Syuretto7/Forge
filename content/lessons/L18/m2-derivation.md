@@ -1,124 +1,88 @@
-# Derivation: memory, communication and four ways to split a model
+# Derivation: where the time and memory go
 
-## 1. Memory accounting
+## 1. Prefill and decode
 
-Training a model with $\Psi$ parameters in mixed precision with Adam keeps:
-
-- **weights** in 16-bit for the forward and backward passes: $2\Psi$ bytes;
-- **gradients** in 16-bit: $2\Psi$;
-- **optimizer states** in fp32: master weights, momentum and variance, $12\Psi$;
-- **activations**: everything backward needs, which grows with batch, sequence length and depth.
-
-The first three, $16\Psi$, are the **model states** (Rajbhandari et al., 2020).
-
-:::edge{from=L17 text="bytes per parameter in mixed precision"}
-:::
-
-## 2. Activations, counted
-
-Korthikanti et al. (2022) count the bytes one transformer layer stores for backward, in 16-bit, for sequence length $s$, micro-batch $b$, width $h$ and $a$ heads. The attention block keeps its input, $Q$ and $K$, $V$, the projection input and a dropout mask ($11sbh$), plus the $a$ attention matrices of size $s \times s$: scores after softmax, the dropout mask and the dropped-out scores ($5as^2b$). The MLP keeps its input, the $4h$-wide pre-activation and activation and a mask ($19sbh$), and the two layer norms their inputs ($4sbh$):
+Serving a request has two phases. **Prefill** runs the prompt's $T$ tokens through the model in one pass: each weight read from memory serves $T$ tokens, an arithmetic intensity of about $T$ FLOPs per byte in 16-bit, so long prompts are compute-bound. **Decode** then generates one token per step per sequence: each weight read serves only the $b$ sequences in the batch, an intensity of about $b$. Below the ridge point (about 150 on an A100, 200 on a T4) decode is memory-bound, and a step takes the time to read the weights and the caches:
 $$
-\text{activations per layer} = s\,b\,h\left(34 + \frac{5\,a\,s}{h}\right) \text{ bytes}.
+t_\text{step} \approx \frac{\text{weight bytes} + \text{cache bytes}}{\text{bandwidth}}.
 $$
-FlashAttention (L12) never stores the $s \times s$ matrices, removing the second term.
+The two phases are measured separately: **time to first token** (mostly prefill) and **inter-token latency** (decode).
 
-::::derivation{id=d1 title="Activations of a large model"}
+::::derivation{id=d1 title="Decode on the roofline"}
 :::step
-GPT-3 175B has $h = 12288$, $a = 96$, and is trained with $s = 2048$. For one sequence, $5as/h =$ [[80]].
+At batch 1 with 16-bit weights, decode's intensity is about [[1]] FLOP per byte.
 :::
 :::step
-One layer stores $2048 \cdot 12288 \cdot 114 \approx$ [[2.87e9|tol=1e7]] bytes.
-:::
-:::step
-Across 96 layers that is about [[275|tol=1]] GB, for a single sequence.
+To reach an A100's ridge point of 312 TFLOP/s over 2.04 TB/s, a batch of about [[153|tol=1]] sequences would be needed (ignoring the caches).
 :::
 ::::
 
-:::edge{from=L08 text="tensors saved for backward"}
+:::edge{from=L08 text="kernels bound by bytes, and FlashAttention"}
 :::
 
-## 3. Collectives and what they cost
+:::widget{name=Roofline hardware=a100 precision=fp16}
+:::
 
-Distributed training moves data with a few **collectives** over $P$ ranks: **all-reduce** (every rank ends with the sum of everyone's arrays), **reduce-scatter** (every rank ends with the sum of one $1/P$ slice) and **all-gather** (every rank ends with every rank's slice).
+## 2. The KV cache
 
-A **ring** implementation arranges the ranks in a cycle and splits each array into $P$ chunks. Reduce-scatter takes $P - 1$ steps; in each, every rank passes one chunk to its neighbor, who adds it. All-gather passes the finished chunks around in another $P - 1$ steps. With $\alpha$ the latency of a step and $\beta$ the seconds per byte,
+At every decode step, attention needs the keys and values of all earlier tokens. Recomputing them would cost a full forward pass over the prefix per token; instead they are **cached**: per token, a key and a value for every layer and every key-value head,
 $$
-T_\text{all-reduce} = 2(P-1)\,\alpha + 2\,\frac{P - 1}{P}\, n\, \beta.
+\text{bytes per token} = 2 \times n_\text{layers} \times n_\text{kv heads} \times d_\text{head} \times \text{bytes per number}.
 $$
-Each rank sends just under $2n$ bytes whatever $P$ is: the ring is bandwidth-optimal, and latency is what grows with $P$. Inside a server, GPUs talk over NVLink at hundreds of GB/s; between servers the network gives each GPU an order of magnitude less, which decides where each kind of parallelism goes.
+Each step then computes only the new token's query, key and value and attends over the cache. The cache grows with batch and context and becomes the main consumer of memory. **Grouped-query attention** (GQA) shares each key-value head among a group of query heads and divides the cache by the group size; multi-query attention uses a single key-value head.
 
-::::derivation{id=d2 title="Ring traffic"}
+::::derivation{id=d2 title="Cache arithmetic"}
 :::step
-All-reducing 1 GB over 8 GPUs, each GPU sends $2 \cdot \frac{7}{8} =$ [[1.75]] GB.
+Llama 2 7B (32 layers, 32 key-value heads of dimension 128, 16-bit) stores $2 \cdot 32 \cdot 32 \cdot 128 \cdot 2 =$ [[524288]] bytes per token.
 :::
 :::step
-Over 1024 GPUs it sends about [[2|tol=0.01]] GB.
-:::
-:::step
-The fp16 gradients of a 7B model are 14 GB; over 64 GPUs each sends $2 \cdot \frac{63}{64} \cdot 14 \approx$ [[27.56|tol=0.02]] GB per step.
+With 8 key-value heads instead of 32 that becomes [[131072]] bytes.
 :::
 ::::
 
-:::edge{from=L11 text="bandwidth, latency and overlapping work"}
+:::edge{from=L09 text="attention over keys and values"}
 :::
 
-## 4. Data parallelism
+## 3. Batching
 
-Every GPU holds the whole model and a different slice of the batch. After backward, an all-reduce averages the gradients, and every GPU applies the same update, so the copies never diverge. PyTorch's DDP groups gradients into buckets and starts each bucket's all-reduce as soon as backward has produced it, overlapping communication with the rest of the backward pass. Data parallelism scales the batch, not the model: memory per GPU stays $16\Psi$ plus activations.
+Batching shares each weight read among sequences, raising throughput until the step becomes compute-bound or the caches fill memory. **Static batching** groups requests and runs each group until its longest member finishes, so short requests wait and new arrivals queue behind the whole batch. **Continuous batching** (Orca, 2022) schedules at every step: finished sequences leave immediately and waiting ones take their slots. **Paged attention** (vLLM, 2023) stores each sequence's cache in fixed-size pages allocated as it grows, so memory is not reserved for tokens that are never generated, more sequences fit, and pages holding a shared prompt can be shared. Throughput and latency trade against each other: a larger batch makes more tokens per second and each token slower.
 
-## 5. ZeRO: sharding the model states
+## 4. Quantization
 
-Data-parallel ranks hold identical model states, which is wasteful. **ZeRO** (Rajbhandari et al., 2020) shards them over the $N_d$ data-parallel ranks:
+Decode time is mostly reading weights, so storing them in fewer bits speeds it up almost proportionally. **Weight-only quantization** stores integers and a scale per row (or per group of weights) and dequantizes on the fly: with a scale $s$, each weight's error is at most $s/2$. What matters is the error in the layer's **outputs** on real inputs, so methods like GPTQ round to minimize $\|X W^\top - X \hat W^\top\|$ on calibration data. Large models have a few input features with very large activations: with one scale per tensor they wreck the precision of everything else, and the LLM.int8 method keeps those few features in 16 bits.
 
-- **stage 1** shards the optimizer states: each rank updates its $1/N_d$ of the parameters, $(2 + 2 + 12/N_d)\Psi$ bytes;
-- **stage 2** also shards the gradients: a reduce-scatter leaves each rank only the gradients it updates, $(2 + 14/N_d)\Psi$;
-- **stage 3** also shards the weights, all-gathered layer by layer when needed (PyTorch's FSDP), $16\Psi/N_d$.
-
-Stages 1 and 2 communicate exactly what data parallelism does (a reduce-scatter and an all-gather make an all-reduce); stage 3 adds an all-gather of the weights in backward, 1.5 times the traffic.
-
-::::derivation{id=d3 title="ZeRO for 7.5B parameters on 64 GPUs"}
+::::derivation{id=d3 title="Bytes saved"}
 :::step
-Without sharding: $16 \cdot 7.5 =$ [[120]] GB per GPU.
-:::
-:::step
-Stage 1: $(4 + 12/64) \cdot 7.5 \approx$ [[31.4|tol=0.1]] GB.
-:::
-:::step
-Stage 3: $16 \cdot 7.5 / 64 \approx$ [[1.875|tol=0.001]] GB.
+In int8, the 6.74-billion-parameter model takes about [[6.74|tol=0.01]] GB instead of 13.48: the decode step roughly halves.
 :::
 ::::
 
-## 6. Tensor parallelism
+:::edge{from=L13 text="fewer bits per number"}
+:::
 
-Split the matrices themselves (Shoeybi et al., 2019). In the MLP, split the first weight by **columns**: each of $t$ GPUs computes a slice of the hidden units, and the elementwise activation needs no communication. Split the second by **rows**: each GPU multiplies its hidden slice by its rows, producing a partial output, and **one all-reduce** sums them. Attention splits the same way by heads: the $Q, K, V$ projections by columns (whole heads per GPU), the output projection by rows. Each layer costs two all-reduces of the $s \times b \times h$ activations in forward and two in backward, inside every layer, so tensor parallelism needs the fast links within a server and is usually limited to 8 GPUs. **Sequence parallelism** additionally splits the layer norms and dropout along the sequence, dividing all of the activations by $t$.
+## 5. Speculative decoding
 
-## 7. Pipeline parallelism
-
-Give each of $p$ stages a contiguous block of layers, and stream $m$ **micro-batches** through: stage $s$ starts on micro-batch $j$ as soon as stage $s-1$ is done with it. While the pipeline fills and drains, stages sit idle: with every micro-batch taking $t_f + t_b$ per stage, a step takes $(m + p - 1)(t_f + t_b)$ instead of $m(t_f + t_b)$, a **bubble** of
+Because decode is memory-bound, checking several tokens costs about as much as generating one: one forward pass of the target model over $\gamma$ proposed tokens reads the weights once. A small **draft** model proposes $\gamma$ tokens; the target scores them all in one pass and accepts each proposed token $x$ with probability $\min(1, p(x)/q(x))$, where $p$ and $q$ are the target's and the draft's probabilities. At the first rejection it samples a replacement from $\max(0, p - q)$, renormalized. The emitted token's distribution is exactly $p$: accepting gives $q(x)\min(1, p(x)/q(x)) = \min(p(x), q(x))$, and the rejected mass $1 - \sum \min(p, q)$, spread as the residual, supplies the remaining $p(x) - \min(p(x), q(x))$ (Leviathan et al., 2023). With each token accepted with probability $\alpha$, a target pass yields on average
 $$
-\frac{p - 1}{m + p - 1}
+\frac{1 - \alpha^{\gamma + 1}}{1 - \alpha}
 $$
-of the time. **GPipe** runs all forwards, then all backwards, holding $m$ micro-batches' activations; **1F1B** alternates one forward and one backward once the pipeline is full, holding at most $p$. Pipeline stages exchange only the activations at their boundary, so pipelines can span servers.
+tokens; a draft that costs a fraction $c$ of the target per token makes the speedup that divided by $\gamma c + 1$.
 
-::::derivation{id=d4 title="The bubble"}
+::::derivation{id=d4 title="Speculative speedup"}
 :::step
-With 4 stages and 4 micro-batches, the bubble is $3/7 \approx$ [[0.4286|tol=0.0005]] of the step.
+With $\alpha = 0.8$ and $\gamma = 4$, each target pass yields $(1 - 0.8^5)/0.2 \approx$ [[3.36|tol=0.01]] tokens.
 :::
 :::step
-With 32 micro-batches it falls to $3/35 \approx$ [[0.0857|tol=0.0005]].
+If the draft costs 5% of the target per token, the speedup is $3.36/(4 \cdot 0.05 + 1) \approx$ [[2.8|tol=0.02]].
 :::
 ::::
 
-## 8. Activation checkpointing
-
-Keep only some activations (typically each layer's input) and recompute the rest during backward. Memory for activations drops from all of them to one input per layer plus one layer's worth; the price is one extra forward pass, about a third more compute. Applied to every $k$-th of $L$ layers, storage is about $L/k + k$ activations, smallest at $k = \sqrt{L}$ (Chen et al., 2016).
-
-## 9. Putting it together
-
-Large runs combine all of these, "3D parallelism": tensor parallelism inside a server, pipeline stages across servers, data parallelism (often with ZeRO stage 1) over the replicas, and checkpointing where activations still do not fit. The planner follows the same order of preference: model parallelism adds communication inside every layer, so use as little of it as the memory allows.
-
-:::edge{from=L15 text="compute-optimal model sizes"}
+:::edge{from=L16 text="a distilled student as the draft model"}
 :::
 
-:::edge{to=L19 text="A real pretraining run, data parallel and resumable."}
+## 6. Measuring
+
+Benchmark the phases separately, with warm-up and synchronization (L07): time to first token as a function of prompt length, inter-token latency as a function of batch and context, and throughput at a stated latency target. Report the distribution of latencies (median and 95th percentile), not just the mean: users wait for the slow requests.
+
+:::edge{to=L20 text="The final capstone serves its own model."}
 :::

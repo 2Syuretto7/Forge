@@ -1,0 +1,36 @@
+id: L03
+hours: 10
+capstone: "A 2-hidden-layer MLP with every gradient written by hand, reaching at least 88 percent test accuracy on a provided digit-like dataset"
+teaser: "Build a multi-layer network and its backward pass by hand, check every gradient, train it, and break it three ways."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 45}
+  - {file: m2-derivation.md, mode: theory,   minutes: 190}
+  - {file: m3-build.md,      mode: practice, minutes: 150}
+  - {file: m4-scale.md,      mode: practice, minutes: 70}
+  - {file: m5-break.md,      mode: both,     minutes: 50}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 25}
+  - {file: m7-capstone.md,   mode: practice, minutes: 45}
+hooks:
+  - {to: L04, text: "You will replace these hand-written backward passes with an autograd engine that derives them automatically."}
+  - {to: L05, text: "Plain SGD is only the start: momentum, Adam, schedules and principled initialization come next."}
+  - {to: L09, text: "A transformer is this MLP's backward pass applied to attention layers and residual blocks."}
+  - {to: L17, text: "The gradient p - onehot(y) returns as the score function of policy gradients."}
+reuses:
+  - {from: M19, concept: "vector-Jacobian products and the matmul VJP"}
+  - {from: L01, concept: "softmax regression and its gradient"}
+annotations:
+  - {target: M19, anchor: "Derivatives of matrix expressions", text: "These two VJPs are the entire backward pass of a linear layer; L03 stacks them into an MLP."}
+  - {target: L01, anchor: "Softmax regression for many classes", text: "An MLP is softmax regression on learned features; its output layer uses exactly this gradient (L03)."}
+concepts:
+  - q: "What is the backward pass of a linear layer Y = XW + b?"
+    a: "dX = dY W^T, dW = X^T dY, db = sum of dY over the batch."
+  - q: "Why can a network whose hidden weights all start equal never learn different features?"
+    a: "Every hidden unit computes the same function and receives the same gradient, so they stay identical forever: the symmetry is never broken. Random initialization breaks it."
+  - q: "What is a dead ReLU?"
+    a: "A unit whose pre-activation is negative for every input, so its output and gradient are always zero and it can never recover by gradient descent."
+  - q: "Why does a one-hidden-layer ReLU network approximate any continuous function on an interval?"
+    a: "It computes a piecewise linear function with a kink per unit; with enough units the pieces can follow any continuous curve as closely as you like."
+  - q: "Roughly how does the cost of the backward pass compare with the forward pass?"
+    a: "About twice: each layer needs one matrix product for the input gradient and one for the weight gradient, against one in the forward pass."
+katas: [e01, e03, e04]

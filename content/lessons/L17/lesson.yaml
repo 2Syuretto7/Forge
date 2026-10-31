@@ -1,36 +1,37 @@
 id: L17
-hours: 7
-capstone: "The GPT trained with fp16 automatic mixed precision and loss scaling, matching the fp32 loss with a measured speedup and lower memory on a T4"
-teaser: "What fp32, bf16, fp16 and fp8 can and cannot represent, and how mixed precision with loss scaling trains just as well, faster."
+hours: 12
+capstone: "Reinforcement learning with an exact-match reward that raises a fine-tuned model's accuracy on held-out arithmetic, with the reward-KL tradeoff reported for two penalty strengths"
+teaser: "Train a language model with rewards: policy gradients and baselines, PPO, reward models from preferences, DPO, verifiable rewards, and what goes wrong when the reward is wrong."
 movements:
-  - {file: m0-recall.md,     mode: theory,   minutes: 20}
-  - {file: m1-puzzle.md,     mode: theory,   minutes: 30}
-  - {file: m2-derivation.md, mode: theory,   minutes: 130}
-  - {file: m3-build.md,      mode: practice, minutes: 110}
-  - {file: m4-scale.md,      mode: practice, minutes: 45}
-  - {file: m5-break.md,      mode: both,     minutes: 35}
-  - {file: m6-feynman.md,    mode: theory,   minutes: 20}
-  - {file: m7-capstone.md,   mode: practice, minutes: 30}
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 230}
+  - {file: m3-build.md,      mode: practice, minutes: 180}
+  - {file: m4-scale.md,      mode: practice, minutes: 70}
+  - {file: m5-break.md,      mode: both,     minutes: 50}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 25}
+  - {file: m7-capstone.md,   mode: practice, minutes: 100}
 hooks:
-  - {to: L18, text: "Sixteen bytes per parameter for weights, gradients and Adam state is the budget distributed training splits across GPUs."}
-  - {to: L22, text: "Inference goes further: int8 and fp8 weights, and low-precision caches of keys and values."}
-  - {to: L14, text: "The GPT you train in L14 runs faster in mixed precision with the same loss."}
+  - {to: L19, text: "Evaluate and look inside the model that RL produced."}
+  - {to: L20, text: "The final capstone aligns its own model."}
 reuses:
-  - {from: L11, concept: "tensor cores and the roofline"}
+  - {from: M27, concept: "the KL divergence"}
+  - {from: L03, concept: "the softmax gradient p - y"}
+  - {from: L16, concept: "a fine-tuned starting policy"}
 annotations:
-  - {target: L11, movement: m2-derivation, anchor: "Arithmetic intensity and the roofline", text: "Half precision raises both roofs, the compute roof eightfold on a T4; L17 makes it numerically safe."}
-  - {target: L13, movement: m2-derivation, anchor: "Why divide by the square root of the dimension", text: "In fp16 the scale matters for range too: scores above about 11 overflow the exponential, and large unscaled dot products overflow outright (L17)."}
+  - {target: M27, movement: m2-derivation, anchor: "3. Cross-entropy and KL divergence", text: "L17 uses this divergence as the leash that keeps a policy near its reference during RLHF, and derives the optimal policy under it."}
+  - {target: L03, movement: m2-derivation, anchor: "3. The backward pass of each layer", text: "L17 reuses the softmax gradient as the score function of the policy gradient."}
 concepts:
-  - q: "How do bf16 and fp16 differ?"
-    a: "Both use 16 bits; bf16 keeps fp32's 8 exponent bits (same range, about 3 significant digits) while fp16 has 5 exponent bits and 10 mantissa bits (more precision, but a maximum of 65504 and early underflow)."
-  - q: "Why does mixed-precision training keep fp32 master weights?"
-    a: "Updates are often smaller than the spacing between half-precision numbers near the weight's value, so applied directly to fp16 weights they round away; an fp32 copy accumulates them."
-  - q: "What does loss scaling do?"
-    a: "It multiplies the loss by a large factor before the backward pass so small gradients do not underflow in fp16, then divides the gradients by the same factor before the update; dynamic scaling lowers the factor when gradients overflow."
-  - q: "Why is a long sum accumulated in fp32 even when its inputs are fp16?"
-    a: "Once the running sum is large, its spacing exceeds the small addends, which then round away; tensor cores and well-written kernels accumulate in fp32."
-  - q: "What is stochastic rounding and why is it useful?"
-    a: "Rounding up or down at random with probabilities that make the expected result exact; tiny updates then accumulate on average instead of always rounding away."
-  - q: "How many bytes per parameter does mixed-precision training with Adam need, without activations?"
-    a: "About 16: fp16 weights and gradients (2 + 2) plus fp32 master weights and two Adam moments (4 + 4 + 4)."
-katas: [e01, e04, e06]
+  - q: "What is the policy gradient?"
+    a: "The gradient of expected reward equals the expectation of reward times the gradient of the log-probability of the sampled response, so it can be estimated from samples."
+  - q: "Why does a baseline not bias the policy gradient?"
+    a: "The expected score function is zero, so subtracting any baseline that does not depend on the sampled response leaves the expectation unchanged while reducing variance."
+  - q: "What is the optimum of reward minus beta times KL to a reference?"
+    a: "The reference policy tilted by exp(reward / beta) and renormalized."
+  - q: "How does DPO train on preferences without a reward model?"
+    a: "It writes the reward as beta times the log-ratio of policy to reference, substitutes it into the Bradley-Terry likelihood, and maximizes that likelihood directly."
+  - q: "What are group-relative advantages?"
+    a: "Several responses are sampled for the same prompt and each reward is normalized by the group's mean and standard deviation, replacing a value network as the baseline."
+  - q: "What is reward overoptimization?"
+    a: "Optimizing a proxy reward too hard raises the proxy while true quality first rises and then falls, which a KL penalty and held-out evaluations guard against."
+katas: [e01, e05, e08]

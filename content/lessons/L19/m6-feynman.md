@@ -1,11 +1,11 @@
-# Explain it plainly: keeping a long training run healthy
+# Explain it plainly: evaluating and reading a model
 
-Explain to an engineer joining a pretraining team what can go wrong during a long run and how the team detects and recovers from it.
+Explain to an engineer who ships models how to tell whether one model is really better than another, and how researchers find out what a model is doing inside.
 
 - Write 150 to 400 words.
-- Name at least two causes of loss spikes.
-- Explain what a checkpoint must contain for an exact resume, and how a spike is recovered from.
-- Mention one bug that makes a resumed run silently different.
+- Explain confidence intervals over items and paired comparisons.
+- Explain what a linear probe shows and what it does not.
+- Explain superposition, sparse autoencoders, and activation patching.
 
-:::feynman{id=f1 prompt="Explain what can go wrong during a long pretraining run and how it is detected and recovered from, including causes of loss spikes, what a checkpoint must contain, and one silent resume bug." key_points="Loss spikes come from learning rates that are too high, bad data batches, and numerical problems such as attention or output logits growing without bound|The loss and the gradient norm are logged every step and compared with a trailing window to detect spikes|A checkpoint must contain the model, the optimizer state including its step count, the data position and the random-number states, saved atomically|Recovery restores a checkpoint from before the spike and skips the data around it|A resume that changes the data order or restarts the learning-rate schedule keeps training silently and must be caught by comparing with an uninterrupted run or auditing the logs"}
+:::feynman{id=f1 prompt="Explain how to tell whether one model is really better than another on a benchmark, and how linear probes, sparse autoencoders and activation patching reveal what a model computes, including the limits of each." key_points="A benchmark score is an average over sampled items, so it needs a confidence interval over items, and two models should be compared item by item because they share hard items|Contamination, prompt format and seeds can move scores, so they must be checked and reported|A linear probe shows that a property is linearly decodable from activations, not that the model uses it, and needs a random-feature or control-task baseline|Superposition stores more features than dimensions as nearly orthogonal directions, so a sparse autoencoder with an L1 penalty and unit-norm decoder rows is used to recover feature directions|Activation patching replaces one component's activation with its value from another input and measures how much of the output difference it restores, which tests whether the component carries the behaviour"}
 :::

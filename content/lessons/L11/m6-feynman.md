@@ -1,11 +1,11 @@
-# Explain it plainly: memory-bound and compute-bound
+# Explain it plainly: spending a compute budget
 
-Explain to a programmer who has just moved a training loop from CPU to GPU why some operations got a hundred times faster and others barely changed.
+Explain to an engineering manager how to decide the model size and the amount of training data for a fixed compute budget.
 
 - Write 150 to 400 words.
-- Use a concrete comparison between a matrix product and an elementwise operation.
-- Explain arithmetic intensity and what decides whether a kernel is memory-bound.
-- Mention one practical fix for a memory-bound or launch-bound workload.
+- Use the relation between compute, parameters and tokens.
+- Explain why both should grow with the budget, and roughly how fast.
+- Mention one way such a plan can mislead, and how to check it.
 
-:::feynman{id=f1 prompt="Explain why a matrix multiplication runs close to a GPU's peak FLOP rate while an elementwise operation runs far below it, using arithmetic intensity and the roofline model, and give one practical fix for memory-bound or launch-bound code." key_points="A kernel is limited by whichever is slower, computing its FLOPs or moving its bytes|Arithmetic intensity is FLOPs per byte moved; a matmul's grows with matrix size while an elementwise operation's stays below one|Kernels below the ridge point, peak FLOPs divided by bandwidth, are memory-bound and gain nothing from more compute|Small kernels can be dominated by launch overhead and synchronization rather than by either limit|A concrete fix such as fusion, larger batches, lower precision or avoiding per-step synchronization"}
+:::feynman{id=f1 prompt="Explain how to choose the model size and the number of training tokens for a fixed compute budget, using scaling laws, and describe one way such predictions can mislead." key_points="Training compute is about 6 times parameters times tokens, so a budget trades model size against data|The loss falls as a power law in parameters and in tokens toward an irreducible floor|At the optimum the marginal benefits balance, so parameters and tokens both grow with the budget, roughly as its square root, about 20 tokens per parameter|Fits are made on small runs and extrapolated, so they should be checked on a held-out larger run and reported with uncertainty|Fitting too narrow a range, ignoring the floor or not retuning the learning rate per size biases the predictions"}
 :::

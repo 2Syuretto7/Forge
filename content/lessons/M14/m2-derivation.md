@@ -121,7 +121,7 @@ For $A = \begin{pmatrix} 1 & 1 \end{pmatrix}$, $\sigma_1 = \sqrt 2$, $v_1 = (1, 
 :::edge{to=M23 text="PCA is the eigen-decomposition of the covariance matrix; M23 adds the probability."}
 :::
 
-:::edge{to=L20 text="LoRA adds a low-rank update to a weight matrix, the object Eckart-Young describes."}
+:::edge{to=L16 text="LoRA adds a low-rank update to a weight matrix, the object Eckart-Young describes."}
 :::
 
 ## Summary

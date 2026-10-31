@@ -1,8 +1,6 @@
-# Scale and measure: expressiveness and cost
+# Scale and measure: transfers, profiles and memory
 
-How much can a hidden layer represent, and what does a backward pass cost? Three exercises answer with numbers.
-
-## Building functions from hinges
+Sections 1 and 2 of the capstone notebook (linked from Movement 7) measure the T4's real matmul and addition throughput and its copy bandwidth; run them when you reach this point and compare them with your models.
 
 :::exercise{ref=e08}
 :::
@@ -10,18 +8,18 @@ How much can a hidden layer represent, and what does a backward pass cost? Three
 :::exercise{ref=e09}
 :::
 
-::::predict{id=p4 kind=numeric answer=11 tol=0}
-A one-hidden-layer ReLU network with 10 hidden units takes a single scalar input. What is the largest possible number of linear pieces of the function it computes?
+::::predict{id=p4 kind=choice answer=c}
+Activation checkpointing stores only the input of a block and recomputes the rest during the backward pass. For an MLP block $y = \operatorname{gelu}(xW_1)W_2$ with hidden width four times the input width, what does it cost?
+
+- Nothing: the gradients are computed differently, and the result is cheaper.
+- Twice the memory, half the compute.
+- About one extra forward pass of compute in exchange for most of the block's activation memory.
+- Approximate gradients.
 
 :::reveal
-Each unit contributes at most one kink, at $x = -b/w$, so at most 10 kinks and 11 pieces. With two hidden layers the count can grow multiplicatively with depth, which is one argument for depth: deep ReLU networks can represent functions with exponentially many pieces using only polynomially many units.
+The backward pass recomputes the hidden activations from the stored input, one extra forward pass, and the gradients are exactly the same. In exchange, the block no longer stores $h$ and $\operatorname{gelu}(h)$, each four times the size of the input. Exercise 10 measures both.
 :::
 ::::
 
-## Counting FLOPs
-
-:::exercise{ref=e13}
-:::
-
-:::edge{to=L08 text="An autograd engine computes these backward passes for any composition of operations."}
+:::exercise{ref=e10}
 :::

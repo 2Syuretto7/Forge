@@ -11,7 +11,7 @@ A straight line on log-log axes means what kind of law?
 - No law at all; log axes distort everything.
 
 :::reveal
-A power law, $L = C\,x^{-p}$. Taking logarithms, $\log L = \log C - p \log x$: a straight line in $\log x$ with slope $-p$. Multiplying compute by 10 moves one step right on the log axis and lowers $\log L$ by a fixed amount, which is multiplying $L$ by the fixed factor $10^{-p}$. Scaling laws for language models (L15, M35) are exactly such lines.
+A power law, $L = C\,x^{-p}$. Taking logarithms, $\log L = \log C - p \log x$: a straight line in $\log x$ with slope $-p$. Multiplying compute by 10 moves one step right on the log axis and lowers $\log L$ by a fixed amount, which is multiplying $L$ by the fixed factor $10^{-p}$. Scaling laws for language models (L11, M35) are exactly such lines.
 :::
 ::::
 

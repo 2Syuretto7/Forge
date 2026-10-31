@@ -1,15 +1,17 @@
-import numpy as np
+import math
 
 
-def masked_ce(logits, targets, mask):
-    """Mean softmax cross-entropy of logits (T, V) against integer targets, over the positions where
-    mask is 1 only. Return (loss, gradient with respect to logits), the gradient zero wherever the
-    mask is 0."""
-    m = logits.max(axis=1, keepdims=True)
-    logp = logits - m - np.log(np.exp(logits - m).sum(axis=1, keepdims=True))
-    n = mask.sum()
-    rows = np.arange(len(targets))
-    loss = -(logp[rows, targets] * mask).sum() / n
-    g = np.exp(logp)
-    g[rows, targets] -= 1
-    return loss, g * mask[:, None] / n
+def compute_budget(peak_flops, utilization, hours):
+    """Floating-point operations available: peak rate times utilization times seconds."""
+    return peak_flops * utilization * hours * 3600
+
+
+def chinchilla_split(C, tokens_per_param=20):
+    """Parameters N and tokens D with C = 6 N D and D = tokens_per_param N. Return (N, D)."""
+    N = math.sqrt(C / (6 * tokens_per_param))
+    return N, tokens_per_param * N
+
+
+def epochs(D, corpus_tokens):
+    """How many passes over the corpus D training tokens take."""
+    return D / corpus_tokens

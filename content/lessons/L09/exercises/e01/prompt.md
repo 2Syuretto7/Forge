@@ -1,12 +1,12 @@
-# Gradient descent on a quadratic
+# The softmax and its backward pass
 
-1. `quad_fg(A, b, x)` returns the value and gradient of $f(x) = \tfrac12 x^\top A x - b^\top x$ for a symmetric matrix $A$.
-2. `gd(grad, x0, lr, steps)` runs gradient descent $x \leftarrow x - \eta\, \nabla f(x)$ from `x0`, where `grad` is a function returning the gradient, and returns every iterate as an array of shape `(steps + 1, d)`, starting with `x0`.
+1. `softmax_rows(S)`: the softmax of every row (last axis) of `S`, computed stably by subtracting the row maximum. Entries equal to `-inf` must get weight exactly 0.
+2. `softmax_backward(P, dP)`: given the softmax output `P` and $\partial L/\partial P$, return $\partial L/\partial S$, row by row.
 
-The minimizer of $f$ solves $Ax = b$; the tests check that your iteration finds it.
+Both must work for arrays with any number of leading dimensions (for example `(heads, n, n)`).
 
 ## Hints
 
-1. The gradient of $\tfrac12 x^\top A x$ is $Ax$ when $A$ is symmetric.
-2. Copy `x0` into a float array before iterating, so the caller's array is never modified.
-3. Collect the iterates in a list and convert with `np.array` at the end.
+1. `np.exp(-np.inf)` is `0.0`, so masked entries need no special case once the maximum is subtracted.
+2. For one row, $\partial L/\partial s = p \odot (g - p^\top g)$ with $g = \partial L/\partial p$.
+3. Use `axis=-1, keepdims=True` throughout.

@@ -12,7 +12,7 @@ With residual $R = X - UV^\top$, the gradients are $\nabla_U L = -RV$ and $\nabl
 - `grads(U, V, X)` returns `(dU, dV)` with the shapes of `U` and `V`.
 - `fit(X, k, steps, lr, seed)`: initialize `U` and `V` with `0.1 * rng.normal(size=...)` from `np.random.default_rng(seed)` (first `U`, then `V`), run plain gradient descent, and return `(U, V)`.
 
-The test checks that your fitted product reaches the Eckart-Young error within one percent. This low-rank structure (M14) is exactly what LoRA trains in L20; the gradients are two matmul VJPs.
+The test checks that your fitted product reaches the Eckart-Young error within one percent. This low-rank structure (M14) is exactly what LoRA trains in L16; the gradients are two matmul VJPs.
 
 ## Hints
 

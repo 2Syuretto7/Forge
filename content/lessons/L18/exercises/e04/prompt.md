@@ -1,12 +1,12 @@
-# Data-parallel SGD
+# Generation with a KV cache
 
-Every rank holds a shard $(X_r, y_r)$ of the batch and the same weights. Each computes its local gradient; the gradients are combined; every rank applies the same update, so the weights stay identical without ever being sent.
+`logits_full(ids)` is a one-layer attention model (embeddings `E`, positions `P`, projections `Wq, Wk, Wv, Wo`) that recomputes everything for a whole sequence.
 
-1. `local_loss_grad(w, X, y)`: the loss $\tfrac12 \operatorname{mean}((Xw - y)^2)$ on one shard and its gradient.
-2. `dp_step(w, shards, lr)`: one synchronous step whose gradient equals the full-batch gradient, even when shards differ in size.
+1. `generate_uncached(prompt, n)`: greedy generation, recomputing the full sequence at every step.
+2. `generate_cached(prompt, n)`: process the prompt once, keeping the keys and values; then for each new token compute only its query, key and value, append to the cache and attend over it. It must return exactly the same tokens.
 
 ## Hints
 
-1. The gradient is $X^\top (Xw - y)/n$ for a shard of $n$ examples.
-2. The full-batch gradient is the size-weighted average of the shard gradients: $\sum_r n_r g_r / \sum_r n_r$.
-3. In practice the shards are equal and the all-reduce averages; exercise 12 shows what goes wrong when they are not.
+1. The residual stream at position $t$ is $x_t + \text{attention}_t W_o$ with $x_t = E[\text{token}] + P[t]$, and the logits are that times $E^\top$.
+2. The new token's position is the length of the sequence before it was appended.
+3. The cached version does work proportional to the sequence length per step; the uncached one, to its square.
