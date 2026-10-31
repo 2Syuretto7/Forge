@@ -1,0 +1,27 @@
+id: M30
+hours: 12
+capstone: "Dual SVM solver with KKT residual below 1e-4, plus a derivation and check that the KL-regularized optimum is reference times exp(reward / beta)"
+teaser: "The Lagrangian, inequality constraints and the KKT conditions, weak and strong duality, the support vector machine and its dual, projected gradient descent, and why maximizing reward under an entropy or KL penalty yields softmax."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: L01, text: "Ridge regression is a least-squares problem with a norm constraint, written as its Lagrangian; the penalty weight is the multiplier."}
+  - {to: L17, text: "RLHF's target, the KL-regularized optimum, is the reference policy reweighted by exponentiated rewards, and DPO inverts that formula."}
+  - {to: M38, text: "Reading a paper's objective as a constrained problem tells you what its multipliers and temperatures are buying."}
+reuses:
+  - {from: M28, concept: "convexity and Lagrange multipliers for equality constraints"}
+  - {from: M27, concept: "entropy and KL divergence"}
+annotations:
+  - {target: M28, anchor: "Lagrange multipliers", text: "M30: with inequality constraints the multipliers must be nonnegative and vanish on inactive constraints (the KKT conditions), and the best lower bound they give is the dual problem."}
+  - {target: M27, anchor: "Cross-entropy and KL divergence", text: "M30: maximizing expected reward minus beta times KL(p || pi) gives p proportional to pi exp(r / beta), the target of RLHF and the formula DPO inverts."}
+concepts:
+  - q: "What does a Lagrange multiplier measure, and why is it zero for a constraint that is not active?"
+    a: "It is the price of the constraint: how fast the optimal value would improve if the constraint were relaxed by one unit. A constraint that is not active at the optimum can be relaxed a little without changing the optimum, so its price is zero; that is complementary slackness, lambda_j g_j(x) = 0."
+katas: [e08]
