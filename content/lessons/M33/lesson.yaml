@@ -1,0 +1,27 @@
+id: M33
+hours: 12
+capstone: "Randomized SVD meeting a stated relative error at under one-fifth the time of full SVD, with a roofline placement of each kernel"
+teaser: "Flops, bytes and arithmetic intensity; blocked algorithms and the roofline; conjugate gradient, Krylov subspaces and preconditioning; randomized range finders, randomized SVD and sketching; and why forming the normal equations loses half your digits."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: L07, text: "L07 places real GPU kernels on the roofline you derive here; arithmetic intensity is the number that decides whether a kernel waits on memory or on arithmetic."}
+  - {to: M34, text: "Randomized SVD works because a random projection preserves the geometry of a low-dimensional subspace; M34 proves it."}
+  - {to: M38, text: "Low-rank structure and the cost of matrix products return in efficient attention and parameter-efficient fine-tuning."}
+reuses:
+  - {from: M14, concept: "the SVD and Eckart-Young low-rank approximation"}
+  - {from: M26, concept: "floating point, conditioning and stability"}
+annotations:
+  - {target: M14, anchor: "Low-rank approximation: Eckart-Young", text: "M33: the truncated SVD is optimal, but computing the full SVD costs about m n^2 flops; a randomized SVD reaches the same error to within a percent with a few passes of matrix products."}
+  - {target: M26, anchor: "Conditioning and stability", text: "M33: forming A^T A squares the condition number, so the normal equations lose twice the digits that QR loses; conjugate gradient on a well-conditioned or regularized system avoids forming it at all."}
+concepts:
+  - q: "Why is a large matrix product compute-bound while a matrix-vector product is memory-bound, on the same chip?"
+    a: "A matrix product of n by n matrices does 2 n^3 flops on 3 n^2 numbers, so its arithmetic intensity grows like n and exceeds the chip's ridge point, the ratio of peak flops to memory bandwidth. A matrix-vector product does 2 flops per matrix entry it reads, about half a flop per byte in fp32 at any size, far below the ridge point, so it runs at the speed memory can deliver data."
+katas: [e01]
