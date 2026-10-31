@@ -2,7 +2,7 @@
 
 ## 1. An evaluation is an estimate
 
-A benchmark is a sample of items from the space of tasks it stands for, and an accuracy is an average over that sample. With per-item scores $c_i \in \{0, 1\}$ and accuracy $\hat p$, the standard error is $\sqrt{\hat p(1 - \hat p)/n}$; for scores that are not 0/1 (partial credit, log-probabilities), the percentile bootstrap of L02 gives an interval by resampling items. Items, not tokens or random seeds, are the unit to resample: they are what the benchmark sampled.
+A benchmark is a sample of items from the space of tasks it stands for, and an accuracy is an average over that sample. With per-item scores $c_i \in \{0, 1\}$ and accuracy $\hat p$, the standard error is $\sqrt{\hat p(1 - \hat p)/n}$; for scores that are not 0/1 (partial credit, log-probabilities), the percentile bootstrap of M25 gives an interval by resampling items. Items, not tokens or random seeds, are the unit to resample: they are what the benchmark sampled.
 
 Comparing two models on the same items, the per-item difference $c^A_i - c^B_i$ has variance
 $$
@@ -22,7 +22,7 @@ For a 95% interval of $\pm 2$ points around an accuracy near 50%, $n = 1.96^2 \c
 :::
 ::::
 
-:::edge{from=L02 text="the bootstrap"}
+:::edge{from=M25 text="the bootstrap"}
 :::
 
 Sampling noise is only the first threat. **Contamination**: test items that appeared in the training data (L16) inflate scores exactly where they leaked; check with n-gram overlap and by comparing scores on items published before and after the training cutoff. **Prompt sensitivity**: formatting, few-shot examples and answer extraction can move scores by several points, so fix them and report them. **Seeds**: training randomness adds variance between checkpoints that the item interval does not cover; train several seeds when the claim is about a method. And a model trained against a reward (L21) can learn the grader's quirks, so evaluate with a held-out grader where possible.

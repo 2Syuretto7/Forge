@@ -15,11 +15,11 @@ hooks:
   - {to: L15, text: "Scaling laws are learning curves on a log-log plot; the irreducible-error term is the noise floor of this lesson."}
   - {to: L16, text: "Test-set leakage returns at scale as benchmark contamination of pretraining data."}
 reuses:
-  - {from: L02, concept: "bias and variance of estimators"}
+  - {from: M25, concept: "bias and variance of estimators"}
   - {from: L04, concept: "held-out cross-entropy"}
   - {from: L05, concept: "ridge regression and least squares"}
 annotations:
-  - {target: L02, anchor: "mean squared error", text: "The same bias-variance split, applied to a model's predictions instead of a parameter, explains overfitting (L06)."}
+  - {target: M25, anchor: "mean squared error", text: "The same bias-variance split, applied to a model's predictions instead of a parameter, explains overfitting (L06)."}
   - {target: L05, anchor: "ridge", text: "Ridge trades a little bias for a large cut in variance; near the interpolation threshold it removes the double-descent peak (L06)."}
 concepts:
   - q: "State the bias-variance decomposition of expected squared error at a point."

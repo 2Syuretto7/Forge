@@ -2,7 +2,7 @@
 
 A benchmark score is an average over items, a sample from the space of possible questions. Report it with an interval.
 
-1. `accuracy_ci(correct, n_boot=2000, seed=0, level=0.95)`: the accuracy over items (0/1) and a percentile bootstrap interval that resamples items (L02).
+1. `accuracy_ci(correct, n_boot=2000, seed=0, level=0.95)`: the accuracy over items (0/1) and a percentile bootstrap interval that resamples items (M25).
 2. `standard_error(p, n)`: $\sqrt{p(1-p)/n}$.
 
 ## Hints

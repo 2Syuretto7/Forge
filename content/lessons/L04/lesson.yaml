@@ -16,9 +16,9 @@ hooks:
   - {to: L14, text: "A language model's training loss is exactly the cross-entropy derived here, and its perplexity the exponential of it."}
   - {to: L21, text: "KL divergence to a reference model is the penalty that keeps RLHF from drifting."}
 reuses:
-  - {from: L02, concept: "maximum likelihood estimation"}
+  - {from: M25, concept: "maximum likelihood estimation"}
 annotations:
-  - {target: L02, anchor: "maximum likelihood estimate", text: "Maximizing average log-likelihood is minimizing the cross-entropy between the empirical distribution and the model (L04)."}
+  - {target: M25, anchor: "maximum likelihood estimate", text: "Maximizing average log-likelihood is minimizing the cross-entropy between the empirical distribution and the model (L04)."}
 concepts:
   - q: "What does a cross-entropy loss of 1.5 nats per token mean?"
     a: "On average the model assigns probability e^-1.5, about 0.22, to the token that actually comes next; its perplexity is e^1.5, about 4.5, as uncertain as a fair choice among 4.5 tokens."

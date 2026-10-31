@@ -302,7 +302,7 @@ print(f"patching the whole circuit restores {circuit_effect:.2f}; the previous-t
 # model's top prediction after the second $[A]$ should be $[B]$. The control sequences are the same
 # with the earlier $[A]$ replaced, so the only route to $[B]$ is removed. Write
 # `pair_accuracy(x, pos)`: the fraction of sequences whose top prediction at position `pos[i]` is the
-# token `x[i, pos[i] + 1]`, with a bootstrap interval over sequences (L02, exercise 1).
+# token `x[i, pos[i] + 1]`, with a bootstrap interval over sequences (exercise 1).
 
 # %%
 def make_pairs(n, gen, control=False):

@@ -34,9 +34,8 @@ function walk(dir: string, acc: string[] = []): string[] {
   return acc;
 }
 
-// The lessons that may start a path with no inbound edge. L02 stays a root until its
-// material has moved into the math track (docs/math-track.md, Migration).
-const ROOTS = ['M01', 'L02'];
+// The lessons that may start a path with no inbound edge.
+const ROOTS = ['M01'];
 
 // An edge chip, hook or reuse may follow an edge in its direction, or a horizontal
 // edge either way: a horizontal link is mutual.

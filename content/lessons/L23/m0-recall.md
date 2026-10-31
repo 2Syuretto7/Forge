@@ -1,6 +1,6 @@
 # Recall bridge: the bootstrap, attention heads and trained policies
 
-From L02: an average over a sample is itself a random quantity, and the bootstrap estimates its spread by resampling. From L13: each attention head moves information between positions, chosen by query-key matches. From L21: training with rewards changes a model's behaviour in ways the training reward alone does not reveal. This lesson asks two questions about a trained model: how well does it do, measured honestly, and how does it do it, read from its activations. Reviews due from L02, L13 and L21 appear above.
+From M25: an average over a sample is itself a random quantity, and the bootstrap estimates its spread by resampling. From L13: each attention head moves information between positions, chosen by query-key matches. From L21: training with rewards changes a model's behaviour in ways the training reward alone does not reveal. This lesson asks two questions about a trained model: how well does it do, measured honestly, and how does it do it, read from its activations. Reviews due from M25, L13 and L21 appear above.
 
 ::::derivation{id=d0 title="Warm-up"}
 :::step

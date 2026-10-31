@@ -82,7 +82,7 @@ The loss at step $s$ is computed before update $s$, so update $s - 1$ may alread
 
 ## 6. Evaluation you can trust
 
-The validation loss is a mean over examples, so report it with an interval: bootstrap the per-window losses (L02). Compare two checkpoints on the **same** windows with a paired difference, which is far more precise than comparing their separate intervals. Evaluate on fixed windows with fixed seeds, in evaluation mode, at regular steps, and never on training data.
+The validation loss is a mean over examples, so report it with an interval: bootstrap the per-window losses (M25). Compare two checkpoints on the **same** windows with a paired difference, which is far more precise than comparing their separate intervals. Evaluate on fixed windows with fixed seeds, in evaluation mode, at regular steps, and never on training data.
 
 :::edge{from=L15 text="the scaling fit that sized the run"}
 :::

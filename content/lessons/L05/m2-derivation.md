@@ -14,7 +14,7 @@ The log-likelihood is $\sum_i \log\mathcal N(y_i; w^\top x_i, \sigma^2) = -\tfra
 The gradient of $L(w) = \tfrac{1}{n}\|Xw - y\|^2$ is $\tfrac{2}{n}X^\top(Xw - y)$. Setting it to zero gives the normal equations of M12. For a one-feature model with no intercept, $\hat w = \sum x_i y_i / \sum x_i^2$. With data $(1, 2), (2, 3)$ that is $(2 + 6)/(1 + 4) =$ [[1.6]].
 :::
 :::step
-Maximizing over $\sigma^2$ as in L02 gives $\hat\sigma^2 = \tfrac{1}{n}\sum_i (y_i - \hat w^\top x_i)^2$, the mean squared residual. With residuals $0.2$ and $-0.2$, $\hat\sigma^2 =$ [[0.04]].
+Maximizing over $\sigma^2$ as in M25 gives $\hat\sigma^2 = \tfrac{1}{n}\sum_i (y_i - \hat w^\top x_i)^2$, the mean squared residual. With residuals $0.2$ and $-0.2$, $\hat\sigma^2 =$ [[0.04]].
 :::
 ::::
 
@@ -49,7 +49,7 @@ If the noise variance is $\sigma^2 = 0.25$ and the prior variance is $\tau^2 = 0
 :::
 ::::
 
-:::edge{from=L02 text="maximum likelihood and Gaussian priors"}
+:::edge{from=M25 text="maximum likelihood and Gaussian priors"}
 :::
 
 ## 3. Logistic regression is maximum likelihood for coin flips

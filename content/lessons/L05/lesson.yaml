@@ -17,10 +17,10 @@ hooks:
   - {to: L13, text: "The softmax you train here returns as the attention weights of a transformer."}
 reuses:
   - {from: M12, concept: "least squares and the normal equations"}
-  - {from: L02, concept: "maximum likelihood and Gaussian priors"}
+  - {from: M25, concept: "maximum likelihood and Gaussian priors"}
 annotations:
   - {target: M12, movement: m2-derivation, anchor: "Projection onto a subspace", text: "Least squares is maximum likelihood when the noise is Gaussian; ridge regression adds a Gaussian prior (L05)."}
-  - {target: L02, anchor: "Gaussian prior", text: "L05 turns this into ridge regression and weight decay: the MAP estimate of a linear model."}
+  - {target: M25, anchor: "Gaussian prior", text: "L05 turns this into ridge regression and weight decay: the MAP estimate of a linear model."}
 concepts:
   - q: "Why is squared error the right loss for linear regression?"
     a: "If y = w^T x + Gaussian noise, the negative log-likelihood is a constant plus the sum of squared residuals divided by 2 sigma^2, so maximum likelihood is least squares."

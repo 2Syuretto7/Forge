@@ -84,7 +84,7 @@ Let $p = (0.5, 0.5)$ and $q = (0.9, 0.1)$. Then $\mathrm{KL}(p\|q) = 0.5 \ln\tfr
 And $\mathrm{KL}(q\|p) = 0.9 \ln\tfrac{0.9}{0.5} + 0.1 \ln\tfrac{0.1}{0.5} \approx$ [[0.3681]] nats.
 :::
 :::step
-If $q(x) = 0$ for some $x$ with $p(x) > 0$, then $\mathrm{KL}(p\|q)$ is infinite. A model that declares an observed event impossible pays an infinite penalty; you met this in L02 as the tiny-sample MLE.
+If $q(x) = 0$ for some $x$ with $p(x) > 0$, then $\mathrm{KL}(p\|q)$ is infinite. A model that declares an observed event impossible pays an infinite penalty; you met this in M25 as the tiny-sample MLE.
 :::
 ::::
 
@@ -118,7 +118,7 @@ $$
 
 $H(\hat p)$ does not depend on the model. So maximizing likelihood, minimizing the cross-entropy loss, and minimizing the forward KL from the data to the model are the same optimization. Every classifier and language model in this course is trained this way, and its loss is reported in nats.
 
-:::edge{from=L02 text="maximum likelihood estimation"}
+:::edge{from=M25 text="maximum likelihood estimation"}
 :::
 
 ## 5. The gradient of softmax cross-entropy

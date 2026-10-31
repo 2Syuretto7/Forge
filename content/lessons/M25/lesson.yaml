@@ -1,0 +1,32 @@
+id: M25
+hours: 12
+capstone: "A/B test analyzer with bootstrap and Bayesian posteriors, and a report on when they disagree"
+teaser: "Estimators and their bias and variance, the likelihood and maximum likelihood, Fisher information, least squares as maximum likelihood, Bayesian posteriors with conjugate priors, MAP as regularized MLE, the bootstrap, and confidence against credible intervals."
+movements:
+  - {file: m0-recall.md,     mode: theory,   minutes: 25}
+  - {file: m1-puzzle.md,     mode: theory,   minutes: 40}
+  - {file: m2-derivation.md, mode: theory,   minutes: 215}
+  - {file: m3-build.md,      mode: practice, minutes: 175}
+  - {file: m4-scale.md,      mode: practice, minutes: 75}
+  - {file: m5-break.md,      mode: both,     minutes: 70}
+  - {file: m6-feynman.md,    mode: theory,   minutes: 45}
+  - {file: m7-capstone.md,   mode: practice, minutes: 75}
+hooks:
+  - {to: L05, text: "Least squares and logistic regression are maximum likelihood under Gaussian and Bernoulli noise, and ridge regression is MAP with a Gaussian prior."}
+  - {to: L06, text: "The bias and variance of estimators become the bias-variance decomposition of a model's prediction error."}
+  - {to: L23, text: "The bootstrap returns to put confidence intervals on benchmark scores and on the difference between two models."}
+  - {to: M27, text: "Maximizing the average log-likelihood is minimizing the cross-entropy between the data and the model."}
+  - {to: M28, text: "The negative log-likelihoods of exponential families are convex, so their MLE is a convex problem."}
+  - {to: M31, text: "Concentration inequalities bound how far an estimate can stray from its target with high probability, without the central limit theorem's approximation."}
+  - {to: M35, text: "Fitting a power law to noisy measurements is maximum likelihood, and its uncertainty comes from the curvature or the bootstrap."}
+reuses:
+  - {from: M24, concept: "the central limit theorem and confidence intervals"}
+  - {from: M16, concept: "maximization by setting a derivative to zero and checking the second derivative"}
+  - {from: M12, concept: "least squares and the normal equations"}
+annotations:
+  - {target: M12, anchor: "Why it is the minimum", text: "M25: if the errors are independent Gaussians of equal variance, this minimum is also the maximum-likelihood estimate, and the mean squared residual is the MLE of the noise variance."}
+  - {target: M24, anchor: "The central limit theorem", text: "M25: an estimator is usually an average in disguise, so the central limit theorem gives its sampling distribution; the bootstrap estimates the same distribution without a formula."}
+concepts:
+  - q: "What does the likelihood function measure, and why is it not a probability distribution over the parameter?"
+    a: "L(theta) = p(data | theta) is how probable the observed data are under each parameter value. As a function of theta it need not integrate to 1: for 7 heads in 10 flips it integrates to 1/11. Turning it into a distribution over theta requires a prior and Bayes' rule."
+katas: [e03]

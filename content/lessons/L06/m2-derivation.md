@@ -24,7 +24,7 @@ Averaging over $x$ gives the same split for the risk. The noise term is the floo
 :::
 ::::
 
-:::edge{from=L02 text="bias and variance of estimators"}
+:::edge{from=M25 text="bias and variance of estimators"}
 :::
 
 The decomposition explains the classical U. Simple models are wrong in the same way on every training set (high bias, low variance). Flexible models follow the noise of whichever training set they see (low bias, high variance). Somewhere in between the sum is smallest.
@@ -89,7 +89,7 @@ Move the ridge slider: by $\lambda \approx 10^{-1}$ the peak is gone and the cur
 
 ## 6. Estimating risk honestly
 
-**Hold-out.** Split once into training and test. Simple and unbiased if the test set is touched once at the end; noisy if the test set is small (L02's standard error applies: an accuracy measured on 100 examples is uncertain by about $\pm 5$ points).
+**Hold-out.** Split once into training and test. Simple and unbiased if the test set is touched once at the end; noisy if the test set is small (M25's standard error applies: an accuracy measured on 100 examples is uncertain by about $\pm 5$ points).
 
 **k-fold cross-validation.** Split the data into $k$ folds; train on $k - 1$, evaluate on the held-out fold, rotate, and average. Every point is used for evaluation exactly once. Use it to choose hyperparameters, then refit on all training data and report a separate test score.
 
